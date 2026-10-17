@@ -68,6 +68,12 @@ def assert_no_eligible_in_delivery_month(rank_panel: pd.DataFrame) -> None:
         raise QAError(f"Eligible rows inside delivery month: {int(bad.sum())}")
 
 
+def assert_pair_adjacency(pair_panel: pd.DataFrame) -> None:
+    bad = ~pair_panel["rank_far"].eq(pair_panel["rank_near"] + 1)
+    if bad.any():
+        raise QAError(f"Non-adjacent selected pairs: {int(bad.sum())}")
+
+
 def coverage_summary(rank_panel: pd.DataFrame) -> pd.DataFrame:
     total_dates = rank_panel["date"].nunique()
     summary = (

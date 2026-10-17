@@ -4,12 +4,14 @@ import pandas as pd
 from pathlib import Path
 
 from src import qa
-from src.curve import add_eligibility, add_spreads, select_pairs
+from src.curve import add_eligibility, add_spreads, build_pair_episodes, select_pairs
 from src.load import build_rank_panel, read_commodity_metadata, read_raw_wide
 from src.panel import (
     build_contract_panel,
     build_return_panel,
+    build_universe,
     enrich_rank_panel,
+    liquidity_summary,
 )
 
 FIXTURE = Path(__file__).parent / "fixtures" / "synthetic_wide.csv"
@@ -79,3 +81,68 @@ def test_spread_definitions_and_negative_price():
     assert out.loc[1, "negative_price"]
     assert out.loc[2, "negative_price"]
     assert out["months_between"].eq(1).all()
+
+
+def test_pair_episodes_are_additive():
+    dates = pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-06", "2020-01-07", "2020-01-08"])
+    panel = pd.DataFrame(
+        {
+            "date": dates,
+            "root": ["A"] * 5,
+            "contract_near": ["X", "X", "X", "Y", "Y"],
+            "contract_far": ["Z", "Z", "Z", "W", "W"],
+            "pair_rank_mix": ["M1-M2"] * 5,
+            "spread_dollar": [1.0, 2.0, 4.0, 5.0, 6.0],
+        }
+    )
+    episodes = build_pair_episodes(panel)
+    assert len(episodes) == 2
+    assert episodes.loc[0, "holding_days"] == 3
+    assert episodes.loc[0, "entry_spread"] == 1.0
+    assert episodes.loc[0, "exit_spread"] == 4.0
+    assert episodes.loc[0, "spread_change"] == 3.0
+    assert episodes.loc[1, "holding_days"] == 2
+    assert episodes.loc[1, "spread_change"] == 1.0
+
+
+def test_universe_liquidity_and_thresholds():
+    dates = pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-06"])
+    # Two contracts per leg; simple volumes/OI.
+    contract = pd.DataFrame(
+        {
+            "date": list(dates) * 2,
+            "root": ["A"] * 6,
+            "contract_code": ["X"] * 3 + ["Z"] * 3,
+            "volume": [6_000, 7_000, 8_000, 5_000, 6_000, 7_000],
+            "open_interest": [20_000, 21_000, 22_000, 15_000, 16_000, 17_000],
+        }
+    )
+    rank = pd.DataFrame(
+        {
+            "date": list(dates) * 2,
+            "root": ["A"] * 6,
+            "rank": [1] * 3 + [2] * 3,
+            "volume": [6_000, 7_000, 8_000, 5_000, 6_000, 7_000],
+            "open_interest": [20_000, 21_000, 22_000, 15_000, 16_000, 17_000],
+        }
+    )
+    spread = pd.DataFrame(
+        {
+            "date": dates,
+            "root": ["A"] * 3,
+            "rank_near": [1] * 3,
+            "rank_far": [2] * 3,
+            "contract_near": ["X"] * 3,
+            "contract_far": ["Z"] * 3,
+            "pair_rank_mix": ["M1-M2"] * 3,
+        }
+    )
+    universe = build_universe(
+        spread, contract, rank, thresholds=(1_000, 5_000), window=1, min_obs=1
+    )
+    assert universe["liq_volume_pair"].tolist() == [5_000, 6_000, 7_000]
+    assert universe["liq_oi_pair"].tolist() == [15_000, 16_000, 17_000]
+    assert universe["pass_vol_5k"].all()
+    summary = liquidity_summary(universe, thresholds=(1_000, 5_000))
+    assert summary.loc[summary.threshold.eq(5_000), "pass_volume_days"].iloc[0] == 3
+

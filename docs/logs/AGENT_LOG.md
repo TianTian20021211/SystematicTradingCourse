@@ -215,4 +215,57 @@ make the roll-day return use the new contract's previous-day price.
 
 **Next:** Phase 3 — liquidity/universe metrics and pair-episode validation.
 
+---
+
+## LOG-0005 · 2026-10-17 17:10 · Phase 3 · Claude Code
+
+**Goal:** Add point-in-time liquidity diagnostics and validate pair episodes,
+without applying a universe threshold.
+
+**Actions:**
+- Added `build_universe` and trailing-median helpers to `src/panel.py`:
+  - contract-level 252-session median volume/OI, min 60 observations;
+  - rank-level fallback with `liq_proxy` flags;
+  - `pair_liq = min(leg_near, leg_far)`;
+  - threshold booleans for 1k/5k/10k/20k (volume and OI).
+- Added `liquidity_summary` and `qa.assert_pair_adjacency`.
+- Added an adjacency guard in `select_pairs`: the main pair must be
+  `rank_far == rank_near + 1`; dates with a missing middle rank are skipped.
+- Extended `build_pair_episodes` to aggregate mean/min pair liquidity when the
+  universe columns are present.
+- Added tests for episode additivity and universe liquidity/thresholds.
+
+**Files changed:**
+- `src/panel.py` — universe/liquidity metrics and summary
+- `src/curve.py` — adjacency guard, episode liquidity aggregation
+- `src/qa.py` — pair adjacency assertion
+- `tests/test_spread.py` — episode and universe tests
+
+**Commands:**
+- `python3 -m pytest -q` → 14 passed
+- Full-data run → 236,186 selected pair-days; 6,664 episodes; pair mix
+  139,017 M1–M2 / 97,169 M2–M3.
+- Liquidity summary: 5k volume threshold passes 69,301 pair-days across 19
+  roots; 5k OI passes 151,137 pair-days across 21 roots; 1k volume passes
+  127,944 pair-days across 20 roots.
+- `liq_proxy` share ≈30%; pair-level volume liquidity missing ≈7.2% (mostly
+  very early history with fewer than 60 observations).
+
+**Why:** The user wants to choose the universe threshold after seeing the
+diagnostics. The code must expose the metrics without silently filtering. The
+episode table also needs liquidity so the signal layer can later decide which
+pairs are tradable.
+
+**Validation:**
+- Full-data pair adjacency assertion passes.
+- No eligible row is inside a delivery month.
+- Episode entry/exit spread arithmetic is additive in the synthetic unit test.
+- `pytest` 14 passed.
+
+**Commit:** `feat(spread): build liquidity universe and pair episodes`
+
+**Next:** Phase 4 — notebooks `00_data_audit` and `01_panel_build`, execute,
+save parquet, final QA and README/log updates.
+
+
 

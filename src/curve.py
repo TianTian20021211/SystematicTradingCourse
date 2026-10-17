@@ -249,20 +249,28 @@ def build_pair_episodes(pair_panel: pd.DataFrame) -> pd.DataFrame:
         panel["root"] + "_" + panel["episode_num"].astype(int).astype(str).str.zfill(4)
     )
 
+    agg_spec = {
+        "contract_near": ("contract_near", "first"),
+        "contract_far": ("contract_far", "first"),
+        "pair_rank_mix": ("pair_rank_mix", "first"),
+        "entry_date": ("date", "min"),
+        "exit_date": ("date", "max"),
+        "holding_days": ("date", "nunique"),
+        "n_obs": ("settle_near" if "settle_near" in panel.columns else "spread_dollar", "count"),
+        "entry_spread": ("spread_dollar", "first"),
+        "exit_spread": ("spread_dollar", "last"),
+        "mean_spread": ("spread_dollar", "mean"),
+    }
+    if "liq_volume_pair" in panel.columns:
+        agg_spec["mean_liq_volume"] = ("liq_volume_pair", "mean")
+        agg_spec["min_liq_volume"] = ("liq_volume_pair", "min")
+    if "liq_oi_pair" in panel.columns:
+        agg_spec["mean_liq_oi"] = ("liq_oi_pair", "mean")
+        agg_spec["min_liq_oi"] = ("liq_oi_pair", "min")
+
     episodes = (
         panel.groupby(["root", "episode_id"], sort=False)
-        .agg(
-            contract_near=("contract_near", "first"),
-            contract_far=("contract_far", "first"),
-            pair_rank_mix=("pair_rank_mix", "first"),
-            entry_date=("date", "min"),
-            exit_date=("date", "max"),
-            holding_days=("date", "nunique"),
-            n_obs=("settle_near", "count"),
-            entry_spread=("spread_dollar", "first"),
-            exit_spread=("spread_dollar", "last"),
-            mean_spread=("spread_dollar", "mean"),
-        )
+        .agg(**agg_spec)
         .reset_index()
     )
     episodes["spread_change"] = episodes["exit_spread"] - episodes["entry_spread"]
