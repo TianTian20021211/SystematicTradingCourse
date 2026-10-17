@@ -1,7 +1,8 @@
 # Handoff — 当前状态
 
 **最后更新：** 2026-10-17  
-**最新数据层 commit：** `595ca49`（本 handoff 之后会多一个 docs commit）  
+**数据层 commit：** `595ca49`  
+**Handoff/cleanup commit：** `716e7bc`（最新以 `git log` 为准）  
 **Repo：** https://github.com/TianTian20021211/SystematicTradingCourse
 
 ---
