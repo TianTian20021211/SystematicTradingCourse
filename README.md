@@ -12,9 +12,12 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 
 - [x] 原始数据审计：24 commodities × 4 nearby ranks，1986–2026
 - [x] Repo scaffold、agent collaboration protocol、decision/log 体系
-- [ ] Rank / contract / return / spread panels
-- [ ] Liquidity diagnostics（threshold 由你看完图后决定）
+- [x] Rank / contract / return / spread panels + QA
+- [x] Liquidity diagnostics（threshold 由你看完图后决定）
 - [ ] Signals A/B/C/D/H + backtest（下一阶段）
+
+`notebooks/00_data_audit.ipynb` 和 `notebooks/01_panel_build.ipynb` 已可从头运行；
+后者会在本地生成 `data/processed/*.parquet`（不提交）。
 
 ---
 

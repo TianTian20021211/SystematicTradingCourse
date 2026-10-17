@@ -70,6 +70,7 @@ python -m pytest -q
 
 ## 6. 当前下一步
 
-Phase 1–8：解析 → rank panel → contract panel → return panel → pair
-episodes → spread/universe → notebooks → QA。完成后停在 panel，等你 review
-再进 signal 阶段。
+数据层（Phases R–4）已完成：rank/contract/return/spread/universe/episodes
+panel、liquidity diagnostics、adjacent-pair robustness、两个 notebook。
+下一步是 signals A/B/C/D/H 和 backtest；在 Tian 明确批准前不要开始。
+如果发现数据问题，先更新 `docs/logs/AGENT_LOG.md` 和 `docs/decisions.md`。

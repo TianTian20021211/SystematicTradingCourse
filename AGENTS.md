@@ -107,8 +107,10 @@ do not log every `ls`.
 
 ## Current phase
 
-Phase R/1–8: repo scaffold, raw parsing, rank/contract/return/spread panels,
-liquidity diagnostics, notebooks. Do not implement signals or backtests yet.
+The data layer is complete: repo scaffold, raw parsing, rank/contract/return/
+spread panels, liquidity diagnostics, adjacent-pair robustness panel, and
+notebooks 00/01. The next phase is signals/backtest; do not start it without
+user approval. Keep the panels reproducible from the raw CSV and the notebooks.
 
 ## Questions / ownership
 
