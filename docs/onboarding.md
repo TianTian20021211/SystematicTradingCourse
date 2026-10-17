@@ -1,0 +1,75 @@
+# 队友上手指南
+
+这是一页纸的 onboarding。更完整的背景在 `docs/project_brief.md`，硬规则在
+`AGENTS.md`，决策记录在 `docs/decisions.md`。
+
+## 1. 这个 repo 在做什么
+
+用 1986–2026 的 Bloomberg 商品期货数据研究 calendar spread。当前阶段是
+**数据层**：把 generic M1–M4 还原成真实合约，建 rank/contract/return/spread
+panel，做数据审计和流动性诊断。signals/backtest 是下一阶段。
+
+## 2. 先读什么
+
+1. `README.md` — 5 分钟入口。
+2. `docs/decisions.md` — 已经锁定的决定（D=10、no delivery month、dollar/log）。
+3. `docs/data_dictionary.md` — 字段和 panel schema。
+4. `docs/logs/INDEX.md` + `docs/logs/AGENT_LOG.md` — 最近谁做了什么。
+5. `docs/project_brief.md` — 五个 idea 和详细背景。
+
+如果你用 coding agent：让它先读 `AGENTS.md`；Claude Code 读 `CLAUDE.md`。
+
+## 3. 数据怎么放
+
+Public repo 不包含 Bloomberg 原始数据。向 Tian 要 CSV，然后放到：
+
+```text
+data/raw/bloomberg_commodity_bulk_tickers_1986_2026.csv
+```
+
+校验：
+
+```bash
+shasum -a 256 data/raw/bloomberg_commodity_bulk_tickers_1986_2026.csv
+# 应为 045293fed420a82a3f85e592835eac6dba70fce0898b0fe8ddf40561e3f37771
+```
+
+XLSX 只用于生成 `data/metadata/commodities.csv`；日常 notebook 不依赖它。
+
+## 4. 环境与运行
+
+```bash
+python -m pip install -r requirements.txt
+jupyter lab
+```
+
+从 repo 根目录依次运行：
+
+```text
+notebooks/00_data_audit.ipynb      # 只读审计 + 流动性诊断
+notebooks/01_panel_build.ipynb     # 建 panel，写 data/processed/*.parquet
+```
+
+测试（不需要 raw data）：
+
+```bash
+python -m pytest -q
+```
+
+## 5. 你应该怎么改
+
+- 逻辑放 `src/`，notebook 只叙述和调用。
+- 不要提交 raw data、PDF、parquet、secrets。
+- 不要跨 roll 对 generic price 做差分；收益按 contract code 对齐。
+- 不要改 D=10 / no delivery month / dollar-primary，除非先在
+  `docs/decisions.md` 记录并由 Tian 确认。
+- 每次 material change：
+  1. 在 `docs/logs/AGENT_LOG.md` append 一条 entry；
+  2. 更新 `docs/logs/INDEX.md`；
+  3. 和代码一起 commit；commit message 里写 `Log: ...#LOG-XXXX`。
+
+## 6. 当前下一步
+
+Phase 1–8：解析 → rank panel → contract panel → return panel → pair
+episodes → spread/universe → notebooks → QA。完成后停在 panel，等你 review
+再进 signal 阶段。

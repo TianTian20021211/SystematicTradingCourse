@@ -1,0 +1,25 @@
+root,commodity,sector,exchange,caveat
+BO,Soybean Oil,Oilseeds,CBOT,
+C,Corn,Grains,CBOT,Space in Bloomberg generic ticker is intentional.
+CC,Cocoa,Softs,ICE US,
+CL,WTI Crude Oil,Energy,NYMEX,
+CO,Brent Crude Oil,Energy,ICE,
+CT,Cotton No. 2,Industrials,ICE US,
+FC,Feeder Cattle,Livestock,CME,Confirm historical dates and all four generic nearby contracts in Terminal.
+GC,Gold,Metals,COMEX,
+HG,Copper,Metals,COMEX,
+HO,Heating Oil / ULSD,Energy,NYMEX,Contract specification changed over time; verify historical comparability.
+JO,Frozen Concentrated Orange Juice,Softs,ICE US,Verify JO versus OJ aliases in Terminal if rejected.
+KC,Coffee C,Softs,ICE US,
+LB,Legacy Random Length Lumber,Industrials,CME,Legacy contract discontinued in 2023; do not splice blindly with LBR.
+LC,Live Cattle,Livestock,CME,
+LH,Lean Hogs,Livestock,CME,
+NG,Natural Gas,Energy,NYMEX,
+O,Oats,Grains,CBOT,Space in Bloomberg generic ticker is intentional.
+RR,Rough Rice,Grains,CBOT,
+S,Soybeans,Oilseeds,CBOT,Space in Bloomberg generic ticker is intentional.
+SB,Sugar No. 11,Softs,ICE US,
+SI,Silver,Metals,COMEX,
+SM,Soybean Meal,Oilseeds,CBOT,
+W,Wheat,Grains,CBOT,Space in Bloomberg generic ticker is intentional.
+XB,RBOB Gasoline,Energy,NYMEX,RBOB began in 2005; historical gasoline (HU) requires separate investigation before ~2006.

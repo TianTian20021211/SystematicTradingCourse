@@ -1,0 +1,2 @@
+045293fed420a82a3f85e592835eac6dba70fce0898b0fe8ddf40561e3f37771  data/raw/bloomberg_commodity_bulk_tickers_1986_2026.csv  (21361776 bytes)
+de9b7a73577c8f52096eac80aec3f0b0427a7343a7368669c921ae9a392d5b42  data/raw/bloomberg_commodity_bulk_tickers_1986_2026.xlsx  (26361400 bytes)
