@@ -5,6 +5,7 @@ data/raw/*
 # Generated panels: rebuild from raw
 data/processed/*
 !data/processed/.gitkeep
+!data/processed/README.md
 *.parquet
 
 # Papers / course material: copyright

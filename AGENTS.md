@@ -6,11 +6,12 @@ Read it before changing code, data, notebooks, or docs.
 ## Read order
 
 1. `README.md` — one-page project entry.
-2. `AGENTS.md` — this file.
-3. `docs/decisions.md` — locked research/data decisions.
-4. `docs/data_dictionary.md` — raw and derived fields.
-5. `docs/logs/INDEX.md` and the latest entries in `docs/logs/AGENT_LOG.md`.
-6. `docs/project_brief.md` — detailed background, if needed.
+2. `docs/HANDOFF.md` — current state, key numbers, open questions, next step.
+3. `AGENTS.md` — this file.
+4. `docs/decisions.md` — locked research/data decisions.
+5. `docs/data_dictionary.md` — raw and derived fields.
+6. `docs/logs/INDEX.md` and the latest entries in `docs/logs/AGENT_LOG.md`.
+7. `docs/project_brief.md` or `docs/research_notes.md` — detailed background.
 
 ## Project in one paragraph
 
@@ -59,8 +60,10 @@ without mixing two contracts on a roll date.
 
 - All reusable logic lives in `src/*.py`. Notebooks are narrative and call
   functions; they must not contain long transformations or loops.
-- Notebooks are in English. `README.md`, `docs/onboarding.md`, and
-  `docs/project_brief.md` are in Chinese. Technical docs/logs are in English.
+- Notebooks are bilingual: Chinese narrative and explanation, English technical
+  terms and code identifiers. `README.md`, `docs/HANDOFF.md`,
+  `docs/research_notes.md`, `docs/onboarding.md`, and `docs/project_brief.md`
+  are in Chinese; technical docs and agent logs are in English.
 - Keep notebook outputs concise: `.head()`, summary tables, a few figures.
   Never print a million-row DataFrame.
 - Use `python -m pytest -q` for tests. Tests must pass without raw data

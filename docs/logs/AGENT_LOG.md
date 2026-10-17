@@ -358,6 +358,62 @@ what the data now supports.
 **Next:** user review of notebooks/panels; signals/backtest only after explicit
 approval. Stop here for this phase.
 
+---
+
+## LOG-0008 · 2026-10-17 16:50 · Phase 4b · Claude Code
+
+**Goal:** Make the repo self-describing for a new conversation or a teammate's
+coding agent, and make the notebooks readable in Chinese/bilingual.
+
+**Actions:**
+- Added `docs/HANDOFF.md`: current state, key row counts, locked decisions,
+  what is done/not done, reproduction commands, open questions, next step.
+- Added `docs/research_notes.md`: paper/industry roll conventions, why we use
+  no-delivery-month + D=10, dollar/log spread definitions, and data-audit facts.
+- Added `data/processed/README.md`: expected parquet files/shapes, regeneration
+  instructions, and the public-repo/gitignore rationale. Updated `.gitignore`
+  to track this README while still ignoring parquet.
+- Added `scripts/run_all.sh`: install dependencies, run tests, execute both
+  notebooks, list generated panels. Made it executable and syntax-checked.
+- Translated both notebook markdown narratives to Chinese/bilingual while
+  keeping code identifiers and panel names in English; re-executed both.
+- Updated `README.md`, `AGENTS.md`, `CLAUDE.md`, and `docs/onboarding.md` with
+  the HANDOFF read order, bilingual notebook convention, and run_all command.
+
+**Files changed:**
+- `docs/HANDOFF.md`, `docs/research_notes.md` — new
+- `data/processed/README.md`, `.gitignore` — new/tracked exception
+- `scripts/run_all.sh` — new
+- `notebooks/00_data_audit.ipynb`, `notebooks/01_panel_build.ipynb` — Chinese/
+  bilingual markdown, re-executed
+- `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/onboarding.md` — read order,
+  language convention, reproduction command
+
+**Commands:**
+- `chmod +x scripts/run_all.sh && bash -n scripts/run_all.sh`
+- `jupyter nbconvert --execute --to notebook --inplace notebooks/00_data_audit.ipynb`
+- `jupyter nbconvert --execute --to notebook --inplace notebooks/01_panel_build.ipynb`
+- `python3 -m pytest -q` → 15 passed
+
+**Why:** A new Claude Code conversation auto-reads `CLAUDE.md`, but a teammate's
+agent or a fresh chat needs a compact state snapshot. The notebooks are for the
+two authors to read, not a code-submission artifact, so Chinese/bilingual
+narrative is more useful than English-only prose.
+
+**Validation:**
+- Both bilingual notebooks execute top-to-bottom with no errors; outputs remain
+  concise (00 ≈502KB, 01 ≈242KB).
+- No absolute local paths remain in notebook outputs.
+- `data/processed/README.md` is tracked; parquet files remain ignored.
+- `scripts/run_all.sh` passes `bash -n`.
+- 15 tests pass; HANDOFF row counts match the generated panels.
+
+**Commit:** `docs: add handoff snapshot, research notes, and bilingual notebooks`
+
+**Next:** user reviews HANDOFF/notebooks; choose liquidity threshold and signal
+priority. Do not start signals/backtest until explicitly approved.
+
+
 
 
 

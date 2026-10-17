@@ -1,7 +1,8 @@
 # CLAUDE.md
 
 Read `AGENTS.md` first. It contains the project invariants, repository
-conventions, and the mandatory logging protocol.
+conventions, and the mandatory logging protocol. For current state, read
+`docs/HANDOFF.md` right after `README.md`.
 
 Claude Code-specific notes:
 

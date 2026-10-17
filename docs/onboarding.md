@@ -12,10 +12,11 @@ panel，做数据审计和流动性诊断。signals/backtest 是下一阶段。
 ## 2. 先读什么
 
 1. `README.md` — 5 分钟入口。
-2. `docs/decisions.md` — 已经锁定的决定（D=10、no delivery month、dollar/log）。
-3. `docs/data_dictionary.md` — 字段和 panel schema。
-4. `docs/logs/INDEX.md` + `docs/logs/AGENT_LOG.md` — 最近谁做了什么。
-5. `docs/project_brief.md` — 五个 idea 和详细背景。
+2. `docs/HANDOFF.md` — 当前状态、关键数字、open questions。
+3. `docs/decisions.md` — 已经锁定的决定（D=10、no delivery month、dollar/log）。
+4. `docs/data_dictionary.md` — 字段和 panel schema。
+5. `docs/logs/INDEX.md` + `docs/logs/AGENT_LOG.md` — 最近谁做了什么。
+6. `docs/project_brief.md` / `docs/research_notes.md` — 详细背景和 roll/spread 推理。
 
 如果你用 coding agent：让它先读 `AGENTS.md`；Claude Code 读 `CLAUDE.md`。
 
@@ -37,6 +38,14 @@ shasum -a 256 data/raw/bloomberg_commodity_bulk_tickers_1986_2026.csv
 XLSX 只用于生成 `data/metadata/commodities.csv`；日常 notebook 不依赖它。
 
 ## 4. 环境与运行
+
+一条命令（会安装依赖、跑 tests、执行两个 notebook）：
+
+```bash
+bash scripts/run_all.sh
+```
+
+或者手动：
 
 ```bash
 python -m pip install -r requirements.txt

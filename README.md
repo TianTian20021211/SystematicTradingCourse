@@ -19,6 +19,8 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 `notebooks/00_data_audit.ipynb` 和 `notebooks/01_panel_build.ipynb` 已可从头运行；
 后者会在本地生成 `data/processed/*.parquet`（不提交）。
 
+**新对话 / 队友先读：** `docs/HANDOFF.md` → `AGENTS.md` → `docs/decisions.md` → `docs/logs/INDEX.md`。
+
 ---
 
 ## Quick start
@@ -63,14 +65,17 @@ CLAUDE.md                 # Claude Code 专用入口
 
 docs/
   project_brief.md        # 详细项目背景、五个 idea、数据说明
+  HANDOFF.md              # 当前状态、关键数字、open questions、下一步
+  research_notes.md       # roll / spread 的论文与业界惯例、为什么这样选
   data_dictionary.md      # raw + derived fields + panel schemas
   decisions.md            # 已锁定的研究/数据决定
   onboarding.md           # 队友 1 页上手
   logs/                   # agent 操作日志（谁、做了什么、为什么、怎么验证）
 
 src/                      # 所有数据处理逻辑（notebook 只调用）
-notebooks/                # 00_data_audit, 01_panel_build
+notebooks/                # 00_data_audit, 01_panel_build（中英夹杂）
 tests/                    # synthetic fixtures + parser/roll/spread tests
+scripts/run_all.sh        # 一键复现：依赖 + tests + 两个 notebook
 
 data/raw/                  # 原始数据（本地；public repo 不提交）
 data/metadata/             # 24 商品元数据 + checksum（提交）
