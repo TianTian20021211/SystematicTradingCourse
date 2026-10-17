@@ -110,3 +110,54 @@ operation log.
 
 **Next:** initialize git, add the remote, commit the scaffold/docs, push, then
 start Phase 1 (loader/parser).
+
+---
+
+## LOG-0003 · 2026-10-17 16:40 · Phase 1 · Claude Code
+
+**Goal:** Implement the raw loader, contract-code parser, and rank-panel
+construction; validate on a synthetic fixture and the full raw CSV.
+
+**Actions:**
+- Added `src/config.py` with repo paths, D/K constants, liquidity thresholds,
+  month codes, and the negative-price event.
+- Added `src/load.py`:
+  - `read_raw_wide` parses the six-header-row CSV and validates tickers/fields.
+  - `parse_ticker`, `normalize_contract_code`, `parse_contract_code` handle
+    spaced roots, one- and two-digit years, and `.NA.`.
+  - `build_rank_panel` builds the long `date × commodity × rank` panel with
+    contract identity and audit flags.
+- Added `tests/fixtures/make_synthetic.py` and the generated
+  `tests/fixtures/synthetic_wide.csv` (2 commodities × 4 ranks × 13 dates;
+  one simultaneous roll, missing values, `.NA.`, negative price, holiday).
+- Added `tests/test_contract_parsing.py` and `tests/test_roll_logic.py`.
+- Installed `pytest` 9.1.1 in the active environment (was missing).
+
+**Files changed:**
+- `src/config.py` — new
+- `src/load.py` — new
+- `tests/fixtures/make_synthetic.py`, `tests/fixtures/synthetic_wide.csv` — new
+- `tests/test_contract_parsing.py`, `tests/test_roll_logic.py` — new
+
+**Commands:**
+- `python3 tests/fixtures/make_synthetic.py`
+- `python3 -m pytest -q` → 9 passed
+- `python3` full-data smoke test → 1,013,664 rows × 23 columns in ~4s;
+  24 roots, 10,559 union dates, 0 parse failures, 583 code-missing rows,
+  1 negative price (CL 2020-04-20), 25,511 roll flags.
+
+**Why:** Phase 1 establishes the contract identity layer. Every later panel and
+return calculation depends on correct parsing and not treating M1–M4 as fixed
+contracts.
+
+**Validation:**
+- Fixture panel: 96 rows, 12 dates (holiday dropped), 8 roll events, all four
+  ranks roll together, 0 duplicate contract-date, one code-missing row, one
+  negative price.
+- Full raw: 24 roots × 4 ranks; no parse failures; `.NA.` rows flagged.
+- `pytest` 9 passed.
+
+**Commit:** `feat(load): parse Bloomberg wide export and normalize contract metadata`
+
+**Next:** Phase 2 — contract/return panels, roll-aware returns, QA assertions.
+
