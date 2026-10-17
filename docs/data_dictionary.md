@@ -113,10 +113,11 @@ contract appears in this Bloomberg extract.
 | `ret_naive` | Diagnostic only: generic rank price change across the roll (not a tradable return) |
 | `negative_price` | Settle < 0; percentage returns are flagged |
 
-## 6. Spread panel (`spread_panel`)
+## 6. Spread panels (`spread`, `adjacent_spread`)
 
-Built for adjacent rank pairs (M1–M2, M2–M3, M3–M4) and, optionally, all
-unordered pairs. The main selected pair is flagged.
+`spread` is the main selected pair (nearest two eligible adjacent contracts).
+`adjacent_spread` contains every eligible adjacent pair (M1–M2, M2–M3, M3–M4)
+for robustness/alternative-pair analysis; `is_main_pair` marks the main subset.
 
 | Column | Description |
 |---|---|
@@ -148,8 +149,11 @@ under the selected rule.
 | `entry_date`, `exit_date` | First/last date of the episode |
 | `holding_days` | Number of trading sessions |
 | `entry_spread`, `exit_spread` | Dollar spread at entry/exit |
+| `spread_change` | `exit_spread - entry_spread` |
 | `pair_rank_mix` | e.g. `M1-M2`, `M2-M3` at episode start |
 | `n_obs` | Valid observations |
+| `mean_liq_volume`, `min_liq_volume` | Pair volume liquidity within the episode |
+| `mean_liq_oi`, `min_liq_oi` | Pair OI liquidity within the episode |
 | `flags` | stale/negative/missing |
 
 ## 8. Universe (`universe`)
@@ -161,8 +165,9 @@ under the selected rule.
 | `liq_volume_near`, `liq_volume_far` | Trailing 252-session median volume |
 | `liq_volume_pair` | `min(near, far)` |
 | `liq_oi_near`, `liq_oi_far`, `liq_oi_pair` | Same for open interest |
-| `liq_proxy` | Fallback used because a leg had <60 observations |
-| `pass_1k`, `pass_5k`, `pass_10k`, `pass_20k` | Threshold booleans; not applied by default |
+| `liq_proxy_near`, `liq_proxy_far`, `liq_proxy` | Rank-level fallback used because a leg had <60 observations |
+| `pass_vol_1k`, `pass_vol_5k`, `pass_vol_10k`, `pass_vol_20k` | Volume threshold booleans; not applied by default |
+| `pass_oi_1k`, `pass_oi_5k`, `pass_oi_10k`, `pass_oi_20k` | OI threshold booleans; not applied by default |
 
 ## 9. Missing, stale, and event conventions
 

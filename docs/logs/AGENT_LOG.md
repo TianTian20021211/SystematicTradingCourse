@@ -267,5 +267,97 @@ pairs are tradable.
 **Next:** Phase 4 — notebooks `00_data_audit` and `01_panel_build`, execute,
 save parquet, final QA and README/log updates.
 
+---
+
+## LOG-0006 · 2026-10-17 17:20 · Phase 3b · Claude Code
+
+**Goal:** Add the adjacent-pair robustness panel promised in D-008, without
+changing the main selected pair.
+
+**Actions:**
+- Added `build_adjacent_pairs` to `src/panel.py`: builds every eligible
+  adjacent pair (M1–M2, M2–M3, M3–M4), flags the main selected subset with
+  `is_main_pair`, and reuses the same eligibility/eligibility-reason columns.
+- Extended `build_all` to return `adjacent_pairs` and `adjacent_spread` in
+  addition to the main `pairs`/`spread`.
+- Added a unit test that every adjacent pair is truly adjacent and that the
+  `is_main_pair` count equals the main `select_pairs` count.
+- Updated the data dictionary for the adjacent panels and the actual
+  `pass_vol_*` / `pass_oi_*` column names.
+
+**Files changed:**
+- `src/panel.py` — adjacent-pair builder and expanded `build_all`
+- `tests/test_spread.py` — adjacent-pair test
+- `docs/data_dictionary.md` — adjacent panels and universe column names
+
+**Commands:**
+- `python3 -m pytest -q` → 15 passed
+- Full-data run → `adjacent_pairs` 610,801 rows; main subset 236,186;
+  mix 139,017 M1–M2 / 235,917 M2–M3 / 235,867 M3–M4.
+
+**Why:** The main experiment should use one common pair, but the signal layer
+may need alternative adjacent pairs for robustness. Keeping both avoids
+rerunning the data build later.
+
+**Validation:**
+- All adjacent rows satisfy `rank_far == rank_near + 1`.
+- `is_main_pair.sum()` equals the main `pairs` row count.
+- Main pair mix is unchanged.
+
+**Commit:** `feat(spread): add adjacent-pair robustness panel`
+
+**Next:** notebooks and final docs.
+
+---
+
+## LOG-0007 · 2026-10-17 17:35 · Phase 4 · Claude Code
+
+**Goal:** Deliver the human-facing notebooks, execute them from raw data, save
+the processed panels, and finalize the repo status.
+
+**Actions:**
+- Added `src/viz.py`: coverage heatmap, liquidity heatmap, universe counts,
+  pair mix, and spread distribution plots (matplotlib only).
+- Added `notebooks/00_data_audit.ipynb`: raw structure, coverage, roll
+  mechanics, data quality, and liquidity diagnostics.
+- Added `notebooks/01_panel_build.ipynb`: builds the stack, shows the
+  contract/return/spread examples, runs QA, and saves nine parquet panels.
+- Executed both notebooks top-to-bottom with `nbconvert`; kept outputs concise
+  (summary tables and selected figures), and changed the save cell to print
+  relative paths.
+- Updated `README.md`, `AGENTS.md`, and `docs/onboarding.md` to mark the data
+  layer complete and the next phase (signals/backtest) as not started.
+
+**Files changed:**
+- `src/viz.py` — new plotting helpers
+- `notebooks/00_data_audit.ipynb`, `notebooks/01_panel_build.ipynb` — new
+- `README.md`, `AGENTS.md`, `docs/onboarding.md` — status/phase updates
+
+**Commands:**
+- `jupyter nbconvert --execute --to notebook --inplace notebooks/00_data_audit.ipynb`
+- `jupyter nbconvert --execute --to notebook --inplace notebooks/01_panel_build.ipynb`
+- `python3 -m pytest -q` → 15 passed
+- Notebook outputs: 00 ≈502KB, 01 ≈243KB; no execution errors; text outputs
+  capped at ~1.3k characters; 1–2 figures per plot cell.
+- Saved panels (gitignored): rank, contract, returns, pairs, spread, universe,
+  episodes, adjacent_pairs, adjacent_spread.
+
+**Why:** The final deliverable must be readable by a human and reproducible by
+a teammate. Logic stays in `src/`; the notebooks explain what happened and
+what the data now supports.
+
+**Validation:**
+- Both notebooks run top-to-bottom from `data/raw/...csv`.
+- QA assertions pass; CL 2020-04-20 = -37.63; selected pair excludes the
+  expiring front contract.
+- `git status` shows no raw data, PDFs, or parquet staged.
+- Notebook save output uses relative `data/processed/...` paths.
+
+**Commit:** `feat(audit): add data audit and panel build notebooks`
+
+**Next:** user review of notebooks/panels; signals/backtest only after explicit
+approval. Stop here for this phase.
+
+
 
 

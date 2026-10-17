@@ -7,6 +7,7 @@ from src import qa
 from src.curve import add_eligibility, add_spreads, build_pair_episodes, select_pairs
 from src.load import build_rank_panel, read_commodity_metadata, read_raw_wide
 from src.panel import (
+    build_adjacent_pairs,
     build_contract_panel,
     build_return_panel,
     build_universe,
@@ -103,6 +104,16 @@ def test_pair_episodes_are_additive():
     assert episodes.loc[0, "spread_change"] == 3.0
     assert episodes.loc[1, "holding_days"] == 2
     assert episodes.loc[1, "spread_change"] == 1.0
+
+
+def test_adjacent_pairs_include_main_pair():
+    _, _, _, enriched = _fixture_panels()
+    adjacent = build_adjacent_pairs(enriched, d=10, k=5)
+    main = select_pairs(enriched, d=10, k=5)
+    assert not adjacent.empty
+    assert adjacent["rank_far"].eq(adjacent["rank_near"] + 1).all()
+    assert int(adjacent["is_main_pair"].sum()) == len(main)
+    assert set(adjacent["pair_rank_mix"]).issubset({"M1-M2", "M2-M3", "M3-M4"})
 
 
 def test_universe_liquidity_and_thresholds():

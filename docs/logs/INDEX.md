@@ -7,3 +7,5 @@
 | LOG-0003 | 2026-10-17 | Phase 1 | Claude Code | Raw loader, contract parser, rank panel, tests | src/config.py, src/load.py, tests/* | pending |
 | LOG-0004 | 2026-10-17 | Phase 2 | Claude Code | Contract/return panels, roll-aware QA, spread tests | src/curve.py, src/panel.py, src/qa.py, tests/test_spread.py | pending |
 | LOG-0005 | 2026-10-17 | Phase 3 | Claude Code | Liquidity universe, pair episodes, adjacency guard | src/panel.py, src/curve.py, src/qa.py, tests/test_spread.py | pending |
+| LOG-0006 | 2026-10-17 | Phase 3b | Claude Code | Adjacent-pair robustness panel | src/panel.py, tests/test_spread.py, docs/data_dictionary.md | pending |
+| LOG-0007 | 2026-10-17 | Phase 4 | Claude Code | Data audit and panel-build notebooks, viz, status | src/viz.py, notebooks/*, README.md, AGENTS.md, docs/onboarding.md | pending |

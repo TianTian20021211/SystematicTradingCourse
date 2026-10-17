@@ -318,6 +318,101 @@ def liquidity_summary(
     return pd.DataFrame(rows)
 
 
+def build_adjacent_pairs(
+    enriched_rank_panel: pd.DataFrame,
+    d: int = config.D,
+    k: int = config.DELIVERY_BUFFER_K,
+) -> pd.DataFrame:
+    """Build all eligible adjacent pairs, flagging the main selected pair.
+
+    ``enriched_rank_panel`` must already contain contract-calendar columns
+    (use ``enrich_rank_panel`` or ``build_all``).
+    """
+
+    enriched = curve.add_eligibility(enriched_rank_panel, d=d, k=k)
+    selected = curve.select_pairs(enriched, d=d, k=k)
+    selected_index = pd.MultiIndex.from_frame(
+        selected[["date", "root", "contract_near", "contract_far"]]
+    )
+
+    parts: list[pd.DataFrame] = []
+    for near_rank in (1, 2, 3):
+        near = enriched.loc[
+            enriched["rank"].eq(near_rank) & enriched["eligible"]
+        ]
+        far = enriched.loc[
+            enriched["rank"].eq(near_rank + 1) & enriched["eligible"]
+        ]
+        merged = near.merge(
+            far, on=["date", "root"], suffixes=("_near", "_far"),
+            how="inner", validate="many_to_one",
+        )
+        if merged.empty:
+            continue
+
+        merged["rank_near"] = near_rank
+        merged["rank_far"] = near_rank + 1
+        merged["contract_near"] = merged["contract_code_near"]
+        merged["contract_far"] = merged["contract_code_far"]
+        merged["commodity"] = merged["commodity_near"]
+        merged["sector"] = merged["sector_near"]
+        merged["exchange"] = merged["exchange_near"]
+        merged["pair_rank_mix"] = f"M{near_rank}-M{near_rank + 1}"
+        parts.append(merged)
+
+    if not parts:
+        return pd.DataFrame()
+
+    adjacent = pd.concat(parts, ignore_index=True)
+    adjacent["is_main_pair"] = pd.MultiIndex.from_frame(
+        adjacent[["date", "root", "contract_near", "contract_far"]]
+    ).isin(selected_index)
+
+    columns = [
+        "date", "root", "commodity", "sector", "exchange",
+        "rank_near", "rank_far", "contract_near", "contract_far",
+        "settle_near", "settle_far", "volume_near", "volume_far",
+        "open_interest_near", "open_interest_far",
+        "delivery_year_near", "delivery_month_near", "expiry_id_near",
+        "delivery_year_far", "delivery_month_far", "expiry_id_far",
+        "days_to_last_trading_near", "days_to_last_trading_far",
+        "days_to_delivery_start_near", "days_to_delivery_start_far",
+        "eligibility_reason_near", "eligibility_reason_far",
+        "pair_rank_mix", "is_main_pair",
+    ]
+    adjacent = adjacent[[column for column in columns if column in adjacent.columns]]
+    return adjacent.sort_values(["date", "root", "rank_near"]).reset_index(drop=True)
+
+
+def build_all(
+    rank_panel: pd.DataFrame,
+    d: int = config.D,
+    k: int = config.DELIVERY_BUFFER_K,
+) -> dict[str, pd.DataFrame]:
+    """Build the full analysis stack from a rank panel."""
+
+    contract = build_contract_panel(rank_panel)
+    returns = build_return_panel(rank_panel, contract)
+    enriched = enrich_rank_panel(rank_panel, contract)
+    pairs = curve.select_pairs(enriched, d=d, k=k)
+    spread = build_spread_panel(pairs)
+    universe = build_universe(spread, contract, rank_panel)
+    episodes = curve.build_pair_episodes(universe)
+    adjacent_pairs = build_adjacent_pairs(enriched, d=d, k=k)
+    adjacent_spread = build_spread_panel(adjacent_pairs)
+    return {
+        "rank": rank_panel,
+        "contract": contract,
+        "returns": returns,
+        "pairs": pairs,
+        "spread": spread,
+        "universe": universe,
+        "episodes": episodes,
+        "adjacent_pairs": adjacent_pairs,
+        "adjacent_spread": adjacent_spread,
+    }
+
+
 def save_panel(
     frame: pd.DataFrame,
     name: str,
