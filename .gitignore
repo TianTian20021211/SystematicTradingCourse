@@ -1,0 +1,27 @@
+# Raw licensed data: never commit
+data/raw/*
+!data/raw/README.md
+
+# Generated panels: rebuild from raw
+data/processed/*
+!data/processed/.gitkeep
+*.parquet
+
+# Papers / course material: copyright
+paper/*.pdf
+Project.pdf
+calendar-spread-brief.html
+
+# Generated output
+output/*
+!output/.gitkeep
+
+# Python / notebooks
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.DS_Store
+.env
+.venv/
+venv/
