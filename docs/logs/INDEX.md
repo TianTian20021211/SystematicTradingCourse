@@ -10,3 +10,4 @@
 | LOG-0006 | 2026-10-17 | Phase 3b | Claude Code | Adjacent-pair robustness panel | src/panel.py, tests/test_spread.py, docs/data_dictionary.md | `6c6a055` |
 | LOG-0007 | 2026-10-17 | Phase 4 | Claude Code | Data audit and panel-build notebooks, viz, status | src/viz.py, notebooks/*, README.md, AGENTS.md, docs/onboarding.md | `73fff88` |
 | LOG-0008 | 2026-10-17 | Phase 4b | Claude Code | Handoff snapshot, research notes, run script, bilingual notebooks | docs/HANDOFF.md, docs/research_notes.md, data/processed/README.md, scripts/run_all.sh, notebooks/* | pending |
+| LOG-0009 | 2026-10-17 | Phase 4c | Claude Code | Strip volatile notebook execution timestamps | scripts/clean_notebook_metadata.py, scripts/run_all.sh, notebooks/* | pending |

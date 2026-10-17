@@ -23,6 +23,10 @@ echo "== Execute notebooks =="
 jupyter nbconvert --execute --to notebook --inplace notebooks/00_data_audit.ipynb
 jupyter nbconvert --execute --to notebook --inplace notebooks/01_panel_build.ipynb
 
+echo "== Remove volatile notebook execution timestamps =="
+"$PYTHON" scripts/clean_notebook_metadata.py \
+  notebooks/00_data_audit.ipynb notebooks/01_panel_build.ipynb
+
 echo "== Processed panels =="
 ls -lh data/processed/*.parquet
 echo "Done."

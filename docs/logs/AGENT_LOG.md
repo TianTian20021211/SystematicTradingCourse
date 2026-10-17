@@ -413,6 +413,49 @@ narrative is more useful than English-only prose.
 **Next:** user reviews HANDOFF/notebooks; choose liquidity threshold and signal
 priority. Do not start signals/backtest until explicitly approved.
 
+---
+
+## LOG-0009 · 2026-10-17 16:52 · Phase 4c · Claude Code
+
+**Goal:** Make `scripts/run_all.sh` leave the git tree clean after re-executing
+the notebooks.
+
+**Actions:**
+- Added `scripts/clean_notebook_metadata.py`: removes only nbconvert's volatile
+  per-cell `metadata.execution` timestamps; sources and outputs are untouched.
+- Updated `scripts/run_all.sh` to call the cleaner after both notebook
+  executions.
+- Cleaned both committed notebooks once; verified that sources and outputs are
+  identical to the previous commit and only execution timestamps were removed.
+- Re-ran `bash scripts/run_all.sh` to validate the workflow.
+
+**Files changed:**
+- `scripts/clean_notebook_metadata.py` — new
+- `scripts/run_all.sh` — call the cleaner after execution
+- `notebooks/00_data_audit.ipynb`, `notebooks/01_panel_build.ipynb` — timestamps
+  removed; sources/outputs unchanged
+
+**Commands:**
+- `python3 scripts/clean_notebook_metadata.py notebooks/*.ipynb`
+- `bash scripts/run_all.sh` → 15 tests, both notebooks execute, panels listed
+- `python3` comparison vs HEAD → sources True, outputs True, execution metadata
+  removed
+
+**Why:** Re-running the reproduction script should not dirty the working tree
+with wall-clock timestamps. This keeps diffs meaningful for the two-person
+collaboration.
+
+**Validation:**
+- Sources and outputs are byte-identical to the prior notebooks.
+- `run_all.sh` completes and the only notebook change is the timestamp removal.
+- 15 tests pass.
+
+**Commit:** `chore(notebooks): strip volatile execution timestamps`
+
+**Next:** commit/push, then verify a second `run_all.sh` leaves `git status`
+clean. Stop before signals.
+
+
 
 
 
