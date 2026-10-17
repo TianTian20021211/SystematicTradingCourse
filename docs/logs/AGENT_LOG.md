@@ -161,3 +161,58 @@ contracts.
 
 **Next:** Phase 2 — contract/return panels, roll-aware returns, QA assertions.
 
+---
+
+## LOG-0004 · 2026-10-17 16:55 · Phase 2 · Claude Code
+
+**Goal:** Build the contract and return panels with roll-aware returns and QA
+that proves the generic-slot trap is handled.
+
+**Actions:**
+- Added `src/curve.py`: trading calendar, contract calendar/expiry proxy,
+  roll detection/validation, eligibility (no delivery month + D), nearest-two
+  eligible pair selection with an adjacency guard, dollar/log/percentage
+  spreads, and fixed-pair episodes.
+- Added `src/panel.py`: contract panel, rank enrichment, contract-level
+  returns, rank-return mapping, spread panel, parquet writer.
+- Added `src/qa.py`: uniqueness, rank monotonicity, roll-queue validation,
+  return-mapping check, contract-calendar check, delivery-month check, coverage/
+  missing/stale summaries, and the known CL 2020-04-20 event.
+- Added `tests/test_spread.py` covering contract/return panels, eligibility,
+  pair adjacency, spread definitions, and negative-price log-spread handling.
+- Fixed a QA edge case: `ret_naive` must not be compared with `ret_rank` when
+  the previous rank row had a missing contract code (no alignment).
+- Added an adjacency guard: main pair must be `rank_far == rank_near + 1`;
+  dates where a middle rank is missing are skipped instead of creating M1–M3.
+
+**Files changed:**
+- `src/curve.py` — new
+- `src/panel.py` — new
+- `src/qa.py` — new
+- `tests/test_spread.py` — new
+
+**Commands:**
+- `python3 -m pytest -q` → 12 passed
+- Full-data panel run → rank panel 1,013,664 rows; contract panel 950,626 rows
+  (6,735 contracts); return panel 1,013,664 rows; 236,186 selected pair-days
+  (139,017 M1–M2 / 97,169 M2–M3); 6,664 episodes.
+- QA on full data: 0 duplicate contract-date, 0 rank-order violations,
+  0 partial rolls, 0 full-day queue violations, return mapping passes,
+  contract calendar passes, CL 2020-04-20 matches -37.63.
+
+**Why:** This is the project's technical core. Naive generic-price differences
+on roll dates are not returns; the contract panel and the rank-return mapping
+make the roll-day return use the new contract's previous-day price.
+
+**Validation:**
+- Fixture: 95 contract rows, 10 unique contracts, roll-day CL M1 return
+  `62.0/61.4 - 1`; naive return differs.
+- Full data: 6,377 full roll dates; all four ranks shift together; no partial
+  or queue violations.
+- `pytest` 12 passed.
+
+**Commit:** `feat(panel): build contract and return panels with roll-aware QA`
+
+**Next:** Phase 3 — liquidity/universe metrics and pair-episode validation.
+
+
