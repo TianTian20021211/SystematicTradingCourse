@@ -510,6 +510,60 @@ conventions; the research panels remain useful for QA and description.
 t+1 execution, roll/missing/cost state machine), then `src/metrics.py`, tests,
 and `notebooks/02_carry.ipynb`.
 
+---
+
+## LOG-0011 · 2026-10-19 15:48 · Phase 5b · Claude Code
+
+**Goal:** Implement the reusable return-based calendar-spread backtest engine
+and its tests, so A can be benchmarked and C/D/B can reuse the engine.
+
+**Actions:**
+- Added `src/backtest.py`:
+  - `BacktestConfig`, `BacktestResult`, `build_target_legs`, `run_backtest`.
+  - Daily event loop with pair-specific pending orders; signal at t, fill at
+    t+1 close; mark before execute.
+  - Roll handling at t+1 with last-valid marks and `roll_leg_missing`.
+  - Per-contract mark state use; 6th invalid session forced exit.
+  - Exact net-leg cost: 5 bps × traded notional / previous gross notional.
+  - Sample-end open-position flag; config guards for unsupported options.
+- Added `src/metrics.py`: `summarize`, `sector_summary`, `conditional_mean`
+  (normalized, fill-to-fill, date-level block bootstrap), `plot_result`.
+- Added `tests/test_eligibility.py`, `tests/test_signals.py`,
+  `tests/test_backtest.py` (17 new tests).
+- Added `docs/backtest_framework.md`; added §10 to `docs/data_dictionary.md`.
+- Fixed `build_contract_mark_state` to accept minimal synthetic contract
+  panels (compute `first_date`/`last_date` and tolerate missing volume).
+
+**Files changed:**
+- `src/backtest.py` — new
+- `src/metrics.py` — new
+- `src/panel.py` — mark-state robustness on minimal frames
+- `tests/test_eligibility.py`, `tests/test_signals.py`,
+  `tests/test_backtest.py` — new
+- `docs/backtest_framework.md` — new
+- `docs/data_dictionary.md` — §10 backtest tables/conventions
+
+**Commands:**
+- `python -m pytest -q` → 32 passed
+- Synthetic checks: entry at t+1, lagged denominator, roll with four net legs,
+  `roll_leg_missing`, stale-entry block, forced exit, same-sign zero cost,
+  3-leg sanity, config guards.
+
+**Why:** A needs a point-in-time, roll-aware engine; vectorising the whole
+backtest would mishandle pending orders, rolls, and forced exits. The signal
+layer stays separate so C/D/B only add signal functions.
+
+**Validation:**
+- 32 tests pass.
+- Full K=5 run completes; test run starts flat in 2016.
+- Trade reasons/flags are populated (`roll`, `roll_leg_missing`,
+  `forced_exit`, `entry_blocked`, `pending_canceled`).
+
+**Commit:** `feat(backtest): add return-based calendar-spread engine`
+
+**Next:** run the A benchmark in `notebooks/02_carry.ipynb`, record the
+negative result, and update the status docs.
+
 
 
 

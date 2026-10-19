@@ -451,6 +451,8 @@ def _mark_state_for_contract(
     missing. ``sessions_since_valid`` counts missing, stale, and absent rows.
     """
 
+    if "volume" not in rows.columns:
+        rows = rows.assign(volume=np.nan)
     first = rows["first_date"].iloc[0]
     last = rows["last_date"].iloc[0]
     calendar = trading_days[(trading_days >= first) & (trading_days <= last)]
@@ -519,7 +521,11 @@ def build_contract_mark_state(
 
     if trading_days is None:
         trading_days = curve.trading_calendar(contract_panel)
-    panel = contract_panel
+    panel = contract_panel.copy()
+    if "first_date" not in panel.columns or "last_date" not in panel.columns:
+        grouped = panel.groupby(["root", "contract_code"], sort=False)["date"]
+        panel["first_date"] = grouped.transform("min")
+        panel["last_date"] = grouped.transform("max")
     if contracts is not None:
         panel = panel.loc[panel["contract_code"].isin(contracts)]
     panel = panel.sort_values(["root", "contract_code", "date"])

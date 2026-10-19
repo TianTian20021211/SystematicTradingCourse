@@ -11,4 +11,5 @@
 | LOG-0007 | 2026-10-17 | Phase 4 | Claude Code | Data audit and panel-build notebooks, viz, status | src/viz.py, notebooks/*, README.md, AGENTS.md, docs/onboarding.md | `73fff88` |
 | LOG-0008 | 2026-10-17 | Phase 4b | Claude Code | Handoff snapshot, research notes, run script, bilingual notebooks | docs/HANDOFF.md, docs/research_notes.md, data/processed/README.md, scripts/run_all.sh, notebooks/* | `664506c` |
 | LOG-0009 | 2026-10-17 | Phase 4c | Claude Code | Strip volatile notebook execution timestamps | scripts/clean_notebook_metadata.py, scripts/run_all.sh, notebooks/* | `716e7bc` |
-| LOG-0010 | 2026-10-19 | Phase 5 | Claude Code | K=5 backtest panel, per-contract mark state, carry signal | src/curve.py, src/panel.py, src/signals.py, docs/PROGRESS.md, docs/decisions.md | `pending` |
+| LOG-0010 | 2026-10-19 | Phase 5 | Claude Code | K=5 backtest panel, per-contract mark state, carry signal | src/curve.py, src/panel.py, src/signals.py, docs/PROGRESS.md, docs/decisions.md | `f2c4771` |
+| LOG-0011 | 2026-10-19 | Phase 5b | Claude Code | Return-based calendar-spread engine, metrics, tests | src/backtest.py, src/metrics.py, tests/*, docs/backtest_framework.md, docs/data_dictionary.md | `pending` |
