@@ -801,6 +801,47 @@ intentionally deferred to a post-rebase commit to avoid conflicts with A.
 **Next:** rebase on latest `main`, update status docs, run `run_all.sh`, then
 merge the branch after review.
 
+---
+
+## LOG-0017 · 2026-10-19 17:15 · Phase 6e · Claude Code
+
+**Goal:** Record the C baseline in the status docs after the notebook commit.
+
+**Actions:**
+- Updated `docs/PROGRESS.md` to cover both A and C baselines, including the C
+  benchmark table and conditional-mean reading.
+- Updated `docs/HANDOFF.md`: current commits, C results, D-010, read order,
+  done/not-done, reproduction, open questions, and next step.
+- Updated `README.md`, `AGENTS.md`, and `docs/onboarding.md` for the C
+  baseline and the separate A/C branches.
+- Updated `docs/logs/INDEX.md` with the C commit hashes.
+- Kept this as a separate commit so the A robustness branch can be reconciled
+  by union rather than by mixing code and status changes.
+
+**Files changed:**
+- `docs/PROGRESS.md`, `docs/HANDOFF.md`, `README.md`, `AGENTS.md`,
+  `docs/onboarding.md`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 51 passed
+- Notebook 03 was executed in LOG-0016; no code changes here.
+
+**Why:** The teammate needs the C baseline and its negative result visible in
+the same status files used for A, without mixing the A/C code branches.
+
+**Validation:**
+- Status numbers match notebook 03 and the saved `output/mean_reversion_*`
+  files.
+- A's baseline numbers are unchanged.
+- C is described as a negative net result, with the train/test conditional
+  mean caveat.
+
+**Commit:** `docs(status): record idea C baseline`
+
+**Next:** rebase on latest `main`, run the full `scripts/run_all.sh` after the
+A/C branches are reconciled, then review and merge C.
+
 
 ## LOG-0019 · 2026-10-19 16:40 · Phase 6b · Claude Code
 

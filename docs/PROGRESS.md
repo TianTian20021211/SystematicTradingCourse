@@ -1,13 +1,12 @@
-# Progress — A and B Baselines（C separate）
+# Progress — A, B, and C Baselines
 
 **Last updated:** 2026-10-19  
-**Branch:** `main`  
-**A baseline:** `bd6691b`; **A diagnosis:** merged from `a-robustness`
-(`f02f18b`).  
-**B pre-test:** merged from `b-pre-test` (`d257e0e`).  
-**C branch:** `feat/idea-c-mean-reversion` at `5c21cf3` — deliberately **not**
-merged into main yet.  
-**Plan:** `~/.claude/plans/polished-crafting-clock.md`
+**Branch:** `feat/idea-c-mean-reversion` (C); `main` has A/B.  
+**A baseline:** `bd6691b`; **A diagnosis:** `f02f18b`.  
+**B pre-test:** `d257e0e`.  
+**C baseline + hedge-ratio variant:** this branch; not merged into `main` yet.  
+**Plans:** A `~/.claude/plans/polished-crafting-clock.md`;
+C `~/.claude/plans/valiant-pondering-peacock.md`.
 
 This is the live status file for another agent or the teammate. The stable
 end-of-phase snapshot remains `docs/HANDOFF.md`; decisions are in
@@ -28,10 +27,10 @@ end-of-phase snapshot remains `docs/HANDOFF.md`; decisions are in
 | A benchmark | done | full/train/test; negative result |
 | A diagnosis | done | side × sector × era, K=5 vs K=10, costs |
 | B pre-test | done | adjacent-carry rank; negative before costs |
-| Tests | done | 36 passed after A+B merge |
-| Notebooks | done | `02_carry`, `04_a_diagnose`, `05_b_pretest` |
-| Notebook 03 | reserved | idea C (mean reversion), branch only |
-| C baseline | not in main | 51 tests on its branch; negative net result |
+| C baseline | done on branch | 1:1 weekly; negative net result |
+| C hedge-ratio variant | done on branch | 60-day rolling OLS; negative gross result |
+| Tests | done | 58 passed on the C branch |
+| Notebooks | done | `02_carry`, `03_mean_reversion`, `04_a_diagnose`, `05_b_pretest` |
 
 ---
 
@@ -110,19 +109,59 @@ Files: `src/b_pre_test.py`, `notebooks/05_b_pretest.ipynb`,
 
 ---
 
-## C status（not merged）
+## C baseline（this branch; not yet in main）
 
-C lives on `feat/idea-c-mean-reversion` at `5c21cf3`, with 51 tests. Its
-baseline is gross-positive but net-negative after ~22.6× turnover:
-full gross +0.53%, net −1.67%, net Sharpe −0.03; test gross −0.39%,
-net −2.64%. The branch also adds the shared weekly calendar, continuous
-leg indices, and D-010. It is deliberately excluded from this merge so the
-C agent can continue independently.
+C2 additive continuous index; dollar z L=20; weekly ±2/0; 1:1 dollar spread;
+5 bps/leg.
 
-**Reserved slots for C:** notebook `03` and log IDs `LOG-0013`–`LOG-0018`.
-A is `LOG-0019`, B is `LOG-0020`, the A/B merge entry is `LOG-0021`.
-C's next log entry after the current branch head should be `LOG-0022` to
-avoid a collision.
+| Period | Gross ann. | Net ann. | Sharpe net | Max DD net | Turnover |
+|---|---:|---:|---:|---:|---:|
+| Full 1986–2026 | +0.53% | −1.67% | −0.03 | −51.6% | 22.6× |
+| Train 1986–2015 | +0.87% | −1.32% | −0.045 | −35.4% | 22.7× |
+| Test 2016–2026 | −0.39% | −2.64% | −0.025 | −26.9% | 22.6× |
+| Energy 1992–2013 | −1.05% | −3.12% | −0.04 | −51.7% | 25.1× |
+
+Conditional raw spread return:
+
+| Period | Group | Raw mean | Raw t-stat | n_dates |
+|---|---|---|---:|---:|
+| Full | `target_positive` | +0.000017 | +0.11 | 2,071 |
+| Full | `target_negative` | −0.000101 | −1.28 | 2,065 |
+| Train | `target_positive` | +0.000112 | +1.72 | 1,515 |
+| Train | `target_negative` | −0.000203 | −2.12 | 1,516 |
+| Test | `target_positive` | −0.000217 | −0.40 | 555 |
+| Test | `target_negative` | +0.000148 | +1.05 | 548 |
+
+**Reading:** C has no robust, tradable edge in the 1:1 weekly baseline. Gross
+returns are small and positive in-sample but ~22.6× turnover and 5 bps/leg
+costs turn the full and test periods negative. The train short-spread
+conditional mean is significant, but it does not survive in test. Energy
+1992–2013 is negative with a 1:1 spread.
+
+## C hedge-ratio variant（0 bps gross）
+
+60-day rolling OLS on the continuous leg levels; strict weekly rebalancing
+to the current `h`; 1:1 and hedge both at 0 bps.
+
+| Period | Variant | Gross ann. | Vol | Sharpe | Turnover | Trades |
+|---|---|---:|---:|---:|---:|---:|
+| Full | 1:1 | +0.535% | 3.58% | 0.010 | 22.6× | 28,645 |
+| Full | hedge | +0.197% | 2.62% | 0.006 | 20.4× | 56,289 |
+| Train | 1:1 | +0.868% | 1.83% | 0.030 | 22.7× | 20,163 |
+| Train | hedge | +0.290% | 1.54% | 0.012 | 20.3× | 40,476 |
+| Test | 1:1 | −0.391% | 6.24% | −0.002 | 22.6× | 8,476 |
+| Test | hedge | −0.055% | 4.39% | 0.001 | 20.6× | 15,798 |
+
+`h` median 1.008; 5–95% 0.796–1.312; 99.3% valid. The hedge ratio lowers
+volatility and return in full/train/test, does not improve Sharpe, and roughly
+doubles trade count. Conditional mean full sample: hedge `target_negative` raw
+mean +0.000020 (t 0.32) vs 1:1 −0.000101 (t −1.15); neither is significant.
+Energy 1992–2013 (0 bps): 1:1 gross −1.05% / Sharpe −0.013; hedge −0.10% /
+0.0002; the hedge is less bad but still has no positive edge.
+**Conclusion:** no 5 bps run; the hedge ratio does not rescue C overall.
+
+**Log IDs:** C uses `LOG-0013`–`LOG-0018`; A is `LOG-0019`, B `LOG-0020`,
+the A/B merge is `LOG-0021`.
 
 ---
 
@@ -136,26 +175,30 @@ avoid a collision.
 - 5 bps per leg, exact net-leg cost.
 - 1986–2015 train / 2016–2026 test.
 - See D-009 in `docs/decisions.md`.
-- D-010 (C continuous index) is on the C branch, not in main.
+- C: D-010 (additive continuous index; signal-only; L=20; weekly v0).
+- C hedge-ratio variant: D-011 (60-day rolling OLS levels; h>0; strict
+  weekly h rebalancing; 0 bps gross first).
 
 ---
 
 ## Main files
 
-- `src/curve.py` — `d=None` K-only eligibility
+- `src/curve.py` — `d=None` K-only eligibility; shared weekly calendar
 - `src/panel.py` — `build_backtest_panel`, `build_contract_mark_state`
-- `src/signals.py` — `CarryParams`, `carry_signal`
-- `src/backtest.py` — `BacktestConfig`, `BacktestResult`, `build_target_legs`,
-  `run_backtest`
+- `src/continuous.py` — roll-chained leg indices; rolling OLS hedge ratio
+- `src/signals.py` — `CarryParams` / `carry_signal`;
+  `MeanReversionParams` / `mean_reversion_signal`
+- `src/backtest.py` — `BacktestConfig`, `BacktestResult`, `build_target_legs`
+  (optional hedge-ratio weights), `run_backtest`
 - `src/metrics.py` — `summarize`, `conditional_mean`, `sector_summary`,
   `plot_result`
 - `src/a_diagnostics.py` — A negative-result diagnostics
 - `src/b_pre_test.py` — cheap adjacent-carry B pre-test
 - `tests/test_eligibility.py`, `tests/test_signals.py`,
-  `tests/test_backtest.py`, `tests/test_a_diagnostics.py`,
-  `tests/test_b_pre_test.py`
-- `notebooks/02_carry.ipynb`, `notebooks/04_a_diagnose.ipynb`,
-  `notebooks/05_b_pretest.ipynb`
+  `tests/test_backtest.py`, `tests/test_continuous.py`,
+  `tests/test_a_diagnostics.py`, `tests/test_b_pre_test.py`
+- `notebooks/02_carry.ipynb`, `notebooks/03_mean_reversion.ipynb`,
+  `notebooks/04_a_diagnose.ipynb`, `notebooks/05_b_pretest.ipynb`
 - `docs/a_negative_result.md`, `docs/b_pretest.md`
 - `docs/backtest_framework.md`, `docs/data_dictionary.md` §10
 
@@ -168,24 +211,27 @@ python -m pytest -q
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=600 notebooks/02_carry.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=900 notebooks/03_mean_reversion.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=600 notebooks/04_a_diagnose.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
 ```
 
-Notebook 02 produces the `output/carry_*` tables; 04 loads
-`output/carry_full_*` and writes the diagnosis tables; 05 writes
-`output/b_pretest_summary.csv`. All outputs are gitignored.
+Notebook 02 produces the `output/carry_*` tables; 03 produces
+`output/mean_reversion_*`; 04 loads `output/carry_full_*` and writes the
+diagnosis tables; 05 writes `output/b_pretest_summary.csv`. All outputs are
+gitignored.
 
 ---
 
 ## Next
 
-1. Merge C later from `feat/idea-c-mean-reversion`; keep notebook `03` and
-   LOG-0013–0018, and continue its log at LOG-0022.
-2. C continues on its own branch (carry-neutral, daily, log, adjacent pairs,
-   rolling OLS, Kalman).
+1. Merge the C branch after rebasing on latest `main`; notebook `03` and
+   LOG-0013–0018 are the reserved C slots.
+2. C remaining robustness: carry-neutral first, then daily, log, adjacent
+   pairs, returns-based h, 20/120-day windows, h cap, Kalman.
 3. D/H remain. Deferred A/B variants: residual B, threshold/buffer,
    cross-section, inverse-vol, h=21, tick-based cost, liquidity filters,
    point-in-time D=10 proxy.
-4. No report has been written yet; A/B are documented as negative baselines.
+4. No report has been written yet; A/B/C are documented as negative baselines.
