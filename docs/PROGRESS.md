@@ -1,9 +1,12 @@
-# Progress — Carry Baseline (A)
+# Progress — A and B Baselines（C separate）
 
-**Last updated:** 2026-10-19 15:55  
+**Last updated:** 2026-10-19  
 **Branch:** `main`  
-**Latest commits:** `f2c4771` (foundation), `1b833c9` (engine), `bd6691b`
-(benchmark).  
+**A baseline:** `bd6691b`; **A diagnosis:** merged from `a-robustness`
+(`f02f18b`).  
+**B pre-test:** merged from `b-pre-test` (`d257e0e`).  
+**C branch:** `feat/idea-c-mean-reversion` at `5c21cf3` — deliberately **not**
+merged into main yet.  
 **Plan:** `~/.claude/plans/polished-crafting-clock.md`
 
 This is the live status file for another agent or the teammate. The stable
@@ -23,12 +26,16 @@ end-of-phase snapshot remains `docs/HANDOFF.md`; decisions are in
 | Backtest engine | done | daily event loop, pair-specific pending orders |
 | Metrics | done | summary, conditional mean, sector, plot |
 | A benchmark | done | full/train/test; negative result |
-| Tests | done | 32 passed |
-| Notebook | done | `notebooks/02_carry.ipynb` |
+| A diagnosis | done | side × sector × era, K=5 vs K=10, costs |
+| B pre-test | done | adjacent-carry rank; negative before costs |
+| Tests | done | 36 passed after A+B merge |
+| Notebooks | done | `02_carry`, `04_a_diagnose`, `05_b_pretest` |
+| Notebook 03 | reserved | idea C (mean reversion), branch only |
+| C baseline | not in main | 51 tests on its branch; negative net result |
 
 ---
 
-## Benchmark result (first pass)
+## A benchmark result (first pass)
 
 | Period | Gross ann. | Net ann. | Sharpe gross | Sharpe net | Max DD net |
 |---|---:|---:|---:|---:|---:|
@@ -50,50 +57,7 @@ worse. This is a valid negative result, not a bug. Do not tune on the test set.
 
 ---
 
-## Decisions in force
-
-- Backtest eligibility is K=5 ex ante; D=10 research panels are kept.
-- Gross-notional return, lagged denominator.
-- Fixed Friday rebalance, t+1 settlement fill.
-- Roll close at t+1, `roll_leg_missing` flag.
-- 6th invalid session forced exit.
-- 5 bps per leg, exact net-leg cost.
-- 1986–2015 train / 2016–2026 test.
-- See D-009 in `docs/decisions.md`.
-
----
-
-## Main files
-
-- `src/curve.py` — `d=None` K-only eligibility
-- `src/panel.py` — `build_backtest_panel`, `build_contract_mark_state`
-- `src/signals.py` — `CarryParams`, `carry_signal`
-- `src/backtest.py` — `BacktestConfig`, `BacktestResult`, `build_target_legs`,
-  `run_backtest`
-- `src/metrics.py` — `summarize`, `conditional_mean`, `sector_summary`,
-  `plot_result`
-- `tests/test_eligibility.py`, `tests/test_signals.py`,
-  `tests/test_backtest.py`
-- `notebooks/02_carry.ipynb`
-- `docs/backtest_framework.md`, `docs/data_dictionary.md` §10
-
----
-
-## How to reproduce
-
-```bash
-python -m pytest -q
-jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=600 notebooks/02_carry.ipynb
-```
-
-The notebook builds the K=5 panels in memory, runs the full and test backtests,
-and writes summary/conditional/sector CSVs and a cumulative-return PNG to
-`output/` (gitignored).
-
----
-
-## A diagnosis follow-up（branch `a-robustness`）
+## A diagnosis follow-up（merged from `a-robustness`）
 
 - Side × sector × era：short raw mean **+0.000024**（t +2.46），
   long raw mean −0.000008（t −0.65）；负 P&L 主要来自 short side。
@@ -108,10 +72,101 @@ and writes summary/conditional/sector CSVs and a cumulative-return PNG to
 
 ---
 
+## B pre-test（merged from `b-pre-test`）
+
+Cheap, pre-registered B: long the highest-carry adjacent spread
+(M1-M2 / M2-M3 / M3-M4), short the lowest; 4 legs; same engine.
+
+| Period | Gross ann. | Net ann. | Sharpe gross | Sharpe net | Max DD net | Turnover |
+|---|---:|---:|---:|---:|---:|---:|
+| Full 1986–2026 | −1.14% | −2.84% | −0.08 | −0.19 | −70.1% | 17.4× |
+| Train 1986–2015 | −1.10% | −2.80% | −0.08 | −0.21 | −58.3% | 17.6× |
+| Test 2016–2026 | −1.25% | −2.96% | −0.07 | −0.15 | −28.5% | 17.0× |
+
+Gross is already negative; the pre-registered rule says **skip B = True**.
+This is the adjacent-carry version only; the residual/fitted-curve B was not
+tested and should be a separate idea if ever tried.
+Files: `src/b_pre_test.py`, `notebooks/05_b_pretest.ipynb`,
+`docs/b_pretest.md`, `tests/test_b_pre_test.py`.
+
+---
+
+## C status（not merged）
+
+C lives on `feat/idea-c-mean-reversion` at `5c21cf3`, with 51 tests. Its
+baseline is gross-positive but net-negative after ~22.6× turnover:
+full gross +0.53%, net −1.67%, net Sharpe −0.03; test gross −0.39%,
+net −2.64%. The branch also adds the shared weekly calendar, continuous
+leg indices, and D-010. It is deliberately excluded from this merge so the
+C agent can continue independently.
+
+**Reserved slots for C:** notebook `03` and log IDs `LOG-0013`–`LOG-0018`.
+A is `LOG-0019`, B is `LOG-0020`, the A/B merge entry is `LOG-0021`.
+C's next log entry after the current branch head should be `LOG-0022` to
+avoid a collision.
+
+---
+
+## Decisions in force
+
+- Backtest eligibility is K=5 ex ante; D=10 research panels are kept.
+- Gross-notional return, lagged denominator.
+- Fixed Friday rebalance, t+1 settlement fill.
+- Roll close at t+1, `roll_leg_missing` flag.
+- 6th invalid session forced exit.
+- 5 bps per leg, exact net-leg cost.
+- 1986–2015 train / 2016–2026 test.
+- See D-009 in `docs/decisions.md`.
+- D-010 (C continuous index) is on the C branch, not in main.
+
+---
+
+## Main files
+
+- `src/curve.py` — `d=None` K-only eligibility
+- `src/panel.py` — `build_backtest_panel`, `build_contract_mark_state`
+- `src/signals.py` — `CarryParams`, `carry_signal`
+- `src/backtest.py` — `BacktestConfig`, `BacktestResult`, `build_target_legs`,
+  `run_backtest`
+- `src/metrics.py` — `summarize`, `conditional_mean`, `sector_summary`,
+  `plot_result`
+- `src/a_diagnostics.py` — A negative-result diagnostics
+- `src/b_pre_test.py` — cheap adjacent-carry B pre-test
+- `tests/test_eligibility.py`, `tests/test_signals.py`,
+  `tests/test_backtest.py`, `tests/test_a_diagnostics.py`,
+  `tests/test_b_pre_test.py`
+- `notebooks/02_carry.ipynb`, `notebooks/04_a_diagnose.ipynb`,
+  `notebooks/05_b_pretest.ipynb`
+- `docs/a_negative_result.md`, `docs/b_pretest.md`
+- `docs/backtest_framework.md`, `docs/data_dictionary.md` §10
+
+---
+
+## How to reproduce
+
+```bash
+python -m pytest -q
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=600 notebooks/02_carry.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=600 notebooks/04_a_diagnose.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
+```
+
+Notebook 02 produces the `output/carry_*` tables; 04 loads
+`output/carry_full_*` and writes the diagnosis tables; 05 writes
+`output/b_pretest_summary.csv`. All outputs are gitignored.
+
+---
+
 ## Next
 
-1. Merge `a-robustness` into `main` after C's branch; keep both log entries.
-2. C 继续在另一个 branch 上推进；A 以 negative baseline 收尾。
-2. Decide the next idea: C (mean reversion) is the natural reuse of the engine.
-3. Deferred: threshold/buffer, cross-section, inverse-vol, h=21, tick-based
-   cost, liquidity filters, point-in-time D=10 proxy.
+1. Merge C later from `feat/idea-c-mean-reversion`; keep notebook `03` and
+   LOG-0013–0018, and continue its log at LOG-0022.
+2. C continues on its own branch (carry-neutral, daily, log, adjacent pairs,
+   rolling OLS, Kalman).
+3. D/H remain. Deferred A/B variants: residual B, threshold/buffer,
+   cross-section, inverse-vol, h=21, tick-based cost, liquidity filters,
+   point-in-time D=10 proxy.
+4. No report has been written yet; A/B are documented as negative baselines.

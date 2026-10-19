@@ -665,8 +665,52 @@ No rescue variants are tried.
 **Next:** merged into `main` as LOG-0019; the notebook was renumbered to
 `04_a_diagnose.ipynb` to reserve `03` and LOG-0013–0018 for the C branch.
 
+---
 
+## LOG-0020 · 2026-10-19 16:55 · Phase 6c · Claude Code
 
+**Goal:** Decide whether B is worth pursuing with a cheap, pre-registered
+pre-test. This is not a full curve-fitting B and not a rescue of A.
 
+**Actions:**
+- Added `src/b_pre_test.py`:
+  - annualized carry for M1-M2 / M2-M3 / M3-M4;
+  - long the highest-carry adjacent spread, short the lowest;
+  - leg-level targets passed directly to the existing engine; the K=5 main
+    pair supplies the group key and pair validation, with zero-unit main legs
+    when the B trade uses other maturities;
+  - `run_b_pretest` full/train/test and `should_skip_b` decision rule.
+- Added `notebooks/05_b_pretest.ipynb` and `docs/b_pretest.md`.
+- Added `tests/test_b_pre_test.py` (high/low legs and decision rule).
+- Updated `docs/PROGRESS.md`; kept the work on branch `b-pre-test` so it does
+  not mix with A or C.
 
+**Files changed:**
+- `src/b_pre_test.py` — new
+- `tests/test_b_pre_test.py` — new
+- `notebooks/05_b_pretest.ipynb` — new
+- `docs/b_pretest.md` — new
+- `docs/PROGRESS.md`, `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
 
+**Commands:**
+- `python -m pytest -q` → 34 passed
+- `jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb` → OK
+- `run_b_pretest(rank)` → 128.7 s; 872,652 target leg rows; 100,117 trades
+
+**Why:** A's negative result does not logically kill B, but B is a different
+(and more complex) hypothesis. A cheap pre-test is the right way to decide
+whether to spend time on a shallow B. The decision rule was fixed before
+looking at the result.
+
+**Validation:**
+- Full: gross ann. −1.14%, net −2.84%, gross Sharpe −0.08, net −0.19.
+- Train: gross −1.10%, net −2.80%; test: gross −1.25%, net −2.96%.
+- Gross is already negative; costs are not the cause of the sign.
+- `should_skip_b` → True.
+- Targets are non-empty and traded; this is not a no-trade artifact.
+
+**Commit:** `feat(b-pretest): add cheap B negative pre-test`
+
+**Next:** merged into `main` as LOG-0020 after A; skip B in this form. A residual /
+fitted-curve B is a separate pre-registered idea, not a rescue.
