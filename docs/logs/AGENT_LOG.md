@@ -842,6 +842,36 @@ the same status files used for A, without mixing the A/C code branches.
 **Next:** rebase on latest `main`, run the full `scripts/run_all.sh` after the
 A/C branches are reconciled, then review and merge C.
 
+---
+
+## LOG-0018 · 2026-10-19 17:20 · Phase 6f · Claude Code
+
+**Goal:** Lock the weekly evaluation calendar against a later-start backtest.
+
+**Actions:**
+- Added a test that the full-calendar signal's weekly evaluation dates cover
+  the weekly dates produced by a later-start trading calendar (the shape of
+  the 2016 test run's calendar).
+
+**Files changed:**
+- `tests/test_signals.py`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 52 passed
+
+**Why:** The engine filters its calendar by `start_date`, while the signal is
+computed on the full calendar. The target path is held daily, so it must cover
+every engine rebalance date in a later-start run.
+
+**Validation:**
+- The full-calendar weekly set is a superset of the later-start weekly set.
+- Full suite passes (52 tests).
+
+**Commit:** `test(signals): cover later-start weekly calendar`
+
+**Next:** final review/merge.
+
 
 ## LOG-0019 · 2026-10-19 16:40 · Phase 6b · Claude Code
 

@@ -177,6 +177,19 @@ def test_mean_reversion_signal_truncation_does_not_change_past() -> None:
     np.testing.assert_array_equal(past_full, past_truncated)
 
 
+def test_signal_weekly_dates_cover_later_start_calendar() -> None:
+    panel = _spread_panel(n=60)
+    params = _params()
+    trading_days = pd.DatetimeIndex(panel["date"])
+    signal = signals.mean_reversion_signal(
+        panel, params, trading_days=trading_days, pair_grid=panel[["date", "root"]]
+    )
+    full_weekly = set(signal.loc[signal["is_evaluation"], "date"])
+    later_days = trading_days[trading_days >= pd.Timestamp("2020-02-03")]
+    later_weekly = curve.weekly_rebalance_dates(later_days)
+    assert later_weekly.issubset(full_weekly)
+
+
 def test_mean_reversion_signal_parameter_guards() -> None:
     panel = _spread_panel()
     trading_days = pd.DatetimeIndex(panel["date"])
