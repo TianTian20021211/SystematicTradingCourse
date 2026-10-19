@@ -652,6 +652,52 @@ the engine calendar from drifting apart. The refactor is behavior-preserving.
 **Next:** implement `src/continuous.py` (roll-chained leg price indices) and
 its tests.
 
+---
+
+## LOG-0014 · 2026-10-19 16:42 · Phase 6b · Claude Code
+
+**Goal:** Build a roll-chained continuous near/far price index for idea C.
+
+**Actions:**
+- Added `src/continuous.py`:
+  - `build_continuous_leg_prices`: initializes each leg at the first observed
+    settle on the first pair date, then adds contract-level
+    `settle_t - settle_{t-1}`; on rolls uses the new pair's own price changes.
+  - `build_spread_index`: thin dollar-spread layer.
+  - `roll_diagnostics`: compares raw spread changes with continuous changes
+    and the expected contract-level change.
+- Added `tests/test_continuous.py` covering initialization, non-roll tracking,
+  two rolls, adjacent rolls, pair change back and forth, missing changes,
+  zero/negative settles, prehistory, duplicates, and diagnostics.
+
+**Files changed:**
+- `src/continuous.py` — new
+- `tests/test_continuous.py` — new
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest tests/test_continuous.py -q` → 10 passed
+- `python -m pytest -q` → 51 passed
+- Full K=5 panel diagnostic: 236,385 rows, 6,640 pair changes; all 6,593 valid
+  roll changes and 229,098 valid non-roll changes match
+  `delta_near - delta_far`; 694 rows have NaN changes because the previous
+  index is missing.
+
+**Why:** Idea C needs a signal series that does not jump when the fixed pair
+rolls. Chaining contract-level price changes is the roll-safe construction;
+the raw dollar spread is still the traded instrument.
+
+**Validation:**
+- Synthetic tests cover two consecutive rolls, adjacent rolls, and a pair
+  change back and forth.
+- Full-panel diagnostics show no mismatch for any valid change; NaN changes
+  are confined to missing previous observations.
+- Full suite passes.
+
+**Commit:** `feat(continuous): build roll-chained leg price indices`
+
+**Next:** implement the mean-reversion state machine in `src/signals.py`.
+
 
 ## LOG-0019 · 2026-10-19 16:40 · Phase 6b · Claude Code
 
