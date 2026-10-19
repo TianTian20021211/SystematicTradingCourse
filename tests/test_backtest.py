@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src import backtest
+from src import backtest, curve
 
 
 def _case(
@@ -210,6 +210,28 @@ def test_multi_leg_target_sums_leg_pnl() -> None:
     ].iloc[0]
     expected = 0.5 / (103.0 + 101.0 + 0.5 * 99.0)
     assert np.isclose(row["return_gross"], expected)
+
+
+def test_weekly_rebalance_dates_match_legacy_expression() -> None:
+    days = pd.bdate_range("2020-01-01", periods=30)
+    series = pd.Series(days)
+    expected = set(
+        pd.to_datetime(
+            series.groupby(series.dt.to_period("W-FRI")).max()
+        ).tolist()
+    )
+    assert curve.weekly_rebalance_dates(days) == expected
+
+
+def test_weekly_rebalance_dates_holiday_fallback() -> None:
+    days = pd.DatetimeIndex(
+        [
+            day
+            for day in pd.bdate_range("2020-12-21", "2020-12-25")
+            if day != pd.Timestamp("2020-12-25")
+        ]
+    )
+    assert curve.weekly_rebalance_dates(days) == {pd.Timestamp("2020-12-24")}
 
 
 def test_config_guards() -> None:

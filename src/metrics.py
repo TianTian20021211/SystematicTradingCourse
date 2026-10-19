@@ -8,7 +8,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .backtest import BacktestResult, _weekly_rebalance_dates
+from .backtest import BacktestResult
+from .curve import weekly_rebalance_dates
 
 
 def _slice(result: BacktestResult, start: str | None, end: str | None) -> BacktestResult:
@@ -163,7 +164,7 @@ def conditional_mean(
     if pr.empty or dr.empty:
         return pd.DataFrame()
     trading_days = pd.DatetimeIndex(sorted(pd.to_datetime(pr["date"]).unique()))
-    rebalance_dates = sorted(_weekly_rebalance_dates(trading_days))
+    rebalance_dates = sorted(weekly_rebalance_dates(trading_days))
     if not rebalance_dates:
         return pd.DataFrame()
 

@@ -14,6 +14,7 @@
 | LOG-0010 | 2026-10-19 | Phase 5 | Claude Code | K=5 backtest panel, per-contract mark state, carry signal | src/curve.py, src/panel.py, src/signals.py, docs/PROGRESS.md, docs/decisions.md | `f2c4771` |
 | LOG-0011 | 2026-10-19 | Phase 5b | Claude Code | Return-based calendar-spread engine, metrics, tests | src/backtest.py, src/metrics.py, tests/*, docs/backtest_framework.md, docs/data_dictionary.md | `1b833c9` |
 | LOG-0012 | 2026-10-19 | Phase 5c | Claude Code | Idea A baseline notebook and negative result | notebooks/02_carry.ipynb, scripts/run_all.sh, README.md, AGENTS.md, docs/HANDOFF.md, docs/PROGRESS.md | `bd6691b` |
+| LOG-0013 | 2026-10-19 | Phase 6a | Claude Code | Share weekly rebalance calendar across engine and signals | src/curve.py, src/backtest.py, src/metrics.py, tests/test_backtest.py | `pending` |
 | LOG-0019 | 2026-10-19 | Phase 6b | Claude Code | A negative-result diagnosis (side/sector/era, K=5 vs K=10, costs) | src/a_diagnostics.py, tests/test_a_diagnostics.py, notebooks/04_a_diagnose.ipynb, docs/a_negative_result.md | `f02f18b` |
 | LOG-0020 | 2026-10-19 | Phase 6c | Claude Code | Cheap B pre-test (adjacent carry rank) — negative | src/b_pre_test.py, tests/test_b_pre_test.py, notebooks/05_b_pretest.ipynb, docs/b_pretest.md | `d257e0e` |
 | LOG-0021 | 2026-10-19 | Phase 6g | Claude Code | Merge A and B into main; reserve 03/LOG-0013–0018 for C | src/a_diagnostics.py, src/b_pre_test.py, tests/*, notebooks/04_a_diagnose.ipynb, notebooks/05_b_pretest.ipynb, docs/*, README.md, AGENTS.md, scripts/run_all.sh | `a15541e` + `7d1d626` |

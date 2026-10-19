@@ -612,6 +612,47 @@ The notebook is the readable record; the CSVs/plot are local outputs.
 
 ---
 
+## LOG-0013 · 2026-10-19 16:33 · Phase 6a · Claude Code
+
+**Goal:** Share the weekly rebalance calendar between the backtest engine and
+the signal layer before implementing idea C, without changing engine behavior.
+
+**Actions:**
+- Added `curve.weekly_rebalance_dates(trading_days)`; it is the same
+  `W-FRI` last-trading-day logic previously private in `src/backtest.py`.
+- Updated `src/backtest.py` to call `curve.weekly_rebalance_dates`; removed
+  the private helper.
+- Updated `src/metrics.py` to import and use the public helper.
+- Added equivalence and holiday-fallback tests in `tests/test_backtest.py`.
+- Worked on branch `feat/idea-c-mean-reversion` so A and C commits stay
+  separate.
+
+**Files changed:**
+- `src/curve.py` — public weekly helper
+- `src/backtest.py` — delegate to curve helper
+- `src/metrics.py` — use public helper
+- `tests/test_backtest.py` — equivalence/holiday tests
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 34 passed
+
+**Why:** Idea C needs to evaluate its weekly signal on exactly the same dates
+the engine rebalances. A single shared helper prevents the signal calendar and
+the engine calendar from drifting apart. The refactor is behavior-preserving.
+
+**Validation:**
+- The new helper matches the legacy `to_period("W-FRI").groupby.max()`
+  expression.
+- Holiday fallback returns the last trading day of the week.
+- All 34 tests pass (A's 32 plus 2 new).
+
+**Commit:** `refactor(curve): share weekly rebalance calendar`
+
+**Next:** implement `src/continuous.py` (roll-chained leg price indices) and
+its tests.
+
+
 ## LOG-0019 · 2026-10-19 16:40 · Phase 6b · Claude Code
 
 **Goal:** Explain the A (carry) negative result, without trying to rescue it.

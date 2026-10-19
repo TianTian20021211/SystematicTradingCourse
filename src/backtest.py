@@ -20,7 +20,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from . import panel
+from . import curve, panel
 
 
 @dataclass(frozen=True)
@@ -113,14 +113,6 @@ def build_target_legs(
         ["date", "root", "commodity", "sector", "group_id",
          "contract", "units", "leg", "target"]
     ].sort_values(["date", "root", "group_id", "leg"]).reset_index(drop=True)
-
-
-def _weekly_rebalance_dates(trading_days: pd.DatetimeIndex) -> set[pd.Timestamp]:
-    """Last trading day of each ISO week (Friday period, holiday fallback)."""
-
-    series = pd.Series(pd.to_datetime(trading_days))
-    periods = series.dt.to_period("W-FRI")
-    return set(pd.to_datetime(series.groupby(periods).max()).tolist())
 
 
 def _pair_lookup(pair_panel: pd.DataFrame) -> dict[tuple[Any, Any], tuple[Any, Any]]:
@@ -218,7 +210,7 @@ class _Engine:
             self.trading_days = self.trading_days[
                 self.trading_days <= pd.Timestamp(config.end_date)
             ]
-        self.rebalance_dates = _weekly_rebalance_dates(self.trading_days)
+        self.rebalance_dates = curve.weekly_rebalance_dates(self.trading_days)
 
         self._targets = self._index_targets(target_legs)
         contracts = set()
