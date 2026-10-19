@@ -108,12 +108,28 @@ do not log every `ls`.
 
 - Push to `origin main` after each logical commit when collaborating.
 
+## Backtest invariants
+
+- The backtest uses the K=5 ex-ante universe (`d=None`); the D=10 research
+  panels are kept unchanged. Do not use `last_trade_proxy` for backtest
+  selection.
+- Signal at t close; fill at t+1 close. Mark existing positions before
+  executing pending orders. No same-close fills.
+- Return is gross-notional with the lagged denominator; costs are 5 bps per
+  leg of actual net traded notional.
+- Do not use `is_censored`, episode `exit_date`/`holding_days`, or other
+  ex-post fields as signals.
+- The engine is `src/backtest.py`; add new ideas as signal functions in
+  `src/signals.py` rather than editing the engine.
+
 ## Current phase
 
-The data layer is complete: repo scaffold, raw parsing, rank/contract/return/
-spread panels, liquidity diagnostics, adjacent-pair robustness panel, and
-notebooks 00/01. The next phase is signals/backtest; do not start it without
-user approval. Keep the panels reproducible from the raw CSV and the notebooks.
+The data layer and the A (carry) baseline are complete: K=5 backtest panel,
+per-contract mark state, `src/signals.py`, `src/backtest.py`, `src/metrics.py`,
+and `notebooks/02_carry.ipynb`. A is a **negative result** in the simplest
+baseline. The next phase is C/D/B or A robustness; do not change the locked
+A conventions without a new `docs/decisions.md` entry. Keep the panels
+reproducible from the raw CSV and the notebooks.
 
 ## Questions / ownership
 

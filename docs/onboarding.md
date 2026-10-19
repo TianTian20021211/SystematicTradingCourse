@@ -5,9 +5,10 @@
 
 ## 1. 这个 repo 在做什么
 
-用 1986–2026 的 Bloomberg 商品期货数据研究 calendar spread。当前阶段是
-**数据层**：把 generic M1–M4 还原成真实合约，建 rank/contract/return/spread
-panel，做数据审计和流动性诊断。signals/backtest 是下一阶段。
+用 1986–2026 的 Bloomberg 商品期货数据研究 calendar spread。数据层已完成：
+把 generic M1–M4 还原成真实合约，建 rank/contract/return/spread panel。
+A（carry）baseline 也已跑通，但在最简 K=5 版本里是负结果；C/D/B 和
+robustness 是下一阶段。
 
 ## 2. 先读什么
 
@@ -81,5 +82,7 @@ python -m pytest -q
 
 数据层（Phases R–4）已完成：rank/contract/return/spread/universe/episodes
 panel、liquidity diagnostics、adjacent-pair robustness、两个 notebook。
-下一步是 signals A/B/C/D/H 和 backtest；在 Tian 明确批准前不要开始。
+A baseline 已完成（`notebooks/02_carry.ipynb`，负结果）。下一步是 C/D/B
+或 A 的 robustness；先读 `docs/PROGRESS.md` 和 `docs/backtest_framework.md`。
+不要用 test set 调参。
 如果发现数据问题，先更新 `docs/logs/AGENT_LOG.md` 和 `docs/decisions.md`。

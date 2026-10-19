@@ -1,8 +1,8 @@
 # Handoff — 当前状态
 
-**最后更新：** 2026-10-17  
-**数据层 commit：** `595ca49`  
-**Handoff/cleanup commit：** `716e7bc`（最新以 `git log` 为准）  
+**最后更新：** 2026-10-19  
+**Foundation commit：** `f2c4771`（K=5 panel + mark state + carry signal）  
+**Engine/benchmark commit：** 见 `git log`（本次提交）  
 **Repo：** https://github.com/TianTian20021211/SystematicTradingCourse
 
 ---
@@ -15,14 +15,16 @@
 4. `docs/decisions.md` — 已锁定的决定。
 5. `docs/data_dictionary.md` — 字段和 panel schema。
 6. `docs/logs/INDEX.md` + `AGENT_LOG.md` 最近几条 — 谁做了什么。
-7. `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` — 已执行，带简洁输出。
+7. `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` — 数据层。
+8. `notebooks/02_carry.ipynb` — A baseline；`docs/PROGRESS.md` — 实时进度。
 
 ---
 
 ## 1. 一句话
 
-**数据层已经完成：raw → contract-level panel → roll-aware returns → spread/universe/episodes → 两个可读 notebook。**  
-**Signals/backtest 还没开始。**
+**数据层 + A baseline 已完成：K=5 ex-ante panel → carry signal → return-based
+event-loop backtest → full/train/test benchmark。**  
+**A 在这个最简版本里是负结果；C/D/B 还没开始。**
 
 ---
 
@@ -39,6 +41,8 @@
 | `episodes.parquet` | 6,664 | 固定合约对的 episode |
 | `adjacent_pairs.parquet` | 610,801 | 所有 eligible adjacent pairs（robustness） |
 | `adjacent_spread.parquet` | 610,801 | 所有 adjacent pair 的 spread |
+| `backtest_pairs.parquet` | 236,385 | K=5 ex-ante 主 pair（回测用） |
+| `backtest_spread.parquet` | 236,385 | K=5 主 pair 的 spread |
 
 这些 parquet 在 `data/processed/`，**gitignored**；见 `data/processed/README.md`。
 
@@ -49,8 +53,20 @@
 - 0 partial rolls
 - 0 full-day queue violations
 - CL 2020-04-20 = **−37.63** 仍在
-- 15 个 pytest 全过
-- 两个 notebook 都能 top-to-bottom 跑完
+- **32 个 pytest 全过**
+- 三个 notebook 都能 top-to-bottom 跑完
+
+A baseline（K=5；1986–2026）：
+
+| Period | Gross ann. | Net ann. | Sharpe net | Max DD net |
+|---|---:|---:|---:|---:|
+| Full | −0.53% | −1.90% | −0.08 | −55.3% |
+| Train 1986–2015 | −0.44% | −1.78% | −0.10 | −42.7% |
+| Test 2016–2026 | −0.76% | −2.20% | −0.06 | −21.9% |
+
+Conditional raw spread return：`target_positive` ≈ 0（t −0.27）；
+`target_negative` 为 **+0.000127（t +2.41）**，即 contango spread 平均会变强，
+short spread 是错的方向。**A 在这个 baseline 没有 edge。**
 
 ---
 
@@ -66,6 +82,7 @@
 | D-006 | Notebook 是叙述层；逻辑在 `src/`；notebook 中英夹杂，方便两位作者阅读 |
 | D-007 | 每个 material change 写 `docs/logs/AGENT_LOG.md`，并更新 `INDEX.md` |
 | D-008 | 主实验统一一个可交易 spread；adjacent pairs 作为 robustness |
+| D-009 | A baseline 回测口径：K=5 ex-ante、per-contract mark state、gross-notional return、周五 rebalance、t+1 fill、roll 在 t+1 平旧、第 6 个 invalid session forced exit、5 bps/leg |
 
 完整内容见 `docs/decisions.md`。
 
@@ -85,18 +102,25 @@
 - QA：uniqueness、rank monotonicity、roll sync、return mapping、contract calendar、delivery-month、pair adjacency、known events。
 - Notebooks 00/01：已执行，输出简洁。
 - Agent log / decisions / data dictionary / onboarding。
+- **A baseline framework**：`src/signals.py`、`src/backtest.py`、
+  `src/metrics.py`；K=5 panel、per-contract mark state、event-loop engine、
+  summary/conditional mean/sector/plot。
+- **A benchmark**：`notebooks/02_carry.ipynb`；full/train/test；负结果。
+- **32 tests**；`docs/backtest_framework.md`；`docs/PROGRESS.md`。
 
 ---
 
 ## 5. 还没做的
 
-- Signals A/B/C/D/H 的正式实现。
-- Backtest、cost model、position sizing。
-- 最终 liquidity threshold（等你看完图选）。
-- Contract multiplier / tick size 静态表（做美元 P&L 和成本需要）。
-- Proposal 的 holding horizon `h`（1日/5日/21日？）。
-- 队友的 GitHub collaborator 权限（需要 repo owner 添加）。
+- Signals C/D/B/H 的正式实现（engine 可复用；C 只加 signal function）。
+- A 的变体/threshold/cross-section/inverse-vol。
+- Robustness：D=5/20、liquidity buckets、tick-based cost、
+  point-in-time D=10 proxy。
+- 最终 liquidity threshold（baseline 不硬筛）。
+- Contract multiplier / tick size 静态表（做美元 P&L 和容量需要）。
+- Proposal 的 holding horizon `h`（baseline 用 weekly；H 扫描 deferred）。
 - Paper replication。
+- 队友 GitHub collaborator 权限已解决。
 
 ---
 
@@ -121,24 +145,30 @@ python -m pip install -r requirements.txt
 python -m pytest -q
 jupyter nbconvert --execute --to notebook --inplace notebooks/00_data_audit.ipynb
 jupyter nbconvert --execute --to notebook --inplace notebooks/01_panel_build.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=600 notebooks/02_carry.ipynb
 ```
 
-第二个 notebook 会重建 `data/processed/*.parquet`。
+第二个 notebook 会重建 `data/processed/*.parquet`；第三个跑 A baseline，
+结果写到 `output/`（gitignored）。
 
 ---
 
 ## 7. Open questions（下一次决定）
 
-1. **Liquidity threshold**：1k / 5k / 10k / 20k？主结果和 robustness 各用哪个？
-2. **Signal 优先级**：A/B/C/D/H 先做哪个？还是先把 common pair 上的 baseline 都跑一遍？
-3. **Proposal 的 h**：1 日、5 日还是 21 日？`h + D < days_to_expiry` 怎么处理？
-4. **Contract multiplier / tick size**：有没有现成表？没有的话要不要我建 24 商品的静态 spec 表？
-5. **Adjacent pairs**：主结果只用 `pairs`，还是某些 idea（curve RV/butterfly）直接用 `adjacent_pairs`？
-6. **队友权限**：需要在 GitHub Settings → Collaborators 添加。
+1. **A 的负结果怎么处理**：保留为 baseline / 继续做 A 的 threshold、cross-section、
+   inverse-vol，还是先转到 C？本轮结果显示 contango short 是错的方向。
+2. **Liquidity threshold**：baseline 不硬筛；robustness 用 1k/5k/10k/20k 中的哪个？
+3. **Signal 优先级**：C（mean reversion）是 engine 的自然复用；D/B/H 之后。
+4. **Proposal 的 h**：baseline 用 weekly；H 扫描 1/5/21 天 deferred。
+5. **Contract multiplier / tick size**：美元 P&L、容量、tick-based cost 需要时再建。
+6. **Adjacent pairs**：A 主结果只用 main pair；B/D 的多腿以后再决定。
 
 ---
 
 ## 8. 下一步
 
-先 review `notebooks/00_data_audit.ipynb` 和 `01_panel_build.ipynb`，特别是 liquidity 图；确定 threshold 和 signal 优先级后，再进入下一阶段。  
-在 Tian 明确说开始之前，不要写 signal/backtest。
+A baseline 已完成，结果是负的：full/train/test 的 net Sharpe 都为负；
+contango short 的 raw spread return 显著为正（错方向）。
+下一步先在 `docs/PROGRESS.md` / notebook 里 review 这个结果，再决定：
+做 C，还是先做 A 的变体/robustness。不要用 test 调参。

@@ -17,6 +17,8 @@ This directory holds the parquet panels produced by
 | `episodes.parquet` | 6,664 | 17 | fixed-contract pair episodes |
 | `adjacent_pairs.parquet` | 610,801 | 29 | all eligible adjacent pairs (robustness) |
 | `adjacent_spread.parquet` | 610,801 | 30 | all adjacent pair spreads |
+| `backtest_pairs.parquet` | 236,385 | 29 | K=5 ex-ante main pair for the backtest |
+| `backtest_spread.parquet` | 236,385 | 30 | K=5 main pair dollar/log/pct spreads |
 
 Schemas are documented in `docs/data_dictionary.md`.
 

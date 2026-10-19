@@ -4,7 +4,8 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 
 用 1986–2026 的 Bloomberg 商品期货数据，研究同一商品不同到期月之间的 **calendar spread**：曲线形状、roll、carry、价差的可预测性与可交易性。
 
-> 这个 repo 是**数据层 + 研究脚手架**。当前阶段做数据审计、contract-level panel、spread panel 和流动性诊断；signals/backtest 是下一阶段。
+> 这个 repo 是**数据层 + 研究脚手架**。数据层和 A baseline 已完成；
+> A 的第一版是负结果（见 `notebooks/02_carry.ipynb`），B/C/D/H 和 robustness 是下一阶段。
 
 ---
 
@@ -14,10 +15,12 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 - [x] Repo scaffold、agent collaboration protocol、decision/log 体系
 - [x] Rank / contract / return / spread panels + QA
 - [x] Liquidity diagnostics（threshold 由你看完图后决定）
-- [ ] Signals A/B/C/D/H + backtest（下一阶段）
+- [x] A baseline：K=5 panel + carry signal + return-based event-loop backtest
+- [ ] Signals B/C/D/H + robustness（A 的第一版是负结果）
 
-`notebooks/00_data_audit.ipynb` 和 `notebooks/01_panel_build.ipynb` 已可从头运行；
-后者会在本地生成 `data/processed/*.parquet`（不提交）。
+`notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` 和 `02_carry.ipynb`
+已可从头运行；01 生成 `data/processed/*.parquet`，02 生成 `output/carry_*`
+（都不提交）。
 
 **新对话 / 队友先读：** `docs/HANDOFF.md` → `AGENTS.md` → `docs/decisions.md` → `docs/logs/INDEX.md`。
 
@@ -50,9 +53,11 @@ MTH 9897 · Project 7 · Baruch MFE 2026
    ```text
    notebooks/00_data_audit.ipynb
    notebooks/01_panel_build.ipynb
+   notebooks/02_carry.ipynb
    ```
 
-   第二个 notebook 会生成 `data/processed/*.parquet`（不提交到 repo）。
+   第二个 notebook 会生成 `data/processed/*.parquet`（不提交到 repo）；
+   第三个跑 A baseline，结果写到 `output/`（不提交）。
 
 ---
 
@@ -66,6 +71,8 @@ CLAUDE.md                 # Claude Code 专用入口
 docs/
   project_brief.md        # 详细项目背景、五个 idea、数据说明
   HANDOFF.md              # 当前状态、关键数字、open questions、下一步
+  PROGRESS.md             # 实时进度（给另一个 agent / 队友）
+  backtest_framework.md   # 回测框架一页：五层、接口、扩展方式
   research_notes.md       # roll / spread 的论文与业界惯例、为什么这样选
   data_dictionary.md      # raw + derived fields + panel schemas
   decisions.md            # 已锁定的研究/数据决定
@@ -73,9 +80,12 @@ docs/
   logs/                   # agent 操作日志（谁、做了什么、为什么、怎么验证）
 
 src/                      # 所有数据处理逻辑（notebook 只调用）
-notebooks/                # 00_data_audit, 01_panel_build（中英夹杂）
-tests/                    # synthetic fixtures + parser/roll/spread tests
-scripts/run_all.sh        # 一键复现：依赖 + tests + 两个 notebook
+  signals.py              # signal functions（A carry；C 以后加）
+  backtest.py             # target legs + event-loop engine
+  metrics.py              # summary / conditional mean / sector / plot
+notebooks/                # 00_data_audit, 01_panel_build, 02_carry
+tests/                    # synthetic fixtures + parser/roll/spread/backtest tests
+scripts/run_all.sh        # 一键复现：依赖 + tests + 三个 notebook
 
 data/raw/                  # 原始数据（本地；public repo 不提交）
 data/metadata/             # 24 商品元数据 + checksum（提交）
@@ -94,6 +104,9 @@ output/                    # 生成的图/报告（gitignored）
 - **Spread：** dollar spread 做主交易/P&L；log spread 做参考。两者都保存在 `spread_panel`。
 - **Liquidity threshold：** 先出诊断图，不提前写死；代码里是参数。
 - **不做 back-adjusted 连续价格作为主结果。** 主结果使用固定合约对的 raw prices。
+- **A baseline 回测口径（D-009）：** K=5 ex-ante、gross-notional return
+  （lagged denominator）、周五 rebalance、t+1 成交、roll 在 t+1 平旧、
+  第 6 个 invalid session forced exit、5 bps/leg。
 
 详见 `docs/decisions.md`。
 

@@ -564,6 +564,52 @@ layer stays separate so C/D/B only add signal functions.
 **Next:** run the A benchmark in `notebooks/02_carry.ipynb`, record the
 negative result, and update the status docs.
 
+---
+
+## LOG-0012 · 2026-10-19 15:55 · Phase 5c · Claude Code
+
+**Goal:** Run the first A (carry) baseline benchmark end-to-end and record the
+result, including the negative finding.
+
+**Actions:**
+- Added `notebooks/02_carry.ipynb`: K=5 panel, carry signal, target legs,
+  full/test backtests, summary, conditional mean, sector summary, cumulative
+  plot, interpretation, next steps.
+- Updated `scripts/run_all.sh` to execute 02 and clean its metadata.
+- Updated `docs/PROGRESS.md`, `docs/HANDOFF.md`, `README.md`, `AGENTS.md`,
+  `docs/onboarding.md`, and `data/processed/README.md` for the new state.
+- Saved `output/carry_summary.csv`, `output/carry_conditional_mean.csv`,
+  `output/carry_sector.csv`, `output/carry_cumulative.png` (gitignored).
+
+**Files changed:**
+- `notebooks/02_carry.ipynb` — new
+- `scripts/run_all.sh` — run 02
+- `docs/PROGRESS.md`, `docs/HANDOFF.md`, `README.md`, `AGENTS.md`,
+  `docs/onboarding.md`, `data/processed/README.md` — status
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=600 notebooks/02_carry.ipynb` → OK
+- `python scripts/clean_notebook_metadata.py notebooks/02_carry.ipynb`
+- `python -m pytest -q` → 32 passed
+
+**Why:** The project needs an honest first read on A before adding more ideas.
+The notebook is the readable record; the CSVs/plot are local outputs.
+
+**Validation:**
+- Notebook executes top-to-bottom.
+- Full sample net Sharpe −0.08, net ann. −1.90%; test net Sharpe −0.06.
+- Conditional raw mean for `target_negative` is +0.000127 (t +2.41):
+  contango spreads strengthen, so the short spread is the wrong direction.
+- `target_positive` raw mean ≈ 0. A has no edge in this simplest baseline.
+- K=5 pair mix and CL 2020-04-20 NaN carry are shown in the notebook.
+
+**Commit:** `feat(carry): add idea A baseline benchmark`
+
+**Next:** decide whether to try A variants/robustness or move to C
+(mean reversion). Do not tune on the 2016–2026 test sample.
+
 
 
 
