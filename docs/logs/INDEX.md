@@ -28,4 +28,4 @@
 | LOG-0024 | 2026-10-19 | Phase 6i | Claude Code | Gross hedge-ratio comparison (negative) | notebooks/03_mean_reversion.ipynb | `ee3bab9` |
 | LOG-0025 | 2026-10-19 | Phase 6j | Claude Code | Reconcile C branch with A/B main after rebase | AGENTS.md, README.md, docs/HANDOFF.md, docs/PROGRESS.md, scripts/run_all.sh | `f68822b` |
 | LOG-0026 | 2026-10-19 | Phase 6k | Claude Code | Kalman hedge-ratio variant and C close-out | src/kalman.py, tests/test_kalman.py, docs/decisions.md, docs/*.md | `48ae998` |
-| LOG-0027 | 2026-10-19 | Phase 7 | Claude Code | Merge idea C into main and reconcile A/B docs | AGENTS.md, README.md, docs/HANDOFF.md, docs/PROGRESS.md, docs/onboarding.md, docs/logs/* | `pending` |
+| LOG-0027 | 2026-10-19 | Phase 7 | Claude Code | Merge idea C into main and reconcile A/B docs | AGENTS.md, README.md, docs/HANDOFF.md, docs/PROGRESS.md, docs/onboarding.md, docs/logs/* | `86dd750` |
