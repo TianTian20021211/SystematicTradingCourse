@@ -2,7 +2,7 @@
 
 **Scope:** time-series carry sign on the K=5 ex-ante universe.
 **Not a rescue attempt:** no long-only, threshold, cross-section, or h variants.
-**Full detail:** `notebooks/03_a_diagnose.ipynb`.
+**Full detail:** `notebooks/04_a_diagnose.ipynb`.
 
 ---
 
@@ -61,7 +61,7 @@ Gross（0 bps）已经是负的；成本放大负结果，但不是负号的原�
   但 Grains/Industrials/Livestock/Metals 多数为负；没有 broad-based 的正 edge。
 - 所以不是“某个板块特别差”；short side 的方向问题是系统性的。
 
-完整 42 个格子见 `03_a_diagnose.ipynb`。
+完整 42 个格子见 `04_a_diagnose.ipynb`。
 
 ---
 

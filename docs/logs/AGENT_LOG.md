@@ -612,7 +612,7 @@ The notebook is the readable record; the CSVs/plot are local outputs.
 
 ---
 
-## LOG-0014 · 2026-10-19 16:40 · Phase 6b · Claude Code
+## LOG-0019 · 2026-10-19 16:40 · Phase 6b · Claude Code
 
 **Goal:** Explain the A (carry) negative result, without trying to rescue it.
 The deliverable is a concise negative-result diagnosis, not a new strategy.
@@ -625,7 +625,7 @@ The deliverable is a concise negative-result diagnosis, not a new strategy.
     D=10 is deliberately excluded because `last_trade_proxy` is ex post.
   - `cost_sensitivity`: linearly scales the 5 bps cost series to 0/5/10/20.
   - `load_result`: load the saved `output/carry_full_*` tables.
-- Added `notebooks/03_a_diagnose.ipynb` (short narrative + three tables).
+- Added `notebooks/04_a_diagnose.ipynb` (short narrative + three tables).
 - Added `docs/a_negative_result.md` (one-page conclusion and caveats).
 - Added `tests/test_a_diagnostics.py` (direction, contribution, cost scaling).
 - Updated `docs/PROGRESS.md` with the diagnosis summary.
@@ -635,14 +635,14 @@ The deliverable is a concise negative-result diagnosis, not a new strategy.
 **Files changed:**
 - `src/a_diagnostics.py` — new
 - `tests/test_a_diagnostics.py` — new
-- `notebooks/03_a_diagnose.ipynb` — new
+- `notebooks/04_a_diagnose.ipynb` — new
 - `docs/a_negative_result.md` — new
 - `docs/PROGRESS.md`, `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
 
 **Commands:**
 - `python -m pytest -q` → 34 passed
 - `jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=600 notebooks/03_a_diagnose.ipynb` → OK
+  --ExecutePreprocessor.timeout=600 notebooks/04_a_diagnose.ipynb` → OK
 - `eligibility_compare(..., k_values=(5, 10), results={5: full})` → K=10 rerun
 
 **Why:** The baseline is negative. Before moving on, the project needs a short,
@@ -662,8 +662,8 @@ No rescue variants are tried.
 
 **Commit:** `feat(a-diagnostics): add A negative-result diagnosis`
 
-**Next:** merge `a-robustness` after C's branch; keep both log entries.
-LOG-0013 is reserved for the C branch's weekly-calendar change.
+**Next:** merged into `main` as LOG-0019; the notebook was renumbered to
+`04_a_diagnose.ipynb` to reserve `03` and LOG-0013–0018 for the C branch.
 
 
 

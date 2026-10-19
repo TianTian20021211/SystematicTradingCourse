@@ -103,7 +103,7 @@ and writes summary/conditional/sector CSVs and a cumulative-return PNG to
   gross 已经负，成本不是主因。
 - 结论：**no support + wrong sign in-sample**；test 期 t +0.87，
   不写成 “proven absent”。不做 rescue 变体。
-- 文件：`src/a_diagnostics.py`、`notebooks/03_a_diagnose.ipynb`、
+- 文件：`src/a_diagnostics.py`、`notebooks/04_a_diagnose.ipynb`、
   `docs/a_negative_result.md`、`tests/test_a_diagnostics.py`。
 
 ---
