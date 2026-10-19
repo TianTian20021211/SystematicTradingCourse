@@ -91,6 +91,25 @@ Files: `src/b_pre_test.py`, `notebooks/05_b_pretest.ipynb`,
 
 ---
 
+## Zero-cost check（0 bps）
+
+`0 bps` = 不考虑 transaction cost，也就是 gross。A 和 B 在成本前都已经是负的：
+
+| Idea | Period | Gross ann. (0 bps) | Gross Sharpe | Net ann. (5 bps) | Net Sharpe |
+|---|---|---:|---:|---:|---:|
+| A | Full | −0.53% | −0.02 | −1.90% | −0.08 |
+| A | Train | −0.44% | −0.02 | −1.78% | −0.10 |
+| A | Test | −0.76% | −0.02 | −2.20% | −0.06 |
+| B | Full | −1.14% | −0.08 | −2.84% | −0.19 |
+| B | Train | −1.10% | −0.08 | −2.80% | −0.21 |
+| B | Test | −1.25% | −0.07 | −2.96% | −0.15 |
+
+**Reading:** 成本放大亏损，但不改变符号。A 的 0 bps 结果和
+`04_a_diagnose` 的 cost-sensitivity 第一行一致；B 的 gross 列来自
+`05_b_pretest` 的 summary。
+
+---
+
 ## C status（not merged）
 
 C lives on `feat/idea-c-mean-reversion` at `5c21cf3`, with 51 tests. Its

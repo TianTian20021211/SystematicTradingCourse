@@ -7,6 +7,9 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 > 这个 repo 是**数据层 + 研究脚手架**。数据层、A baseline、A 负结果诊断和
 > B 预测试已完成；A/B 都是负结果。C 在独立 branch 上推进（未合入 main），
 > D/H 和 robustness 是下一阶段。
+>
+> A/B 的负结果在 **0 bps（不考虑 transaction cost）** 下已经成立；
+> 5 bps/leg 只是放大亏损，不改变符号。
 
 ---
 

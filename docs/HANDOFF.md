@@ -76,6 +76,9 @@ long −0.000008（t −0.65）；K=10 不翻正；0/5/10/20 bps 下 gross 已�
 B pre-test（`05_b_pretest.ipynb`）：adjacent-carry rank，full gross −1.14%、
 net −2.84%（gross Sharpe −0.08）；预注册规则 **skip B = True**。
 
+**Zero-cost check：** A full gross ann. −0.53%（Sharpe −0.02）；B full gross
+ann. −1.14%（Sharpe −0.08）。两者在扣交易成本之前已经是负的。
+
 ---
 
 ## 3. 已锁定的决定

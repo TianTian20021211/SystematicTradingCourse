@@ -32,8 +32,10 @@ or `net Sharpe <= 0`.
 | Train 1986–2015 | −1.10% | −2.80% | −0.08 | −0.21 | −58.3% | 17.6× |
 | Test 2016–2026 | −1.25% | −2.96% | −0.07 | −0.15 | −28.5% | 17.0× |
 
-Gross is already negative in all periods; costs make it worse but are not the
-cause of the sign. The pre-registered rule returns **skip B = True**.
+**Gross = 0 bps (no transaction cost).** Gross is already negative in all
+periods: full −1.14% (Sharpe −0.08), train −1.10% (−0.08), test −1.25%
+(−0.07). Costs make it worse but are not the cause of the sign. The
+pre-registered rule returns **skip B = True**.
 
 Target table: 872,652 leg rows; 236,070 near + 236,070 far + 400,512 extra.
 Trades: 100,117 in the full sample. The relative-value legs are real (e.g., on

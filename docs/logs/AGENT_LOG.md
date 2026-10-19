@@ -756,6 +756,8 @@ fitted-curve B is a separate pre-registered idea, not a rescue.
   net ann. −0.53% / −1.90% / −3.24% / −5.89%.
 - B: full gross −1.14%, net −2.84%, gross Sharpe −0.076, net −0.187;
   `should_skip_b` → True. Results are unchanged from the A/B branches.
+- Zero-cost check: A full gross ann. −0.53% (Sharpe −0.02); B full gross
+  ann. −1.14% (Sharpe −0.08). Both negative before transaction costs.
 - `main` is the A/B integration; C remains separate.
 
 **Commit:** A merge `a15541e`; B merge `7d1d626`; this docs commit.

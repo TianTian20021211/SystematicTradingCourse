@@ -24,6 +24,10 @@ A 的方向规则是：
 `contribution = return_gross / n_active`，加总等于每日 portfolio gross return 的累计和。
 负 P&L 主要来自 short side。
 
+**零成本检查：** 这些 raw mean 和下面的 0 bps 结果都是**不考虑 transaction
+cost** 的；A 在成本前已经是负的（full-sample gross ann. −0.53%，
+gross Sharpe −0.02）。
+
 ---
 
 ## 2. K=5 vs K=10（都是 ex-ante）
@@ -49,7 +53,9 @@ D=10 没有使用：它依赖 `last_trade_proxy`（合约在数据里的最后�
 | 10 | −3.24% | −0.13 | −74.7% |
 | 20 | −5.89% | −0.22 | −92.0% |
 
-Gross（0 bps）已经是负的；成本放大负结果，但不是负号的原因。
+0 bps 就是**不考虑 transaction cost**：full / train / test gross ann.
+分别为 −0.53% / −0.44% / −0.76%，gross Sharpe 都是 −0.02。
+Gross 已经是负的；5 bps 的 net 只是更差，成本不是负号的原因。
 
 ---
 
