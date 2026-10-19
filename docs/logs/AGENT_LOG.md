@@ -1156,3 +1156,42 @@ fitted-curve B is a separate pre-registered idea, not a rescue.
 
 **Next:** C merge later; keep notebook `03` and LOG-0013–0018, continue its
 log at LOG-0022. D/H next.
+
+---
+
+## LOG-0025 · 2026-10-19 18:05 · Phase 6j · Claude Code
+
+**Goal:** Reconcile the C branch with A/B `main` after the reserve-slot merge.
+
+**Actions:**
+- Rebased `feat/idea-c-mean-reversion` onto `main` (`4c7dee8`), which contains
+  A diagnosis and B pre-test.
+- Kept A/B entries `LOG-0019`–`LOG-0021`; C baseline uses `LOG-0013`–`0018`.
+- Renumbered the later C hedge-ratio entries to `LOG-0022`–`LOG-0024` (merge
+  note in LOG-0022) to avoid the A/B IDs.
+- Merged the status docs so A/B content is preserved and C results are added,
+  rather than taking either side wholesale.
+- Recombined `scripts/run_all.sh` to run notebooks 00, 01, 02, 03, 04, 05.
+
+**Files changed:**
+- `AGENTS.md`, `README.md`, `docs/HANDOFF.md`, `docs/PROGRESS.md`
+- `scripts/run_all.sh`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 62 passed
+- conflict-marker scan over md/py/sh/ipynb → none
+
+**Why:** The C branch was created before main integrated A diagnosis and B
+pre-test. The rebase keeps C's commits separate while making the shared
+engine, docs, and log numbering consistent with main.
+
+**Validation:**
+- 62 tests pass (A/B/C combined).
+- No duplicate INDEX rows; no conflict markers.
+- `scripts/run_all.sh` runs all five notebooks.
+- Notebook 03 still contains the hedge-ratio section and outputs.
+
+**Commit:** `docs(status): reconcile C log IDs after rebase`
+
+**Next:** review and merge the C branch; do not mix A/B and C commits.

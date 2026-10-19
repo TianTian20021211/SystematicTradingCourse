@@ -160,8 +160,9 @@ Energy 1992–2013 (0 bps): 1:1 gross −1.05% / Sharpe −0.013; hedge −0.10%
 0.0002; the hedge is less bad but still has no positive edge.
 **Conclusion:** no 5 bps run; the hedge ratio does not rescue C overall.
 
-**Log IDs:** C uses `LOG-0013`–`LOG-0018`; A is `LOG-0019`, B `LOG-0020`,
-the A/B merge is `LOG-0021`.
+**Log IDs:** C baseline uses `LOG-0013`–`LOG-0018`; the later hedge-ratio
+work uses `LOG-0022`–`LOG-0024`; A is `LOG-0019`, B `LOG-0020`, the A/B merge
+is `LOG-0021`.
 
 ---
 
@@ -227,8 +228,8 @@ gitignored.
 
 ## Next
 
-1. Merge the C branch after rebasing on latest `main`; notebook `03` and
-   LOG-0013–0018 are the reserved C slots.
+1. Merge the C branch after rebasing on latest `main`; notebook `03`,
+   LOG-0013–0018 (baseline), and LOG-0022–0024 (hedge-ratio) are the C slots.
 2. C remaining robustness: carry-neutral first, then daily, log, adjacent
    pairs, returns-based h, 20/120-day windows, h cap, Kalman.
 3. D/H remain. Deferred A/B variants: residual B, threshold/buffer,

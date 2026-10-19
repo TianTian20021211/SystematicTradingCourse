@@ -26,3 +26,4 @@
 | LOG-0022 | 2026-10-19 | Phase 6g | Claude Code | Rolling OLS hedge ratio on continuous leg indices | src/continuous.py, tests/test_continuous.py | `069da35` |
 | LOG-0023 | 2026-10-19 | Phase 6h | Claude Code | Hedge-ratio leg weights and D-011 | src/backtest.py, tests/test_backtest.py, docs/decisions.md, docs/data_dictionary.md, docs/backtest_framework.md | `8e738d7` |
 | LOG-0024 | 2026-10-19 | Phase 6i | Claude Code | Gross hedge-ratio comparison (negative) | notebooks/03_mean_reversion.ipynb | `ee3bab9` |
+| LOG-0025 | 2026-10-19 | Phase 6j | Claude Code | Reconcile C branch with A/B main after rebase | AGENTS.md, README.md, docs/HANDOFF.md, docs/PROGRESS.md, scripts/run_all.sh | `pending` |

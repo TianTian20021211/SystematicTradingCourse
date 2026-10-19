@@ -207,9 +207,9 @@ jupyter nbconvert --execute --to notebook --inplace \
 ## 7. Open questions（下一次决定）
 
 1. **C 何时合入 main**：C 在 `feat/idea-c-mean-reversion`，已有 1:1
-   baseline 和 rolling-OLS hedge-ratio variant（都是负结果）；notebook 03
-   和 LOG-0013–0018 已预留。合入后 C 的剩余 robustness 是 carry-neutral、
-   daily、log、returns-based h。
+   baseline 和 rolling-OLS hedge-ratio variant（都是负结果）；notebook 03、
+   LOG-0013–0018（baseline）和 LOG-0022–0024（hedge-ratio）已预留。
+   合入后 C 的剩余 robustness 是 carry-neutral、daily、log、returns-based h。
 2. **A/B 是否还要变体**：A/B 已作为 documented negative baselines；
    A 的 threshold/cross-section/inverse-vol、residual B 都是新假设，
    要单独预注册。
@@ -228,7 +228,8 @@ A、B、C 都已作为负结果收尾：A 的 contango short 方向错；B 的
 adjacent-carry rank 在成本前就为负；C 的 1:1 和滚动 OLS hedge-ratio
 variant 都没有稳健 edge。C 在本分支上，尚未合入 main。下一步：
 
-1. C 合入时保留 notebook 03 和 LOG-0013–0018；
+1. C 合入时保留 notebook 03、LOG-0013–0018（baseline）和 LOG-0022–0024
+   （hedge-ratio）；
 2. C 的剩余 robustness：carry-neutral、daily、log、returns-based h；
 3. 做 D/H（engine 可复用）；
 4. 不要用 test 调参；A/B/C 的变体要作为新假设预注册。
