@@ -610,6 +610,61 @@ The notebook is the readable record; the CSVs/plot are local outputs.
 **Next:** decide whether to try A variants/robustness or move to C
 (mean reversion). Do not tune on the 2016–2026 test sample.
 
+---
+
+## LOG-0014 · 2026-10-19 16:40 · Phase 6b · Claude Code
+
+**Goal:** Explain the A (carry) negative result, without trying to rescue it.
+The deliverable is a concise negative-result diagnosis, not a new strategy.
+
+**Actions:**
+- Added `src/a_diagnostics.py`:
+  - `side_sector_era`: raw spread mean, cluster-by-date t-stat, exact gross
+    contribution, by side × sector × era.
+  - `eligibility_compare`: same A signal under ex-ante K=5 and K=10;
+    D=10 is deliberately excluded because `last_trade_proxy` is ex post.
+  - `cost_sensitivity`: linearly scales the 5 bps cost series to 0/5/10/20.
+  - `load_result`: load the saved `output/carry_full_*` tables.
+- Added `notebooks/03_a_diagnose.ipynb` (short narrative + three tables).
+- Added `docs/a_negative_result.md` (one-page conclusion and caveats).
+- Added `tests/test_a_diagnostics.py` (direction, contribution, cost scaling).
+- Updated `docs/PROGRESS.md` with the diagnosis summary.
+- Kept the work isolated on branch `a-robustness`; C continues on its own
+  branch/worktree.
+
+**Files changed:**
+- `src/a_diagnostics.py` — new
+- `tests/test_a_diagnostics.py` — new
+- `notebooks/03_a_diagnose.ipynb` — new
+- `docs/a_negative_result.md` — new
+- `docs/PROGRESS.md`, `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 34 passed
+- `jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=600 notebooks/03_a_diagnose.ipynb` → OK
+- `eligibility_compare(..., k_values=(5, 10), results={5: full})` → K=10 rerun
+
+**Why:** The baseline is negative. Before moving on, the project needs a short,
+credible explanation of why A's edge is absent; otherwise the negative result
+looks like an implementation bug. The diagnosis is deliberately limited to the
+hypothesis (side × sector × era), ex-ante eligibility (K=5 vs K=10), and costs.
+No rescue variants are tried.
+
+**Validation:**
+- Short raw mean +0.000024 (t +2.46); long raw mean −0.000008 (t −0.65).
+- K=10: short +0.000018 (t +1.84), long −0.000032 (t −2.83); both net
+  Sharpe negative.
+- Costs 0/5/10/20 bps: net ann. −0.53% / −1.90% / −3.24% / −5.89%;
+  gross is already negative.
+- Contribution cells sum to the cumulative daily portfolio gross return.
+- Cost scaling at 5 bps matches the baseline net result.
+
+**Commit:** `feat(a-diagnostics): add A negative-result diagnosis`
+
+**Next:** merge `a-robustness` after C's branch; keep both log entries.
+LOG-0013 is reserved for the C branch's weekly-calendar change.
+
 
 
 

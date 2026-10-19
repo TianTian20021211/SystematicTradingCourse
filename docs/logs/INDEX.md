@@ -14,3 +14,4 @@
 | LOG-0010 | 2026-10-19 | Phase 5 | Claude Code | K=5 backtest panel, per-contract mark state, carry signal | src/curve.py, src/panel.py, src/signals.py, docs/PROGRESS.md, docs/decisions.md | `f2c4771` |
 | LOG-0011 | 2026-10-19 | Phase 5b | Claude Code | Return-based calendar-spread engine, metrics, tests | src/backtest.py, src/metrics.py, tests/*, docs/backtest_framework.md, docs/data_dictionary.md | `1b833c9` |
 | LOG-0012 | 2026-10-19 | Phase 5c | Claude Code | Idea A baseline notebook and negative result | notebooks/02_carry.ipynb, scripts/run_all.sh, README.md, AGENTS.md, docs/HANDOFF.md, docs/PROGRESS.md | `bd6691b` |
+| LOG-0014 | 2026-10-19 | Phase 6b | Claude Code | A negative-result diagnosis (side/sector/era, K=5 vs K=10, costs) | src/a_diagnostics.py, tests/test_a_diagnostics.py, notebooks/03_a_diagnose.ipynb, docs/a_negative_result.md | `f02f18b` |
