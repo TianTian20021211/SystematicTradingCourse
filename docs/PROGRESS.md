@@ -93,10 +93,28 @@ and writes summary/conditional/sector CSVs and a cumulative-return PNG to
 
 ---
 
+## B pre-test (branch `b-pre-test`)
+
+Cheap, pre-registered B: long the highest-carry adjacent spread
+(M1-M2 / M2-M3 / M3-M4), short the lowest; 4 legs; same engine.
+
+| Period | Gross ann. | Net ann. | Sharpe gross | Sharpe net |
+|---|---:|---:|---:|---:|
+| Full | −1.14% | −2.84% | −0.08 | −0.19 |
+| Train | −1.10% | −2.80% | −0.08 | −0.21 |
+| Test | −1.25% | −2.96% | −0.07 | −0.15 |
+
+Gross is already negative; the pre-registered rule says **skip B = True**.
+This is the adjacent-carry version only; the residual/fitted-curve B was not
+tested and should be a separate idea if ever tried.
+Files: `src/b_pre_test.py`, `notebooks/04_b_pretest.ipynb`,
+`docs/b_pretest.md`, `tests/test_b_pre_test.py`.
+
+---
+
 ## Next
 
-1. Commit the engine + benchmark (LOG-0011 / LOG-0012), update HANDOFF/README/
-   AGENTS, push.
-2. Decide the next idea: C (mean reversion) is the natural reuse of the engine.
-3. Deferred: threshold/buffer, cross-section, inverse-vol, h=21, tick-based
-   cost, liquidity filters, point-in-time D=10 proxy.
+1. Merge `a-robustness` and `b-pre-test` after C; keep both log entries.
+2. C continues on its own branch; A and B are negative baselines.
+3. Deferred: residual B, threshold/buffer, cross-section, inverse-vol, h=21,
+   tick-based cost, liquidity filters, point-in-time D=10 proxy.
