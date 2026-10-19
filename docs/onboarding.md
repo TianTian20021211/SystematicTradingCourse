@@ -87,7 +87,8 @@ python -m pytest -q
 数据层（Phases R–4）已完成：rank/contract/return/spread/universe/episodes
 panel、liquidity diagnostics、adjacent-pair robustness。
 A baseline 和 A 诊断已完成（`02_carry`、`04_a_diagnose`），B 预测试也已完成
-（`05_b_pretest`）；A/B 都是负结果。下一步是 C 合入、D/H 或 A/B 的新假设；
-先读 `docs/PROGRESS.md` 和 `docs/backtest_framework.md`。
+（`05_b_pretest`）；A/B 都是负结果，已经收尾，不再调参/不做变体。
+下一步是 C 合入和 D/H；先读 `docs/PROGRESS.md` 和
+`docs/backtest_framework.md`。
 不要用 test set 调参。
 如果发现数据问题，先更新 `docs/logs/AGENT_LOG.md` 和 `docs/decisions.md`。

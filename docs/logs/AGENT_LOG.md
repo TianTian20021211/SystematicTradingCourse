@@ -733,6 +733,8 @@ fitted-curve B is a separate pre-registered idea, not a rescue.
 - Updated `README.md`, `AGENTS.md`, `docs/HANDOFF.md`, `docs/onboarding.md`,
   `docs/PROGRESS.md`, and `scripts/run_all.sh` for the A/B baselines. C is
   explicitly left on `feat/idea-c-mean-reversion` and not merged.
+- Finalized A/B as **closed** documented negative baselines: no parameter
+  tuning and no rescue variants.
 - No report file was written.
 
 **Files changed:**
@@ -758,9 +760,10 @@ fitted-curve B is a separate pre-registered idea, not a rescue.
   `should_skip_b` → True. Results are unchanged from the A/B branches.
 - Zero-cost check: A full gross ann. −0.53% (Sharpe −0.02); B full gross
   ann. −1.14% (Sharpe −0.08). Both negative before transaction costs.
+- A/B closed; the final report will state the A/B idea does not work.
 - `main` is the A/B integration; C remains separate.
 
 **Commit:** A merge `a15541e`; B merge `7d1d626`; this docs commit.
 
-**Next:** C merge later; keep notebook `03` and LOG-0013–0018, continue its
-log at LOG-0022. D/H next.
+**Next:** A/B closed. C merge later; keep notebook `03` and LOG-0013–0018,
+continue its log at LOG-0022. D/H next.

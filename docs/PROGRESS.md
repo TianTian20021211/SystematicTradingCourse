@@ -25,9 +25,9 @@ end-of-phase snapshot remains `docs/HANDOFF.md`; decisions are in
 | Carry signal | done | target: −1 161,058 / +1 73,661 / 0 1,666 |
 | Backtest engine | done | daily event loop, pair-specific pending orders |
 | Metrics | done | summary, conditional mean, sector, plot |
-| A benchmark | done | full/train/test; negative result |
-| A diagnosis | done | side × sector × era, K=5 vs K=10, costs |
-| B pre-test | done | adjacent-carry rank; negative before costs |
+| A benchmark | closed | negative result; no further tuning |
+| A diagnosis | closed | side × sector × era, K=5 vs K=10, costs |
+| B pre-test | closed | adjacent-carry rank; negative before costs; skip B |
 | Tests | done | 36 passed after A+B merge |
 | Notebooks | done | `02_carry`, `04_a_diagnose`, `05_b_pretest` |
 | Notebook 03 | reserved | idea C (mean reversion), branch only |
@@ -110,6 +110,18 @@ Files: `src/b_pre_test.py`, `notebooks/05_b_pretest.ipynb`,
 
 ---
 
+## A/B final status（closed）
+
+A 和 B 都作为 **documented negative baselines** 收尾。结论已经足够清楚：
+
+- A：carry sign 方向错，尤其 contango short；不是参数或成本问题。
+- B：adjacent-carry rank 在成本前就为负；skip B。
+- 不再调参数，不做 rescue 变体（threshold、long-only、cross-section、
+  inverse-vol、h=21）。
+- 报告里只简短说明：A/B 这个 idea 测试出来不行。
+
+---
+
 ## C status（not merged）
 
 C lives on `feat/idea-c-mean-reversion` at `5c21cf3`, with 51 tests. Its
@@ -181,11 +193,11 @@ Notebook 02 produces the `output/carry_*` tables; 04 loads
 
 ## Next
 
-1. Merge C later from `feat/idea-c-mean-reversion`; keep notebook `03` and
+1. A/B are closed; no further parameter tuning or rescue variants.
+2. Merge C later from `feat/idea-c-mean-reversion`; keep notebook `03` and
    LOG-0013–0018, and continue its log at LOG-0022.
-2. C continues on its own branch (carry-neutral, daily, log, adjacent pairs,
+3. C continues on its own branch (carry-neutral, daily, log, adjacent pairs,
    rolling OLS, Kalman).
-3. D/H remain. Deferred A/B variants: residual B, threshold/buffer,
-   cross-section, inverse-vol, h=21, tick-based cost, liquidity filters,
-   point-in-time D=10 proxy.
-4. No report has been written yet; A/B are documented as negative baselines.
+4. D/H next. Robustness (liquidity buckets, tick-based cost, dollar P&L,
+   point-in-time D=10 proxy) only if needed for the final report; it is not an
+   attempt to rescue A/B.

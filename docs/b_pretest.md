@@ -1,6 +1,7 @@
 # B Pre-test — Negative Result
 
 **Scope:** cheap, pre-registered B version. Not a full curve-fitting B.
+**Status:** **closed** (2026-10-19); documented negative pre-test.
 **Detail:** `notebooks/05_b_pretest.ipynb`.
 **Branch:** merged from `b-pre-test` into `main`.
 
@@ -54,6 +55,10 @@ every possible B exists. The residual/fitted-curve B is a different hypothesis
 and was not tested; it is also higher-complexity (4 points, curve fit,
 overfitting risk). If it is ever tried, it should be a separate pre-registered
 idea, not a rescue of this one.
+
+**Final status: closed.** B adjacent-carry is not pursued. No parameter tuning;
+the residual/fitted-curve B is not planned unless it becomes a separate
+pre-registered idea.
 
 ---
 

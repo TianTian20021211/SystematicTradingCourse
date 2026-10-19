@@ -26,7 +26,8 @@
 
 **数据层 + A/B baseline 已完成：K=5 ex-ante panel → carry signal →
 return-based event-loop backtest → full/train/test benchmark。**  
-**A 和 B 都是负结果；C 在独立 branch 上（未合入 main）；D/H 还没开始。**
+**A 和 B 都是负结果，已收尾（不再调参数/不做 rescue）；C 在独立 branch 上
+（未合入 main）；D/H 还没开始。**
 
 ---
 
@@ -129,7 +130,7 @@ ann. −1.14%（Sharpe −0.08）。两者在扣交易成本之前已经是负�
 
 - C 的正式合入（`feat/idea-c-mean-reversion` 已有 baseline，但未合入 main）。
 - D/H 的正式实现（engine 可复用）。
-- A 的变体/threshold/cross-section/inverse-vol；residual B。
+- A/B 已收尾，不再做变体或调参；residual B 不计划，除非以后作为独立预注册 idea。
 - Robustness：D=5/20、liquidity buckets、tick-based cost、
   point-in-time D=10 proxy。
 - 最终 liquidity threshold（baseline 不硬筛）。
@@ -180,9 +181,8 @@ jupyter nbconvert --execute --to notebook --inplace \
 1. **C 何时合入 main**：C 在 `feat/idea-c-mean-reversion`，已有 baseline
    （gross 正、net 负）；notebook 03 和 LOG-0013–0018 已预留。合入时从
    LOG-0022 继续。
-2. **A/B 是否还要变体**：A/B 已作为 documented negative baselines；
-   A 的 threshold/cross-section/inverse-vol、residual B 都是新假设，
-   要单独预注册。
+2. **A/B 已收尾**：不再做变体或调参；报告只简短说明 A/B 不行。
+   residual B 不计划，除非以后作为独立预注册 idea。
 3. **Liquidity threshold**：baseline 不硬筛；robustness 用 1k/5k/10k/20k 中的哪个？
 4. **Signal 优先级**：D（curve momentum）和 H（holding-period scan）是下一步。
 5. **Proposal 的 h**：baseline 用 weekly；H 扫描 1/5/21 天。
@@ -194,8 +194,9 @@ jupyter nbconvert --execute --to notebook --inplace \
 ## 8. 下一步
 
 A 和 B 都已作为负结果收尾：A 的 contango short 方向错，B 的 adjacent-carry
-rank 在成本前就为负。C 在独立 branch 上继续推进，未合入 main。下一步：
+rank 在成本前就为负。**A/B 不再调参数、不做 rescue 变体。** C 在独立
+branch 上继续推进，未合入 main。下一步：
 
 1. C 合入时保留 notebook 03 和 LOG-0013–0018，并从 LOG-0022 继续；
 2. 做 D/H（engine 可复用）；
-3. 不要用 test 调参；A/B 的变体要作为新假设预注册。
+3. 不要用 test 调参；A/B 的变体不再做。

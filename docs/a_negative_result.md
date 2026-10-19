@@ -1,6 +1,7 @@
 # A（Carry）Negative Result — 一页说明
 
 **Scope:** time-series carry sign on the K=5 ex-ante universe.
+**Status:** **closed** (2026-10-19); documented negative baseline.
 **Not a rescue attempt:** no long-only, threshold, cross-section, or h variants.
 **Full detail:** `notebooks/04_a_diagnose.ipynb`.
 
@@ -93,5 +94,7 @@ spread（near − far）倾向于上升。Short spread 是在赌 near 继续弱�
 - 不用 test set 调参；
 - 不把 D=10 或 point-in-time proxy 加进来。
 
-A 作为 documented negative baseline 收尾。下一步是做 C（mean reversion），
-它在另一个 branch 上推进。
+**Final status: closed.** A 作为 documented negative baseline 收尾；
+不再调参数，不做 long-only / threshold / cross-section / inverse-vol / h 变体。
+报告里只写一句：A 的 carry sign 在这个数据上不成立。下一步是 C（mean
+reversion），它在另一个 branch 上推进。

@@ -10,6 +10,8 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 >
 > A/B 的负结果在 **0 bps（不考虑 transaction cost）** 下已经成立；
 > 5 bps/leg 只是放大亏损，不改变符号。
+>
+> A/B 已收尾：不再调参数、不做 rescue 变体；报告里只简短说明 A/B 不行。
 
 ---
 
@@ -22,6 +24,7 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 - [x] A baseline：K=5 panel + carry signal + return-based event-loop backtest
 - [x] A 负结果诊断：side × sector × era、K=5 vs K=10、成本敏感性
 - [x] B 预测试：adjacent-carry rank；负结果，skip B
+- [x] A/B 负结果确认并收尾（不再调参/不做 rescue）
 - [ ] C/D/H + robustness（C 在 `feat/idea-c-mean-reversion`，未合入 main）
 
 `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb`、`02_carry.ipynb`、
