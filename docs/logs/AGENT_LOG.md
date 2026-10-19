@@ -872,6 +872,134 @@ every engine rebalance date in a later-start run.
 
 **Next:** final review/merge.
 
+---
+
+## LOG-0022 · 2026-10-19 17:40 · Phase 6g · Claude Code
+
+**Merge note:** renumbered from LOG-0019 at the A/C merge to avoid the A
+diagnosis entry (main LOG-0019). LOG-0023/0024 follow the same branch.
+
+**Goal:** Add a rolling OLS hedge ratio on the continuous leg indices for the
+C hedge-ratio variant.
+
+**Actions:**
+- Added `continuous.rolling_ols_hedge_ratio(leg_prices, window=60,
+  min_periods=60)`:
+  - `h_t = Cov(near_index, far_index) / Var(far_index)` over the trailing
+    window;
+  - hedge index `near_index − h_t·far_index`;
+  - `h` must be finite and positive; otherwise the hedge index is NaN;
+  - rolling estimates use only data through t.
+- Added tests for a known slope of 2.0, negative/zero-variance invalidation,
+  truncation/no-lookahead, and parameter/key validation.
+
+**Files changed:**
+- `src/continuous.py` — `rolling_ols_hedge_ratio`
+- `tests/test_continuous.py` — hedge-ratio tests
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 58 passed
+- Full-panel diagnostic: 236,385 rows, 99.3% valid; `h` quantiles
+  1%=0.555, 5%=0.796, 50%=1.008, 95%=1.312, 99%=1.612.
+
+**Why:** The user wants to test whether a time-varying hedge ratio improves
+the same mean-reversion signal. The rolling OLS on levels is the direct
+analogue of the paper's hedge portfolio; `h` near 1 means the hedge portfolio
+is close to the 1:1 spread.
+
+**Validation:**
+- Synthetic near = 2·far recovers h=2 and hedge index 0.
+- Negative/zero-variance slopes are invalid and produce NaN.
+- Truncating the input does not change past h.
+- Full suite passes.
+
+**Commit:** `feat(continuous): add rolling OLS hedge ratio`
+
+**Next:** support optional hedge-ratio weights in `build_target_legs`.
+
+---
+
+## LOG-0023 · 2026-10-19 17:42 · Phase 6h · Claude Code
+
+**Goal:** Support hedge-ratio-weighted far legs and lock the C hedge-ratio
+variant conventions.
+
+**Actions:**
+- Extended `backtest.build_target_legs` with an optional `hedge_ratio`
+  column: far units are `−target × hedge_ratio`; invalid/missing ratios are
+  dropped; behavior without the column is unchanged.
+- Added a duplicate `(date, root)` guard to the signal panel.
+- Added D-011 and updated the data dictionary and framework docs.
+- Added tests for long/short hedge weights and invalid ratios; updated the
+  existing target-leg test to use unique dates.
+
+**Files changed:**
+- `src/backtest.py` — optional hedge-ratio weights
+- `tests/test_backtest.py` — hedge-weight tests
+- `docs/decisions.md` — D-011
+- `docs/data_dictionary.md`, `docs/backtest_framework.md`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 58 passed
+
+**Why:** The hedge-ratio variant requires a far-leg position of `−target·h`
+instead of `−target`. The target-leg layer is the documented place for this
+change; the engine already accepts arbitrary units.
+
+**Validation:**
+- target +1 / h=2 → near +1, far −2; target −1 / h=0.5 → near −1, far +0.5.
+- Missing/non-positive ratios are dropped.
+- The 1:1 path is unchanged when `hedge_ratio` is absent.
+- Full suite passes.
+
+**Commit:** `feat(backtest): support hedge-ratio leg weights`
+
+**Next:** add the hedge-ratio comparison section to notebook 03 and run the
+gross (0 bps) experiment.
+
+---
+
+## LOG-0024 · 2026-10-19 17:45 · Phase 6i · Claude Code
+
+**Goal:** Run the C rolling-OLS hedge-ratio variant gross (0 bps) and compare
+it with the 1:1 baseline.
+
+**Actions:**
+- Built the 60-day rolling OLS hedge index and signal on the K=5 panel.
+- Merged `hedge_ratio` onto the signal, forced target=0 where h is invalid,
+  and built hedge-weighted target legs.
+- Ran 1:1 and hedge variants with `cost_bps_per_leg=0.0`:
+  - full 1986–2026, train 1986–2015, test 2016–2026.
+- Compared gross summary and conditional mean.
+
+**Results:**
+- h distribution: median 1.008; 5–95% 0.796–1.312; 99.3% valid.
+- 0 bps full: 1:1 gross ann. +0.535%, Sharpe 0.010, turnover 22.6×;
+  hedge gross ann. +0.197%, Sharpe 0.006, turnover 20.4×.
+- Train: 1:1 +0.868% / Sharpe 0.030; hedge +0.290% / 0.012.
+- Test: 1:1 −0.391% / Sharpe −0.002; hedge −0.055% / 0.001.
+- Conditional mean full: 1:1 target_positive +0.000017 (t 0.10),
+  target_negative +0.000101 (t 1.15); hedge target_positive +0.000057
+  (t 0.48), target_negative −0.000020 (t −0.32).
+
+**Why:** The hedge ratio was the remaining plausible explanation for C's weak
+gross result. The gross comparison shows it does not improve returns; it
+lowers volatility and returns, with more trades and similar/worse Sharpe.
+
+**Validation:**
+- Same state machine, universe, and weekly timing; only the index and far-leg
+  weights change.
+- 1:1 and hedge runs both use 0 bps, so the comparison isolates the hedge
+  ratio.
+- No 5 bps run because the hedge gross result is not materially better.
+
+**Commit:** `feat(mean-reversion): add hedge-ratio robustness section`
+
+**Next:** document the negative hedge-ratio result; do not run costs or tune
+on the test sample.
+
 
 ## LOG-0019 · 2026-10-19 16:40 · Phase 6b · Claude Code
 

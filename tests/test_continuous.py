@@ -236,6 +236,93 @@ def test_duplicate_keys_raise() -> None:
         )
 
 
+def test_rolling_ols_recovers_known_slope() -> None:
+    dates = _dates(30)
+    far = np.arange(100.0, 130.0)
+    near = 2.0 * far
+    panel = pd.DataFrame(
+        {"date": dates, "root": "X", "near_index": near, "far_index": far}
+    )
+    out = continuous.rolling_ols_hedge_ratio(panel, window=10)
+    valid = out.loc[out["hedge_ratio_valid"]]
+    assert not valid.empty
+    assert np.allclose(valid["hedge_ratio"], 2.0)
+    assert np.allclose(valid["spread_index"], 0.0)
+    assert out["hedge_ratio"].iloc[:9].isna().all()
+
+
+def test_rolling_ols_flags_nonpositive_and_zero_variance() -> None:
+    dates = _dates(20)
+    far = np.linspace(100.0, 120.0, 20)
+    negative = pd.DataFrame(
+        {
+            "date": dates,
+            "root": "X",
+            "near_index": -far,
+            "far_index": far,
+        }
+    )
+    out = continuous.rolling_ols_hedge_ratio(negative, window=5)
+    assert not out["hedge_ratio_valid"].any()
+    assert out["spread_index"].isna().all()
+
+    constant = pd.DataFrame(
+        {
+            "date": dates,
+            "root": "X",
+            "near_index": np.arange(20.0),
+            "far_index": np.full(20, 100.0),
+        }
+    )
+    out = continuous.rolling_ols_hedge_ratio(constant, window=5)
+    assert not out["hedge_ratio"].notna().any()
+    assert not out["hedge_ratio_valid"].any()
+
+
+def test_rolling_ols_uses_only_past() -> None:
+    dates = _dates(40)
+    far = np.linspace(100.0, 140.0, 40)
+    near = 1.5 * far + np.sin(np.arange(40))
+    panel = pd.DataFrame(
+        {"date": dates, "root": "X", "near_index": near, "far_index": far}
+    )
+    full = continuous.rolling_ols_hedge_ratio(panel, window=10)
+    truncated = continuous.rolling_ols_hedge_ratio(panel.iloc[:25], window=10)
+    merged = full.merge(
+        truncated, on=["date", "root"], suffixes=("_full", "_truncated")
+    )
+    common = merged.loc[merged["hedge_ratio_full"].notna()]
+    assert not common.empty
+    assert np.allclose(
+        common["hedge_ratio_full"],
+        common["hedge_ratio_truncated"],
+        equal_nan=True,
+    )
+
+
+def test_rolling_ols_validation() -> None:
+    dates = _dates(10)
+    panel = pd.DataFrame(
+        {
+            "date": dates,
+            "root": "X",
+            "near_index": np.arange(10.0),
+            "far_index": np.arange(10.0) + 100.0,
+        }
+    )
+    with pytest.raises(ValueError):
+        continuous.rolling_ols_hedge_ratio(panel, window=1)
+    with pytest.raises(ValueError):
+        continuous.rolling_ols_hedge_ratio(
+            panel, window=5, min_periods=6
+        )
+    with pytest.raises(ValueError, match="duplicate"):
+        continuous.rolling_ols_hedge_ratio(
+            pd.concat([panel, panel.iloc[[0]]], ignore_index=True),
+            window=5,
+        )
+
+
 def test_build_spread_index_returns_continuous_columns() -> None:
     pairs, contract, _dates_ = _base_frames()
     legs = continuous.build_continuous_leg_prices(pairs, contract)

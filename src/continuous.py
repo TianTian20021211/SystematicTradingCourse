@@ -211,6 +211,80 @@ def build_spread_index(leg_prices: pd.DataFrame) -> pd.DataFrame:
     return leg_prices[columns].sort_values(["date", "root"]).reset_index(drop=True)
 
 
+def rolling_ols_hedge_ratio(
+    leg_prices: pd.DataFrame,
+    window: int = 60,
+    min_periods: int | None = None,
+) -> pd.DataFrame:
+    """Rolling OLS slope of ``near_index`` on ``far_index``.
+
+    ``h_t = Cov(near, far) / Var(far)`` over the trailing window; the hedge
+    index is ``near_index - h_t * far_index``. Non-positive or non-finite
+    slopes are flagged, and the hedge index is NaN there so the signal layer
+    cannot trade an invalid ratio. The regression uses only data through t.
+    """
+
+    if not isinstance(window, int) or window <= 1:
+        raise ValueError("window must be an integer > 1")
+    if min_periods is None:
+        min_periods = window
+    if (
+        not isinstance(min_periods, int)
+        or min_periods <= 1
+        or min_periods > window
+    ):
+        raise ValueError("min_periods must satisfy 1 < min_periods <= window")
+
+    required = {"date", "root", "near_index", "far_index"}
+    missing = required.difference(leg_prices.columns)
+    if missing:
+        raise ValueError(f"leg_prices missing columns: {sorted(missing)}")
+
+    panel = leg_prices.copy()
+    panel["date"] = pd.to_datetime(panel["date"])
+    if panel.duplicated(["date", "root"]).any():
+        raise ValueError("leg_prices contains duplicate (date, root) rows")
+
+    label_columns = [c for c in ("commodity", "sector") if c in panel.columns]
+    frames: list[pd.DataFrame] = []
+    for root, group in panel.sort_values(["root", "date"]).groupby(
+        "root", sort=False
+    ):
+        group = group.set_index("date").sort_index()
+        near = group["near_index"].astype(float)
+        far = group["far_index"].astype(float)
+        covariance = near.rolling(window, min_periods=min_periods).cov(far)
+        variance = far.rolling(window, min_periods=min_periods).var()
+        ratio = covariance / variance
+        ratio = ratio.where(np.isfinite(ratio))
+        valid = ratio.notna() & ratio.gt(0)
+        hedge_index = (near - ratio * far).where(valid)
+        pair_count = (
+            (near.notna() & far.notna())
+            .astype(int)
+            .rolling(window, min_periods=1)
+            .sum()
+        )
+
+        frame = pd.DataFrame(
+            {
+                "date": group.index,
+                "root": root,
+                **{column: group[column].iloc[0] for column in label_columns},
+                "near_index": near.to_numpy(dtype=float),
+                "far_index": far.to_numpy(dtype=float),
+                "hedge_ratio": ratio.to_numpy(dtype=float),
+                "spread_index": hedge_index.to_numpy(dtype=float),
+                "hedge_ratio_valid": valid.to_numpy(dtype=bool),
+                "hedge_window_count": pair_count.to_numpy(dtype=int),
+            }
+        )
+        frames.append(frame)
+
+    out = pd.concat(frames, ignore_index=True)
+    return out.sort_values(["date", "root"]).reset_index(drop=True)
+
+
 def roll_diagnostics(leg_prices: pd.DataFrame) -> pd.DataFrame:
     """Compare raw spread changes with continuous index changes around rolls.
 
