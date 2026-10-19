@@ -233,6 +233,63 @@ backtest; they are computed by `(root, rank)` and reset on rolls.
 | `score` | Raw signal used for position construction |
 | `target` | +1 (long spread), −1 (short spread), 0 (no position) |
 
+### 10.3b Continuous index (idea C)
+
+`src.continuous.build_continuous_leg_prices()` returns one row per
+`date × root` on the pair panel:
+
+| Column | Description |
+|---|---|
+| `date`, `root` | Keys |
+| `commodity`, `sector` | Labels |
+| `contract_near`, `contract_far` | Current main pair |
+| `settle_near`, `settle_far` | Raw settles for the pair |
+| `raw_spread` | `settle_near − settle_far` |
+| `near_index`, `far_index` | Additively chained leg indices |
+| `spread_index` | `near_index − far_index`; NaN when either change is missing |
+| `delta_near`, `delta_far` | Contract-level `settle_t − settle_{t−1}` |
+| `prev_settle_near`, `prev_settle_far` | Previous observed settle per contract |
+| `is_pair_change` | Fixed contract pair changed vs the previous date |
+| `near_price_change_missing`, `far_price_change_missing` | Change unavailable; index held |
+| `zero_prev_settle_near`, `zero_prev_settle_far` | Previous settle was zero; change treated as missing |
+
+Construction: initialize each leg at the first observed settle, then add the
+current contract's own price change. On a roll date the new pair's changes are
+used, so the index has no level jump. The index is signal-only; backtest P&L
+still uses the raw dollar spread.
+
+`build_spread_index()` returns the same keys plus `spread_index`.
+`roll_diagnostics()` adds `raw_spread_change`, `spread_index_change`, and
+`expected_change = delta_near − delta_far`.
+
+### 10.3c Mean-reversion signal (idea C)
+
+`src.signals.mean_reversion_signal()` returns a complete daily target path:
+
+| Column | Description |
+|---|---|
+| `date`, `root` | Keys |
+| `commodity`, `sector` | Labels |
+| `spread_index` | Continuous dollar spread index |
+| `score` | z-score of `spread_index` |
+| `target` | +1 (long spread), −1 (short spread), 0 (flat); forced 0 when `has_pair=False` |
+| `state` | Internal state before the `has_pair` filter |
+| `evaluation_date` | Most recent weekly evaluation date; NaT before the first |
+| `is_evaluation` | Last trading day of the week on the engine calendar |
+| `z_valid` | Spread present and rolling window meets `min_periods` |
+| `window_count` | Non-NaN observations in the trailing window |
+| `has_pair` | A tradable pair exists for this date/root |
+
+Conventions:
+
+- z = (spread_index − rolling mean) / rolling std; L=20, `min_periods=16`,
+  `ddof=1`; `std<=0` gives NaN.
+- Entry at z crossing ±2; exit at z crossing 0; a flip is emitted as a direct
+  ±1 target on the same evaluation date.
+- The state updates only on `is_evaluation` dates; `target` is held between
+  them. NaN windows do not open new positions and do not force an exit.
+- `evaluation="daily"` raises `NotImplementedError` in the current baseline.
+
 ### 10.4 Target legs
 
 `src.backtest.build_target_legs()` returns one row per leg:

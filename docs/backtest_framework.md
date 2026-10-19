@@ -9,6 +9,10 @@ data panels
   rank / contract / pairs / spread
         │
         ▼
+continuous index layer               src/continuous.py
+  date, root, spread_index
+        │
+        ▼
 signal layer                         src/signals.py
   date, root, score, target
         │
@@ -29,6 +33,7 @@ metrics                              src/metrics.py
 
 | 层 | 知道什么 | 不知道什么 |
 |---|---|---|
+| Continuous | price-change chaining、roll 日不 jump | signal 规则、成交、P&L |
 | Signal | carry/mean reversion 怎么算 | 成交、成本、roll |
 | Target legs | 用哪张合约、多少 units | signal 内部逻辑 |
 | Engine | position、roll、missing、cost、P&L | 这是哪个 idea |
@@ -53,13 +58,23 @@ summary = metrics.summarize(result)
 
 ## 加一个新 signal（例如 C）
 
+C 需要一个 roll-safe 的连续价差序列；这是 `src/continuous.py` 的职责，
+signal function 只消费 `spread_index`：
+
 ```python
-signal = signals.mean_reversion_signal(bt["spread"], params)
+leg = continuous.build_continuous_leg_prices(bt["pairs"], bt["contract"])
+spread_index = continuous.build_spread_index(leg)
+signal = signals.mean_reversion_signal(
+    spread_index,
+    signals.MeanReversionParams(window=20),
+    trading_days=curve.trading_calendar(bt["contract"]),
+    pair_grid=bt["pairs"][["date", "root"]],
+)
 targets = backtest.build_target_legs(signal, bt["spread"])
 result = backtest.run_backtest(bt["spread"], bt["contract"], targets, config)
 ```
 
-只新增 signal function，输出同样的 `date, root, score, target`；
+signal function 输出同样的 `date, root, score, target`；
 engine 和 metrics 不变。
 
 ## 改仓位规则
@@ -104,6 +119,7 @@ BacktestConfig(
 
 ## 文件
 
+- `src/continuous.py` — roll-chained leg price indices
 - `src/signals.py` — signal functions
 - `src/backtest.py` — target legs + engine
 - `src/metrics.py` — summary, conditional mean, sector, plot

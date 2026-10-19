@@ -165,3 +165,44 @@ Status values: `proposed`, `accepted`, `superseded`.
   research/QA convention; a point-in-time D=10 proxy is deferred. The backtest
   panels are saved under distinct `backtest_*` names. Any later change to
   these rules requires a new decision entry.
+
+---
+
+## D-010 · Idea C baseline conventions
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** Idea C tests calendar-spread mean reversion. A fixed contract
+  pair rolls, so the raw spread level is not a continuous signal series. The
+  baseline must define the signal series explicitly while keeping the traded
+  instrument and P&L unchanged.
+- **Decision:**
+  1. **Continuous index:** additive price-change chaining. On the first pair
+     date, initialize each leg index at that date's observed settle. Thereafter
+     add each contract's own `settle_t - settle_{t-1}` (within the contract).
+     On a roll date use the new pair's contract-level changes; never difference
+     old and new spread levels.
+  2. **Signal-only:** `spread_index` is used only to compute z-scores. The
+     backtest still trades the raw dollar spread; P&L is the engine's
+     contract-level mark-to-market. This is not a back-adjusted price for the
+     main results.
+  3. **Missing/zero:** a missing change holds the corresponding leg index and
+     sets the spread index to NaN for that date. Zero previous settle is
+     flagged and treated as missing. Negative settles are supported by the
+     additive construction. No raw price is forward-filled.
+  4. **Signal:** dollar z-score with L=20, `min_periods=16`, `ddof=1`,
+     `std<=0 -> NaN`. Entry when z crosses ±2; exit when z crosses 0. The state
+     machine updates on the last trading day of each week, uses the engine's
+     trading calendar, holds through NaN windows, and emits at most one target
+     per root. `evaluation="daily"` is deferred until the engine supports it.
+  5. **Instrument:** K=5 main pair (nearest two eligible contracts), 1:1 dollar
+     spread, 24 commodities, 5 bps per leg, equal-weight active roots.
+  6. **Baseline:** weekly v0; energy 1992–2013 sanity check first, then full
+     1986–2026 with 1986–2015 train / 2016–2026 test. Honest negative results
+     are reported.
+  7. **Deferred:** daily evaluation, log spread, adjacent pairs, rolling OLS
+     hedge ratio, Kalman replication, carry/momentum controls, liquidity
+     thresholds, 100/200 windows.
+- **Consequences:** The continuous index is a signal-construction object, not a
+  back-adjusted price. Any later change to the index construction or the state
+  machine requires a new decision entry.

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src import backtest, curve
+from src import backtest, curve, signals
 
 
 def _case(
@@ -210,6 +210,60 @@ def test_multi_leg_target_sums_leg_pnl() -> None:
     ].iloc[0]
     expected = 0.5 / (103.0 + 101.0 + 0.5 * 99.0)
     assert np.isclose(row["return_gross"], expected)
+
+
+def test_mean_reversion_signal_rolls_position() -> None:
+    dates = pd.bdate_range("2020-01-01", periods=30)
+    spread_values = np.full(30, 0.5)
+    spread_values[7:] = 10.0
+    spread_panel = pd.DataFrame(
+        {"date": dates, "root": "X", "spread_index": spread_values}
+    )
+    signal = signals.mean_reversion_signal(
+        spread_panel,
+        signals.MeanReversionParams(window=10),
+        trading_days=dates,
+        pair_grid=spread_panel[["date", "root"]],
+    )
+    assert signal.loc[signal["date"].eq(dates[15]), "target"].item() == -1.0
+
+    contract_rows = []
+    pair_rows = []
+    for index, date in enumerate(dates):
+        a = 100.0 + index
+        b = 90.0 + index
+        c = 70.0 + index
+        for code, price in (("A", a), ("B", b), ("C", c)):
+            contract_rows.append(
+                dict(date=date, root="X", contract_code=code, settle=price, volume=100)
+            )
+        if index < 15:
+            near, far, settle_near, settle_far = "A", "B", a, b
+        else:
+            near, far, settle_near, settle_far = "B", "C", b, c
+        pair_rows.append(
+            dict(
+                date=date, root="X", commodity="Test", sector="Test",
+                contract_near=near, contract_far=far,
+                settle_near=settle_near, settle_far=settle_far,
+                spread_dollar=settle_near - settle_far,
+            )
+        )
+    contract = pd.DataFrame(contract_rows)
+    pairs = pd.DataFrame(pair_rows)
+    targets = backtest.build_target_legs(signal, pairs)
+    result = backtest.run_backtest(
+        pairs, contract, targets, backtest.BacktestConfig()
+    )
+
+    rolls = result.trades.loc[result.trades["reason"] == "roll"]
+    assert not rolls.empty
+    assert rolls["date"].min() == dates[16]
+    assert set(rolls["contract"]) == {"A", "B", "C"}
+    exits = result.trades.loc[
+        (result.trades["reason"] == "exit") & (result.trades["date"] == dates[16])
+    ]
+    assert exits.empty
 
 
 def test_weekly_rebalance_dates_match_legacy_expression() -> None:

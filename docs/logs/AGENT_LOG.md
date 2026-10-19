@@ -698,6 +698,60 @@ the raw dollar spread is still the traded instrument.
 
 **Next:** implement the mean-reversion state machine in `src/signals.py`.
 
+---
+
+## LOG-0015 · 2026-10-19 16:47 · Phase 6c · Claude Code
+
+**Goal:** Implement the weekly mean-reversion signal and lock the idea C
+baseline conventions.
+
+**Actions:**
+- Added `MeanReversionParams` and `mean_reversion_signal` to `src/signals.py`.
+  - Rolling z with L=20, `min_periods=16`, `ddof=1`.
+  - `_state_path` hysteresis: entry at ±2, exit at 0, direct flip, NaN hold.
+  - Weekly evaluation on the engine calendar; complete daily target path.
+  - `pair_grid` forces `target=0` where no tradable pair exists.
+  - `evaluation="daily"` raises `NotImplementedError`.
+- Added signal tests: state machine, weekly path, no-pair targets, truncation
+  causality, and parameter guards.
+- Added an integration test: a signal target path rolls a short position
+  through a pair change rather than flattening.
+- Added D-010, the continuous layer to `docs/backtest_framework.md`, and the
+  new schemas to `docs/data_dictionary.md`.
+
+**Files changed:**
+- `src/signals.py` — `MeanReversionParams`, `_state_path`,
+  `mean_reversion_signal`
+- `tests/test_signals.py` — state and public API tests
+- `tests/test_backtest.py` — signal/roll integration test
+- `docs/decisions.md` — D-010
+- `docs/backtest_framework.md` — continuous layer and C example
+- `docs/data_dictionary.md` — continuous index and signal schemas
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 51 passed
+- Full K=5 panel: 252,168 signal rows; target counts 0=166,822, −1=43,945,
+  +1=41,401; 93.3% z-valid; all 24 roots trade.
+- Full-sample backtest: gross ann. +0.53%, net −1.67%, net Sharpe −0.03,
+  turnover 22.6×.
+
+**Why:** The state machine must be explicit and causal, and the target path
+must be complete on pair-change dates or the engine would flatten positions
+during rolls. The baseline is deliberately weekly; daily is deferred.
+
+**Validation:**
+- The signal's evaluation dates are the engine's weekly dates.
+- Truncating the input does not change past targets.
+- No nonzero target appears on a date without a pair.
+- A short signal survives a pair change as an engine roll.
+- Full suite passes.
+
+**Commit:** `feat(signals): add mean-reversion signal`
+
+**Next:** build `notebooks/03_mean_reversion.ipynb`; run the energy 1992–2013
+sanity check and the full/train/test backtests.
+
 
 ## LOG-0019 · 2026-10-19 16:40 · Phase 6b · Claude Code
 
