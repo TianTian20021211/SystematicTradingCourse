@@ -137,4 +137,8 @@ C（mean reversion）baseline 已实现：连续价差层 + weekly z-score 状�
 结果见 `notebooks/03_mean_reversion.ipynb` 和
 `output/mean_reversion_summary.csv`。C 的 baseline 是负结果
 （full-sample net Sharpe 约 −0.03；energy sanity check 也是负的）。
-D/B 还没实现。
+
+C 的 rolling-OLS hedge-ratio variant 也已完成（60-day levels、strict
+weekly h 调仓、0 bps gross 对照）：h 中位数约 1.008；full/train/test 的
+hedge 版本 vol 更低、return 更低、trade 数约翻倍，Sharpe 没有改善；
+energy 1992–2013 只是从负接近零。不跑 5 bps。D/B 还没实现。

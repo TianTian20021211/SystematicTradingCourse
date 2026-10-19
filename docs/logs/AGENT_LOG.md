@@ -983,10 +983,13 @@ it with the 1:1 baseline.
 - Conditional mean full: 1:1 target_positive +0.000017 (t 0.10),
   target_negative +0.000101 (t 1.15); hedge target_positive +0.000057
   (t 0.48), target_negative −0.000020 (t −0.32).
+- Energy 1992–2013 (0 bps): 1:1 gross −1.05% / Sharpe −0.013; hedge
+  −0.10% / 0.0002; less bad but still no positive edge.
 
 **Why:** The hedge ratio was the remaining plausible explanation for C's weak
-gross result. The gross comparison shows it does not improve returns; it
-lowers volatility and returns, with more trades and similar/worse Sharpe.
+gross result. The gross comparison shows it does not improve full/train/test
+returns; it lowers volatility and returns, with more trades and similar/worse
+Sharpe. Energy is less bad but still has no positive edge.
 
 **Validation:**
 - Same state machine, universe, and weekly timing; only the index and far-leg
