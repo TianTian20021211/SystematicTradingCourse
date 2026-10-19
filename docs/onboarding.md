@@ -7,8 +7,8 @@
 
 用 1986–2026 的 Bloomberg 商品期货数据研究 calendar spread。数据层已完成：
 把 generic M1–M4 还原成真实合约，建 rank/contract/return/spread panel。
-A（carry）baseline 也已跑通，但在最简 K=5 版本里是负结果；C/D/B 和
-robustness 是下一阶段。
+A（carry）和 B 的 baseline 都已跑通，但在最简 K=5 版本里都是负结果；
+C 在独立 branch 上推进（未合入 main），D/H 和 robustness 是下一阶段。
 
 ## 2. 先读什么
 
@@ -40,7 +40,7 @@ XLSX 只用于生成 `data/metadata/commodities.csv`；日常 notebook 不依赖
 
 ## 4. 环境与运行
 
-一条命令（会安装依赖、跑 tests、执行两个 notebook）：
+一条命令（会安装依赖、跑 tests、执行 A/B notebook）：
 
 ```bash
 bash scripts/run_all.sh
@@ -58,6 +58,10 @@ jupyter lab
 ```text
 notebooks/00_data_audit.ipynb      # 只读审计 + 流动性诊断
 notebooks/01_panel_build.ipynb     # 建 panel，写 data/processed/*.parquet
+notebooks/02_carry.ipynb           # A baseline
+notebooks/04_a_diagnose.ipynb      # A 负结果诊断（依赖 02 的输出）
+notebooks/05_b_pretest.ipynb       # B adjacent-carry 预测试
+# 03 留给 C（mean reversion），该 branch 尚未合入 main
 ```
 
 测试（不需要 raw data）：
@@ -81,8 +85,9 @@ python -m pytest -q
 ## 6. 当前下一步
 
 数据层（Phases R–4）已完成：rank/contract/return/spread/universe/episodes
-panel、liquidity diagnostics、adjacent-pair robustness、两个 notebook。
-A baseline 已完成（`notebooks/02_carry.ipynb`，负结果）。下一步是 C/D/B
-或 A 的 robustness；先读 `docs/PROGRESS.md` 和 `docs/backtest_framework.md`。
+panel、liquidity diagnostics、adjacent-pair robustness。
+A baseline 和 A 诊断已完成（`02_carry`、`04_a_diagnose`），B 预测试也已完成
+（`05_b_pretest`）；A/B 都是负结果。下一步是 C 合入、D/H 或 A/B 的新假设；
+先读 `docs/PROGRESS.md` 和 `docs/backtest_framework.md`。
 不要用 test set 调参。
 如果发现数据问题，先更新 `docs/logs/AGENT_LOG.md` 和 `docs/decisions.md`。

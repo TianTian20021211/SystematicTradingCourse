@@ -2,7 +2,8 @@
 
 **最后更新：** 2026-10-19  
 **Foundation commit：** `f2c4771`（K=5 panel + mark state + carry signal）  
-**Engine/benchmark commit：** 见 `git log`（本次提交）  
+**A/B merge：** 见 `git log`（A diagnosis + B pre-test）  
+**C branch：** `feat/idea-c-mean-reversion`（未合入 main）  
 **Repo：** https://github.com/TianTian20021211/SystematicTradingCourse
 
 ---
@@ -16,15 +17,16 @@
 5. `docs/data_dictionary.md` — 字段和 panel schema。
 6. `docs/logs/INDEX.md` + `AGENT_LOG.md` 最近几条 — 谁做了什么。
 7. `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` — 数据层。
-8. `notebooks/02_carry.ipynb` — A baseline；`docs/PROGRESS.md` — 实时进度。
+8. `notebooks/02_carry.ipynb` — A baseline；`04_a_diagnose.ipynb` — A 诊断；
+   `05_b_pretest.ipynb` — B 预测试；`docs/PROGRESS.md` — 实时进度。
 
 ---
 
 ## 1. 一句话
 
-**数据层 + A baseline 已完成：K=5 ex-ante panel → carry signal → return-based
-event-loop backtest → full/train/test benchmark。**  
-**A 在这个最简版本里是负结果；C/D/B 还没开始。**
+**数据层 + A/B baseline 已完成：K=5 ex-ante panel → carry signal →
+return-based event-loop backtest → full/train/test benchmark。**  
+**A 和 B 都是负结果；C 在独立 branch 上（未合入 main）；D/H 还没开始。**
 
 ---
 
@@ -53,8 +55,8 @@ event-loop backtest → full/train/test benchmark。**
 - 0 partial rolls
 - 0 full-day queue violations
 - CL 2020-04-20 = **−37.63** 仍在
-- **32 个 pytest 全过**
-- 三个 notebook 都能 top-to-bottom 跑完
+- **36 个 pytest 全过**
+- notebooks 00/01/02/04/05 都能 top-to-bottom 跑完
 
 A baseline（K=5；1986–2026）：
 
@@ -67,6 +69,12 @@ A baseline（K=5；1986–2026）：
 Conditional raw spread return：`target_positive` ≈ 0（t −0.27）；
 `target_negative` 为 **+0.000127（t +2.41）**，即 contango spread 平均会变强，
 short spread 是错的方向。**A 在这个 baseline 没有 edge。**
+
+A diagnosis（`04_a_diagnose.ipynb`）：short raw mean +0.000024（t +2.46），
+long −0.000008（t −0.65）；K=10 不翻正；0/5/10/20 bps 下 gross 已经负。
+
+B pre-test（`05_b_pretest.ipynb`）：adjacent-carry rank，full gross −1.14%、
+net −2.84%（gross Sharpe −0.08）；预注册规则 **skip B = True**。
 
 ---
 
@@ -106,14 +114,19 @@ short spread 是错的方向。**A 在这个 baseline 没有 edge。**
   `src/metrics.py`；K=5 panel、per-contract mark state、event-loop engine、
   summary/conditional mean/sector/plot。
 - **A benchmark**：`notebooks/02_carry.ipynb`；full/train/test；负结果。
-- **32 tests**；`docs/backtest_framework.md`；`docs/PROGRESS.md`。
+- **A diagnosis**：`src/a_diagnostics.py`、`notebooks/04_a_diagnose.ipynb`；
+  side × sector × era、K=5 vs K=10、成本敏感性。
+- **B pre-test**：`src/b_pre_test.py`、`notebooks/05_b_pretest.ipynb`；
+  adjacent-carry rank；负结果，skip B。
+- **36 tests**；`docs/backtest_framework.md`；`docs/PROGRESS.md`。
 
 ---
 
 ## 5. 还没做的
 
-- Signals C/D/B/H 的正式实现（engine 可复用；C 只加 signal function）。
-- A 的变体/threshold/cross-section/inverse-vol。
+- C 的正式合入（`feat/idea-c-mean-reversion` 已有 baseline，但未合入 main）。
+- D/H 的正式实现（engine 可复用）。
+- A 的变体/threshold/cross-section/inverse-vol；residual B。
 - Robustness：D=5/20、liquidity buckets、tick-based cost、
   point-in-time D=10 proxy。
 - 最终 liquidity threshold（baseline 不硬筛）。
@@ -147,28 +160,39 @@ jupyter nbconvert --execute --to notebook --inplace notebooks/00_data_audit.ipyn
 jupyter nbconvert --execute --to notebook --inplace notebooks/01_panel_build.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=600 notebooks/02_carry.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=600 notebooks/04_a_diagnose.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
 ```
 
-第二个 notebook 会重建 `data/processed/*.parquet`；第三个跑 A baseline，
+第二个 notebook 会重建 `data/processed/*.parquet`；02 跑 A baseline，
+04 跑 A 诊断（依赖 02 的 `output/carry_full_*`），05 跑 B 预测试；
 结果写到 `output/`（gitignored）。
 
 ---
 
 ## 7. Open questions（下一次决定）
 
-1. **A 的负结果怎么处理**：保留为 baseline / 继续做 A 的 threshold、cross-section、
-   inverse-vol，还是先转到 C？本轮结果显示 contango short 是错的方向。
-2. **Liquidity threshold**：baseline 不硬筛；robustness 用 1k/5k/10k/20k 中的哪个？
-3. **Signal 优先级**：C（mean reversion）是 engine 的自然复用；D/B/H 之后。
-4. **Proposal 的 h**：baseline 用 weekly；H 扫描 1/5/21 天 deferred。
-5. **Contract multiplier / tick size**：美元 P&L、容量、tick-based cost 需要时再建。
-6. **Adjacent pairs**：A 主结果只用 main pair；B/D 的多腿以后再决定。
+1. **C 何时合入 main**：C 在 `feat/idea-c-mean-reversion`，已有 baseline
+   （gross 正、net 负）；notebook 03 和 LOG-0013–0018 已预留。合入时从
+   LOG-0022 继续。
+2. **A/B 是否还要变体**：A/B 已作为 documented negative baselines；
+   A 的 threshold/cross-section/inverse-vol、residual B 都是新假设，
+   要单独预注册。
+3. **Liquidity threshold**：baseline 不硬筛；robustness 用 1k/5k/10k/20k 中的哪个？
+4. **Signal 优先级**：D（curve momentum）和 H（holding-period scan）是下一步。
+5. **Proposal 的 h**：baseline 用 weekly；H 扫描 1/5/21 天。
+6. **Contract multiplier / tick size**：美元 P&L、容量、tick-based cost 需要时再建。
+7. **Adjacent pairs**：A 主结果只用 main pair；B/D 的多腿以后再决定。
 
 ---
 
 ## 8. 下一步
 
-A baseline 已完成，结果是负的：full/train/test 的 net Sharpe 都为负；
-contango short 的 raw spread return 显著为正（错方向）。
-下一步先在 `docs/PROGRESS.md` / notebook 里 review 这个结果，再决定：
-做 C，还是先做 A 的变体/robustness。不要用 test 调参。
+A 和 B 都已作为负结果收尾：A 的 contango short 方向错，B 的 adjacent-carry
+rank 在成本前就为负。C 在独立 branch 上继续推进，未合入 main。下一步：
+
+1. C 合入时保留 notebook 03 和 LOG-0013–0018，并从 LOG-0022 继续；
+2. 做 D/H（engine 可复用）；
+3. 不要用 test 调参；A/B 的变体要作为新假设预注册。

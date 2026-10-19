@@ -714,3 +714,51 @@ looking at the result.
 
 **Next:** merged into `main` as LOG-0020 after A; skip B in this form. A residual /
 fitted-curve B is a separate pre-registered idea, not a rescue.
+
+---
+
+## LOG-0021 · 2026-10-19 17:25 · Phase 6g · Claude Code
+
+**Goal:** Integrate A and B into `main` without mixing in the deferred C branch.
+
+**Actions:**
+- Created an integration worktree from `main` (`09b88ec`) and merged
+  `a-robustness` (`ab4286a`, change `f02f18b`) with `--no-ff`; no conflicts.
+- Renumbered A diagnosis notebook `03_a_diagnose` → `04_a_diagnose` and
+  LOG-0014 → LOG-0019. Notebook `03` and LOG-0013–0018 are reserved for C.
+- Merged `b-pre-test` (`21fa760`, change `d257e0e`); resolved conflicts in
+  `docs/PROGRESS.md`, `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`.
+- Renumbered B pre-test notebook `04_b_pretest` → `05_b_pretest` and
+  LOG-0015 → LOG-0020.
+- Updated `README.md`, `AGENTS.md`, `docs/HANDOFF.md`, `docs/onboarding.md`,
+  `docs/PROGRESS.md`, and `scripts/run_all.sh` for the A/B baselines. C is
+  explicitly left on `feat/idea-c-mean-reversion` and not merged.
+- No report file was written.
+
+**Files changed:**
+- `src/a_diagnostics.py`, `tests/test_a_diagnostics.py`,
+  `notebooks/04_a_diagnose.ipynb`, `docs/a_negative_result.md` (from A)
+- `src/b_pre_test.py`, `tests/test_b_pre_test.py`,
+  `notebooks/05_b_pretest.ipynb`, `docs/b_pretest.md` (from B)
+- `docs/PROGRESS.md`, `docs/HANDOFF.md`, `README.md`, `AGENTS.md`,
+  `docs/onboarding.md`, `scripts/run_all.sh`, `docs/logs/*`
+
+**Commands:**
+- `python -m pytest -q` → 36 passed
+- `jupyter nbconvert --execute --to notebook ... notebooks/04_a_diagnose.ipynb`
+  → OK
+- `jupyter nbconvert --execute --to notebook ... notebooks/05_b_pretest.ipynb`
+  → OK
+
+**Validation:**
+- A: K=5 net Sharpe −0.0799; K=10 net Sharpe −0.0853; short raw mean
+  +0.000024 (t +2.46), long −0.000008 (t −0.65); cost 0/5/10/20 bps
+  net ann. −0.53% / −1.90% / −3.24% / −5.89%.
+- B: full gross −1.14%, net −2.84%, gross Sharpe −0.076, net −0.187;
+  `should_skip_b` → True. Results are unchanged from the A/B branches.
+- `main` is the A/B integration; C remains separate.
+
+**Commit:** A merge `a15541e`; B merge `7d1d626`; this docs commit.
+
+**Next:** C merge later; keep notebook `03` and LOG-0013–0018, continue its
+log at LOG-0022. D/H next.

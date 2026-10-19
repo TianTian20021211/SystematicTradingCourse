@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Reproduce the data layer from the raw Bloomberg CSV.
+# Reproduce the data layer and the A/B baselines from the raw Bloomberg CSV.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -24,11 +24,17 @@ jupyter nbconvert --execute --to notebook --inplace notebooks/00_data_audit.ipyn
 jupyter nbconvert --execute --to notebook --inplace notebooks/01_panel_build.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=600 notebooks/02_carry.ipynb
+# 03 is reserved for idea C (mean reversion); that branch is not merged yet.
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=600 notebooks/04_a_diagnose.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
 
 echo "== Remove volatile notebook execution timestamps =="
 "$PYTHON" scripts/clean_notebook_metadata.py \
   notebooks/00_data_audit.ipynb notebooks/01_panel_build.ipynb \
-  notebooks/02_carry.ipynb
+  notebooks/02_carry.ipynb notebooks/04_a_diagnose.ipynb \
+  notebooks/05_b_pretest.ipynb
 
 echo "== Processed panels =="
 ls -lh data/processed/*.parquet

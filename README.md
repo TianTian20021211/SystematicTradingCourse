@@ -4,8 +4,9 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 
 用 1986–2026 的 Bloomberg 商品期货数据，研究同一商品不同到期月之间的 **calendar spread**：曲线形状、roll、carry、价差的可预测性与可交易性。
 
-> 这个 repo 是**数据层 + 研究脚手架**。数据层和 A baseline 已完成；
-> A 的第一版是负结果（见 `notebooks/02_carry.ipynb`），B/C/D/H 和 robustness 是下一阶段。
+> 这个 repo 是**数据层 + 研究脚手架**。数据层、A baseline、A 负结果诊断和
+> B 预测试已完成；A/B 都是负结果。C 在独立 branch 上推进（未合入 main），
+> D/H 和 robustness 是下一阶段。
 
 ---
 
@@ -16,11 +17,14 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 - [x] Rank / contract / return / spread panels + QA
 - [x] Liquidity diagnostics（threshold 由你看完图后决定）
 - [x] A baseline：K=5 panel + carry signal + return-based event-loop backtest
-- [ ] Signals B/C/D/H + robustness（A 的第一版是负结果）
+- [x] A 负结果诊断：side × sector × era、K=5 vs K=10、成本敏感性
+- [x] B 预测试：adjacent-carry rank；负结果，skip B
+- [ ] C/D/H + robustness（C 在 `feat/idea-c-mean-reversion`，未合入 main）
 
-`notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` 和 `02_carry.ipynb`
-已可从头运行；01 生成 `data/processed/*.parquet`，02 生成 `output/carry_*`
-（都不提交）。
+`notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb`、`02_carry.ipynb`、
+`04_a_diagnose.ipynb` 和 `05_b_pretest.ipynb` 已可从头运行；01 生成
+`data/processed/*.parquet`，02 生成 `output/carry_*`，04/05 生成诊断和
+B 预测试输出（都不提交）。`03` 留给 C（未合入 main）。
 
 **新对话 / 队友先读：** `docs/HANDOFF.md` → `AGENTS.md` → `docs/decisions.md` → `docs/logs/INDEX.md`。
 
@@ -54,10 +58,13 @@ MTH 9897 · Project 7 · Baruch MFE 2026
    notebooks/00_data_audit.ipynb
    notebooks/01_panel_build.ipynb
    notebooks/02_carry.ipynb
+   notebooks/04_a_diagnose.ipynb   # 依赖 02 的 output/carry_full_*
+   notebooks/05_b_pretest.ipynb
    ```
 
    第二个 notebook 会生成 `data/processed/*.parquet`（不提交到 repo）；
-   第三个跑 A baseline，结果写到 `output/`（不提交）。
+   第三个跑 A baseline，04 跑 A 诊断，05 跑 B 预测试；结果写到
+   `output/`（不提交）。
 
 ---
 
@@ -83,9 +90,11 @@ src/                      # 所有数据处理逻辑（notebook 只调用）
   signals.py              # signal functions（A carry；C 以后加）
   backtest.py             # target legs + event-loop engine
   metrics.py              # summary / conditional mean / sector / plot
-notebooks/                # 00_data_audit, 01_panel_build, 02_carry
+  a_diagnostics.py        # A 负结果诊断
+  b_pre_test.py           # cheap adjacent-carry B 预测试
+notebooks/                # 00, 01, 02, 04, 05；03 留给 C
 tests/                    # synthetic fixtures + parser/roll/spread/backtest tests
-scripts/run_all.sh        # 一键复现：依赖 + tests + 三个 notebook
+scripts/run_all.sh        # 一键复现：依赖 + tests + A/B notebook
 
 data/raw/                  # 原始数据（本地；public repo 不提交）
 data/metadata/             # 24 商品元数据 + checksum（提交）

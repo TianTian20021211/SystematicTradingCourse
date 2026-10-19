@@ -124,12 +124,15 @@ do not log every `ls`.
 
 ## Current phase
 
-The data layer and the A (carry) baseline are complete: K=5 backtest panel,
+The data layer and the A/B baselines are complete: K=5 backtest panel,
 per-contract mark state, `src/signals.py`, `src/backtest.py`, `src/metrics.py`,
-and `notebooks/02_carry.ipynb`. A is a **negative result** in the simplest
-baseline. The next phase is C/D/B or A robustness; do not change the locked
-A conventions without a new `docs/decisions.md` entry. Keep the panels
-reproducible from the raw CSV and the notebooks.
+`src/a_diagnostics.py`, `src/b_pre_test.py`, and notebooks `02_carry`,
+`04_a_diagnose`, `05_b_pretest`. A and B are **negative results** in their
+simplest forms. C lives on `feat/idea-c-mean-reversion` and is **not** merged;
+notebook `03` and LOG-0013–0018 are reserved for it. The next phase is
+D/H or a pre-registered new hypothesis; do not change the locked A conventions
+without a new `docs/decisions.md` entry. Keep the panels reproducible from the
+raw CSV and the notebooks.
 
 ## Questions / ownership
 
