@@ -93,10 +93,25 @@ and writes summary/conditional/sector CSVs and a cumulative-return PNG to
 
 ---
 
+## A diagnosis follow-up（branch `a-robustness`）
+
+- Side × sector × era：short raw mean **+0.000024**（t +2.46），
+  long raw mean −0.000008（t −0.65）；负 P&L 主要来自 short side。
+- K=5 vs K=10（都是 ex-ante）：两者都负；K=10 的 short raw mean +0.000018
+  （t +1.84），long −0.000032（t −2.83）。D=10 未使用（ex-post）。
+- 成本 0/5/10/20 bps：net ann. −0.53% / −1.90% / −3.24% / −5.89%；
+  gross 已经负，成本不是主因。
+- 结论：**no support + wrong sign in-sample**；test 期 t +0.87，
+  不写成 “proven absent”。不做 rescue 变体。
+- 文件：`src/a_diagnostics.py`、`notebooks/03_a_diagnose.ipynb`、
+  `docs/a_negative_result.md`、`tests/test_a_diagnostics.py`。
+
+---
+
 ## Next
 
-1. Commit the engine + benchmark (LOG-0011 / LOG-0012), update HANDOFF/README/
-   AGENTS, push.
+1. Merge `a-robustness` into `main` after C's branch; keep both log entries.
+2. C 继续在另一个 branch 上推进；A 以 negative baseline 收尾。
 2. Decide the next idea: C (mean reversion) is the natural reuse of the engine.
 3. Deferred: threshold/buffer, cross-section, inverse-vol, h=21, tick-based
    cost, liquidity filters, point-in-time D=10 proxy.
