@@ -268,6 +268,14 @@ trailing window (default 60 days, `min_periods=60`) and returns
 `hedge_ratio_valid`, and `hedge_window_count`. Non-positive or non-finite `h`
 is invalid and the hedge index is NaN there.
 
+`kalman.kalman_hedge_ratio()` fits the paper's two-state DLM
+(`near = β0 + β1·far`, random-walk β) with a 252-observation warm-up,
+rolling 252-observation likelihood for `q` every 60 observations, and
+`W = qV·I`. It returns the same keys plus `kalman_intercept`,
+`kalman_observation_var`, `kalman_q`, `kalman_loglik`,
+`kalman_is_reestimate`, and `kalman_pair_count`. `h` is NaN during the
+warm-up; only finite positive `h` produces a hedge index.
+
 ### 10.3c Mean-reversion signal (idea C)
 
 `src.signals.mean_reversion_signal()` returns a complete daily target path:

@@ -3,8 +3,9 @@
 **最后更新：** 2026-10-19  
 **A baseline：** `bd6691b`；**A diagnosis：** `f02f18b`。  
 **B pre-test：** `d257e0e`。  
-**C baseline + hedge-ratio variant：** 本分支
-（`feat/idea-c-mean-reversion`），未合入 main。  
+**C baseline + hedge-ratio + Kalman variant：** 本分支
+（`feat/idea-c-mean-reversion`），未合入 main；C 已作为 mixed/negative
+收尾。  
 **Repo：** https://github.com/TianTian20021211/SystematicTradingCourse
 
 ---
@@ -29,8 +30,8 @@
 **数据层 + A/B/C baseline 已完成：K=5 ex-ante panel → carry /
 mean-reversion signal → return-based event-loop backtest →
 full/train/test benchmark。**  
-**A、B、C 1:1、C hedge-ratio 都是负结果；C 在本分支上（未合入 main）；
-D/H 还没开始。**
+**A、B、C 1:1、C rolling-OLS、C Kalman 都是负结果或 mixed-negative；
+C 在本分支上（未合入 main）；D/H 还没开始。**
 
 ---
 
@@ -98,6 +99,15 @@ vs +0.868% / 0.030；test −0.055% / 0.001 vs −0.391% / −0.002。Energy
 Hedge 版本 vol 更低，但 return 也更低、trade 数约翻倍；full/train/test
 没有改善，energy 只是从负接近零；不跑 5 bps。
 
+C Kalman variant（paper-style DLM；252-day likelihood、每 60 天重估 V/W、
+9 点 q grid、strict weekly h、0 bps）：aggregate full gross +0.98%，
+vol 8.9%，max DD −28.9%，turnover 28.3×；test gross +0.52%，vol 16.7%。
+按 turnover 估算 5 bps 后约 −1.8%/yr full、−2.5%/yr test。Per-root paper
+sample：CL −0.79% / Sharpe −0.257，CO −0.57% / −0.236，HO −0.50% /
+−0.458，NG **+1.34% / +0.309**，XB +0.21% / +0.268。CL 最坏单日
+2020-04-20（−48.4% of avg gross），但 2020 全年贡献 +10.0%；没有剔除或
+cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收尾。**
+
 ---
 
 ## 3. 已锁定的决定
@@ -114,7 +124,8 @@ Hedge 版本 vol 更低，但 return 也更低、trade 数约翻倍；full/train
 | D-008 | 主实验统一一个可交易 spread；adjacent pairs 作为 robustness |
 | D-009 | A baseline 回测口径：K=5 ex-ante、per-contract mark state、gross-notional return、周五 rebalance、t+1 fill、roll 在 t+1 平旧、第 6 个 invalid session forced exit、5 bps/leg |
 | D-010 | C baseline：additive roll-chained continuous index（signal-only）、dollar z L=20、weekly ±2/0、1:1 dollar、5 bps/leg；daily/log/adjacent 后置 |
-| D-011 | C hedge-ratio variant：60-day rolling OLS levels、h>0、strict weekly h 调仓、0 bps gross 对照；returns/20/120/cap/Kalman 后置 |
+| D-011 | C hedge-ratio variant：60-day rolling OLS levels、h>0、strict weekly h 调仓、0 bps gross 对照；returns/20/120/cap 后置 |
+| D-012 | C Kalman variant：paper-style DLM、252-day likelihood、q grid、0 bps gross；结果 mixed/negative，C closed；不做 daily replication |
 
 完整内容见 `docs/decisions.md`。
 
@@ -146,15 +157,18 @@ Hedge 版本 vol 更低，但 return 也更低、trade 数约翻倍；full/train
   `notebooks/03_mean_reversion.ipynb`；1:1 weekly；负结果。
 - **C hedge-ratio variant**：60-day rolling OLS h、strict weekly 调仓、
   0 bps gross 对照；负结果。
-- **58 tests**；`docs/backtest_framework.md`；`docs/PROGRESS.md`。
+- **C Kalman variant**：`src/kalman.py`、`tests/test_kalman.py`；
+  rolling-likelihood DLM；aggregate mixed/negative，per-root NG 为正、
+  CL 为负；C 收尾。
+- **66 tests**；`docs/backtest_framework.md`；`docs/PROGRESS.md`。
 
 ---
 
 ## 5. 还没做的
 
-- C 的正式合入（本分支已有 baseline + hedge-ratio，未合入 main）。
-- C 的剩余 robustness：carry-neutral、daily、log、adjacent pairs、
-  returns-based h、20/120 天窗口、h cap、Kalman。
+- C 的正式合入（本分支已有 baseline + rolling-OLS + Kalman，未合入 main）。
+- C 已 closed；不做 daily paper replication。若以后重开，daily CL/NG 是
+  独立的 pre-registered 项目。
 - D/H 的正式实现（engine 可复用）。
 - A 的变体/threshold/cross-section/inverse-vol；residual B。
 - Robustness：D=5/20、liquidity buckets、tick-based cost、
@@ -207,15 +221,15 @@ jupyter nbconvert --execute --to notebook --inplace \
 ## 7. Open questions（下一次决定）
 
 1. **C 何时合入 main**：C 在 `feat/idea-c-mean-reversion`，已有 1:1
-   baseline 和 rolling-OLS hedge-ratio variant（都是负结果）；notebook 03、
-   LOG-0013–0018（baseline）和 LOG-0022–0024（hedge-ratio）已预留。
-   合入后 C 的剩余 robustness 是 carry-neutral、daily、log、returns-based h。
+   baseline、rolling-OLS 和 Kalman variant；notebook 03、LOG-0013–0018
+   （baseline）、LOG-0022–0024（rolling OLS）和 LOG-0026（Kalman）已预留。
+   C 已作为 mixed/negative 收尾，不再做 daily replication。
 2. **A/B 是否还要变体**：A/B 已作为 documented negative baselines；
    A 的 threshold/cross-section/inverse-vol、residual B 都是新假设，
    要单独预注册。
 3. **Liquidity threshold**：baseline 不硬筛；robustness 用 1k/5k/10k/20k 中的哪个？
-4. **Signal 优先级**：C 的剩余 robustness 或 D（curve momentum）/ H
-   （holding-period scan）；D/H 还没实现。
+4. **Signal 优先级**：C 已 closed；下一步是 D（curve momentum）/ H
+   （holding-period scan），还没实现。
 5. **Proposal 的 h**：baseline 用 weekly；H 扫描 1/5/21 天。
 6. **Contract multiplier / tick size**：美元 P&L、容量、tick-based cost 需要时再建。
 7. **Adjacent pairs**：A 主结果只用 main pair；B/D 的多腿以后再决定。
@@ -224,12 +238,12 @@ jupyter nbconvert --execute --to notebook --inplace \
 
 ## 8. 下一步
 
-A、B、C 都已作为负结果收尾：A 的 contango short 方向错；B 的
-adjacent-carry rank 在成本前就为负；C 的 1:1 和滚动 OLS hedge-ratio
-variant 都没有稳健 edge。C 在本分支上，尚未合入 main。下一步：
+A、B、C 都已作为负结果或 mixed-negative 收尾：A 的 contango short 方向错；
+B 的 adjacent-carry rank 在成本前就为负；C 的 1:1、rolling-OLS 和 Kalman
+都没有稳健、可交易的 edge。C 在本分支上，尚未合入 main。下一步：
 
-1. C 合入时保留 notebook 03、LOG-0013–0018（baseline）和 LOG-0022–0024
-   （hedge-ratio）；
-2. C 的剩余 robustness：carry-neutral、daily、log、returns-based h；
+1. C 合入时保留 notebook 03、LOG-0013–0018（baseline）、LOG-0022–0024
+   （rolling OLS）和 LOG-0026（Kalman）；
+2. C 已 closed；不做 daily paper replication；若重开，daily CL/NG 是独立项目；
 3. 做 D/H（engine 可复用）；
 4. 不要用 test 调参；A/B/C 的变体要作为新假设预注册。

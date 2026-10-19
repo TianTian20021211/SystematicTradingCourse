@@ -1195,3 +1195,73 @@ engine, docs, and log numbering consistent with main.
 **Commit:** `docs(status): reconcile C log IDs after rebase`
 
 **Next:** review and merge the C branch; do not mix A/B and C commits.
+
+---
+
+## LOG-0026 · 2026-10-19 18:40 · Phase 6k · Claude Code
+
+**Goal:** Test the paper's Kalman-filter hedge ratio, run the aggregate and
+per-root comparison, and close idea C honestly.
+
+**Actions:**
+- Added `src/kalman.py`:
+  - two-state DLM (`near = beta_0 + beta_1·far`, random-walk beta);
+  - 252-observation warm-up; observation variance from a trailing OLS
+    residual; `q` selected from `1e-9 … 1e-1` by Kalman likelihood every 60
+    observations; `W = qV·I`; `h>0`; no cap.
+- Added `tests/test_kalman.py`: known slope, no-lookahead truncation, missing
+  observations, parameter/key validation.
+- Ran the 0 bps aggregate comparison (1:1, rolling OLS, Kalman) and a per-root
+  dollar P&L report for the paper sample.
+- Added D-012 and documented the close-out.
+
+**Results:**
+- Aggregate Kalman full: gross +0.984%, vol 8.90%, Sharpe 0.0094,
+  max drawdown −28.9%, turnover 28.3×; test: gross +0.519%, vol 16.7%,
+  Sharpe 0.0064.
+- Implied 5 bps net: about −1.8%/yr full, −2.5%/yr test.
+- Per-root paper sample (dollar P&L / average gross): CL −0.79% / Sharpe
+  −0.257, CO −0.57% / −0.236, HO −0.50% / −0.458, NG **+1.34% / +0.309**,
+  XB +0.21% / +0.268.
+- CL worst day is 2020-04-20 (−48.4% of average gross); its 2020
+  calendar-year contribution is +10.0%. No data were excluded, capped, or
+  winsorized.
+- The paper's Sharpe >2 is not reproduced in the weekly K=5 setting. NG is
+  directionally consistent, CL is not. A genuine 5–21 day edge should
+  survive weekly sampling; the gap plus the paper's large grid and weak
+  significance in many combinations points to selection/overfitting.
+
+**Files changed:**
+- `src/kalman.py` — new
+- `tests/test_kalman.py` — new
+- `docs/decisions.md` — D-012
+- `docs/backtest_framework.md`, `docs/data_dictionary.md`
+- `docs/PROGRESS.md`, `docs/HANDOFF.md`, `README.md`, `AGENTS.md`,
+  `docs/onboarding.md`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 66 passed
+- Kalman panel: 252-day likelihood, 60-day re-estimation, 9-point q grid;
+  96.4–96.5% valid h; h median ≈1.001.
+- Per-root dollar P&L report: `output/kalman_per_root_dollar.csv` (local,
+  gitignored).
+
+**Why:** Kalman was the remaining paper-faithful hedge-ratio variant. It
+improves gross return but not risk-adjusted return; costs and drawdowns make
+it non-tradable. The weekly result and the per-root signs do not support the
+paper's strong Sharpe, so C is closed rather than extended into a daily
+replication.
+
+**Validation:**
+- Full suite 66 passed.
+- q-grid boundary checked down to 1e-9; no material boundary effect.
+- Negative prices and extreme P&L are retained; only the statistical
+  reporting was changed to dollar/arithmetic measures.
+- The aggregate and per-root numbers are reproducible from the scripts and
+  the C branch data.
+
+**Commit:** `feat(kalman): add Kalman hedge-ratio and close idea C`
+
+**Next:** D/H; keep C closed unless a pre-registered daily CL/NG project is
+explicitly started.

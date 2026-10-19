@@ -120,7 +120,8 @@ BacktestConfig(
 
 ## 文件
 
-- `src/continuous.py` — roll-chained leg price indices
+- `src/continuous.py` — roll-chained leg price indices, rolling OLS hedge ratio
+- `src/kalman.py` — Kalman-filter hedge ratio (rolling-likelihood DLM)
 - `src/signals.py` — signal functions
 - `src/backtest.py` — target legs + engine
 - `src/metrics.py` — summary, conditional mean, sector, plot
@@ -141,4 +142,10 @@ C（mean reversion）baseline 已实现：连续价差层 + weekly z-score 状�
 C 的 rolling-OLS hedge-ratio variant 也已完成（60-day levels、strict
 weekly h 调仓、0 bps gross 对照）：h 中位数约 1.008；full/train/test 的
 hedge 版本 vol 更低、return 更低、trade 数约翻倍，Sharpe 没有改善；
-energy 1992–2013 只是从负接近零。不跑 5 bps。D/B 还没实现。
+energy 1992–2013 只是从负接近零。不跑 5 bps。
+
+C 的 Kalman hedge-ratio variant（rolling 252-day likelihood、每 60 天重估
+V/W、9 点 q grid）也已完成：aggregate full gross +0.98% / vol 8.9% /
+max DD −28.9%；per-root paper sample 里 NG 为正、CL 为负。5 bps 估算后仍为
+负，且 paper 的 Sharpe >2 没有在 weekly K=5 设置下复现。**C 作为
+mixed/negative 收尾**，不做 daily paper replication。D/B 还没实现。

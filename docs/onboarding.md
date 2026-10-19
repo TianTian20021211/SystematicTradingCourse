@@ -8,9 +8,8 @@
 用 1986–2026 的 Bloomberg 商品期货数据研究 calendar spread。数据层已完成：
 把 generic M1–M4 还原成真实合约，建 rank/contract/return/spread panel。
 A（carry）、B 和 C（mean reversion）的 baseline 都已跑通，但在最简 K=5
-版本里都是负结果；C 的 rolling-OLS hedge-ratio variant 也没有改善。
-C 在独立 branch 上推进（未合入 main），D/H 和 C 的剩余 robustness 是
-下一阶段。
+版本里都是负结果；C 的 rolling-OLS 和 Kalman hedge-ratio variant 也没有
+改善。C 已 closed，在独立 branch 上（未合入 main）；D/H 是下一阶段。
 
 ## 2. 先读什么
 
@@ -89,9 +88,9 @@ python -m pytest -q
 数据层（Phases R–4）已完成：rank/contract/return/spread/universe/episodes
 panel、liquidity diagnostics、adjacent-pair robustness。
 A baseline 和 A 诊断已完成（`02_carry`、`04_a_diagnose`），B 预测试也已完成
-（`05_b_pretest`），C baseline + hedge-ratio variant 已完成
-（`03_mean_reversion`）；A/B/C 都是负结果。下一步是 C 合入、C 的剩余
-robustness（carry-neutral、daily、log、returns-based h）和 D/H；
+（`05_b_pretest`），C baseline + rolling-OLS + Kalman variant 已完成
+（`03_mean_reversion`、`src/kalman.py`）；A/B/C 都是负结果或
+mixed-negative。C 已 closed；下一步是 C 合入和 D/H；
 先读 `docs/PROGRESS.md` 和 `docs/backtest_framework.md`。
 不要用 test set 调参。
 如果发现数据问题，先更新 `docs/logs/AGENT_LOG.md` 和 `docs/decisions.md`。

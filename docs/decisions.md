@@ -243,3 +243,43 @@ Status values: `proposed`, `accepted`, `superseded`.
   must report the `h` distribution and change magnitude. If strict ratio
   rebalancing adds too much turnover, the hold-at-entry variant is a separate
   robustness experiment.
+
+---
+
+## D-012 · Kalman hedge-ratio variant and C close-out
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** The rolling-OLS hedge ratio did not improve C. The paper uses a
+  dynamic linear model with a Kalman-filtered time-varying hedge ratio; test
+  that model before closing the idea.
+- **Decision:**
+  1. **Model:** `near_index_t = beta_0,t + beta_1,t·far_index_t + eps_t`;
+     `beta_t = beta_{t-1} + w_t`; `h_t = beta_1,t`. Prior
+     `beta_0 = [0, 1]`, large diagonal covariance.
+  2. **Variance estimation:** observation variance from the residual variance
+     of an OLS fit on the trailing 252 observations; process-to-observation
+     ratio `q` selected from `1e-9 … 1e-1` by the Kalman log likelihood every
+     60 observations; `W = qV·I`; 252-observation warm-up; `h>0` required;
+     no cap.
+  3. **Signal and trading:** same C state machine (L=20, ±2 entry, 0 exit,
+     weekly), strict weekly h rebalancing, 0 bps gross first; 1:1 and
+     rolling-OLS at 0 bps are the comparison.
+  4. **Result:** aggregate full gross +0.98%, vol 8.9%, max drawdown −28.9%,
+     turnover 28.3×; implied 5 bps net about −1.8%/yr full and −2.5%/yr test.
+     Per-root paper sample (1992–2013): NG +1.34% / Sharpe +0.31, CL −0.79% /
+     −0.26; the paper's WTI strength is not reproduced. CL's worst day is
+     2020-04-20 (−48.4% of average gross), while its 2020 calendar-year
+     contribution is +10.0%; no data are excluded or capped.
+  5. **Close-out:** C is closed as a **mixed/negative** result. Do not build a
+     daily paper-replication branch. A genuine 5–21 day mean-reversion edge
+     should survive weekly sampling in some form; its absence, together with
+     the paper's large commodity × maturity × MA-window grid and its own
+     weak significance in many combinations, suggests the reported Sharpe >2
+     is selection/overfitting rather than a robust effect.
+- **Consequences:** `src/kalman.py` and its tests are the code deliverable;
+  results live in `docs/PROGRESS.md` and `docs/HANDOFF.md`, not a new
+  notebook. C uses LOG-0013–0018 (baseline), LOG-0022–0024 (hedge ratio), and
+  LOG-0026 (Kalman/close-out). If a daily CL/NG replication is ever revisited,
+  it must be a separate pre-registered project with engine daily-rebalance
+  support.

@@ -5,13 +5,13 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 用 1986–2026 的 Bloomberg 商品期货数据，研究同一商品不同到期月之间的 **calendar spread**：曲线形状、roll、carry、价差的可预测性与可交易性。
 
 > 这个 repo 是**数据层 + 研究脚手架**。数据层、A baseline、A 负结果诊断、
-> B 预测试、C baseline 和 C rolling-OLS hedge-ratio variant 已完成；
-> A/B/C 都是负结果。C 在独立 branch 上推进（未合入 main），D/H 和
-> C 的剩余 robustness 是下一阶段。
+> B 预测试、C baseline、C rolling-OLS hedge-ratio 和 C Kalman variant
+> 已完成；A/B/C 都是负结果或 mixed-negative。C 已 closed，在独立 branch
+> 上（未合入 main）；D/H 是下一阶段。
 >
 > A/B 的负结果在 **0 bps（不考虑 transaction cost）** 下已经成立；
-> C 的 1:1 和 hedge-ratio variant 也都不是正的。5 bps/leg 只是放大亏损，
-> 不改变符号。
+> C 的 1:1、rolling OLS 和 Kalman variant 也都不是稳健正的。5 bps/leg
+> 只是放大亏损，不改变符号。
 
 ---
 
@@ -26,7 +26,8 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 - [x] B 预测试：adjacent-carry rank；负结果，skip B
 - [x] C baseline：continuous index + weekly mean-reversion；负结果
 - [x] C hedge-ratio variant：60-day rolling OLS；负结果
-- [ ] D/H + C 的剩余 robustness（C 在 `feat/idea-c-mean-reversion`，未合入 main）
+- [x] C Kalman variant：rolling-likelihood DLM；mixed/negative，C closed
+- [ ] D/H（C 在 `feat/idea-c-mean-reversion`，未合入 main）
 
 `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb`、`02_carry.ipynb`、
 `03_mean_reversion.ipynb`、`04_a_diagnose.ipynb` 和
@@ -97,6 +98,7 @@ docs/
 
 src/                      # 所有数据处理逻辑（notebook 只调用）
   continuous.py           # roll-chained leg indices + rolling OLS hedge ratio
+  kalman.py               # Kalman-filter hedge ratio (rolling-likelihood DLM)
   signals.py              # signal functions（A carry; C mean reversion）
   backtest.py             # target legs + event-loop engine
   metrics.py              # summary / conditional mean / sector / plot
@@ -130,6 +132,8 @@ output/                    # 生成的图/报告（gitignored）
   （signal-only）、dollar z L=20、weekly ±2/0、1:1 dollar、5 bps/leg。
 - **C hedge-ratio variant（D-011）：** 60-day rolling OLS levels、h>0、
   strict weekly h 调仓、0 bps gross 对照；负结果。
+- **C Kalman variant（D-012）：** paper-style DLM、252-day likelihood、
+  q grid、0 bps gross；mixed/negative，C closed。
 
 详见 `docs/decisions.md`。
 
