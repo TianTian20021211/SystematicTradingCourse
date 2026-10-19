@@ -752,6 +752,55 @@ during rolls. The baseline is deliberately weekly; daily is deferred.
 **Next:** build `notebooks/03_mean_reversion.ipynb`; run the energy 1992–2013
 sanity check and the full/train/test backtests.
 
+---
+
+## LOG-0016 · 2026-10-19 17:05 · Phase 6d · Claude Code
+
+**Goal:** Add the idea C baseline notebook and wire it into the reproduction
+script.
+
+**Actions:**
+- Added `notebooks/03_mean_reversion.ipynb`:
+  - K=5 panel rebuilt in memory (no dependency on A's local parquet).
+  - Continuous index + roll diagnostics.
+  - Weekly mean-reversion signal, target legs, energy 1992–2013 sanity check,
+    full/train/test backtests, conditional mean, sector summary, cumulative
+    plot, and an honest negative-result interpretation.
+- Added notebook 03 to `scripts/run_all.sh` (execute + metadata clean).
+- Updated `docs/backtest_framework.md` current status.
+- Outputs are local/gitignored: `output/mean_reversion_*`.
+
+**Files changed:**
+- `notebooks/03_mean_reversion.ipynb` — new
+- `scripts/run_all.sh` — run and clean 03
+- `docs/backtest_framework.md` — C status
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=900 notebooks/03_mean_reversion.ipynb` → OK
+- `python scripts/clean_notebook_metadata.py notebooks/03_mean_reversion.ipynb`
+- `python -m pytest -q` → 51 passed
+
+**Why:** The notebook is the readable baseline record for the teammate; the
+whole-file status docs (PROGRESS/HANDOFF/README/AGENTS/onboarding) are
+intentionally deferred to a post-rebase commit to avoid conflicts with A.
+
+**Validation:**
+- Notebook executes top-to-bottom.
+- Full sample gross +0.53%, net −1.67%, net Sharpe −0.03; train gross +0.87%,
+  net −1.32%; test gross −0.39%, net −2.64%.
+- Energy 1992–2013: gross −1.05%, net −3.12%, net Sharpe −0.04.
+- Conditional mean full sample not significant; train short-spread raw mean
+  −0.000203 (t −2.12), test not significant.
+- Roll diagnostics: all valid changes match expected; 694 NaN changes due to
+  missing previous observations.
+
+**Commit:** `feat(mean-reversion): add idea C baseline benchmark`
+
+**Next:** rebase on latest `main`, update status docs, run `run_all.sh`, then
+merge the branch after review.
+
 
 ## LOG-0019 · 2026-10-19 16:40 · Phase 6b · Claude Code
 

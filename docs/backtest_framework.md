@@ -130,4 +130,10 @@ BacktestConfig(
 ## 当前状态
 
 A baseline 已跑通。结果见 `notebooks/02_carry.ipynb` 和
-`output/carry_summary.csv`。C/D/B 还没实现；加 C 时只加 signal function。
+`output/carry_summary.csv`。
+
+C（mean reversion）baseline 已实现：连续价差层 + weekly z-score 状态机，
+结果见 `notebooks/03_mean_reversion.ipynb` 和
+`output/mean_reversion_summary.csv`。C 的 baseline 是负结果
+（full-sample net Sharpe 约 −0.03；energy sanity check 也是负的）。
+D/B 还没实现。
