@@ -18,7 +18,7 @@
 | LOG-0014 | 2026-10-19 | Phase 6b | Claude Code | Roll-chained continuous leg price indices | src/continuous.py, tests/test_continuous.py | `5c8c25d` |
 | LOG-0015 | 2026-10-19 | Phase 6c | Claude Code | Weekly mean-reversion signal and D-010 | src/signals.py, tests/test_signals.py, tests/test_backtest.py, docs/decisions.md, docs/backtest_framework.md, docs/data_dictionary.md | `8ac3487` |
 | LOG-0016 | 2026-10-19 | Phase 6d | Claude Code | Idea C baseline notebook and negative result | notebooks/03_mean_reversion.ipynb, scripts/run_all.sh, docs/backtest_framework.md | `47fae2e` |
-| LOG-0017 | 2026-10-19 | Phase 6e | Claude Code | Record idea C baseline in status docs | docs/PROGRESS.md, docs/HANDOFF.md, README.md, AGENTS.md, docs/onboarding.md | `pending` |
+| LOG-0017 | 2026-10-19 | Phase 6e | Claude Code | Record idea C baseline in status docs | docs/PROGRESS.md, docs/HANDOFF.md, README.md, AGENTS.md, docs/onboarding.md | `3930bac` |
 | LOG-0019 | 2026-10-19 | Phase 6b | Claude Code | A negative-result diagnosis (side/sector/era, K=5 vs K=10, costs) | src/a_diagnostics.py, tests/test_a_diagnostics.py, notebooks/04_a_diagnose.ipynb, docs/a_negative_result.md | `f02f18b` |
 | LOG-0020 | 2026-10-19 | Phase 6c | Claude Code | Cheap B pre-test (adjacent carry rank) — negative | src/b_pre_test.py, tests/test_b_pre_test.py, notebooks/05_b_pretest.ipynb, docs/b_pretest.md | `d257e0e` |
 | LOG-0021 | 2026-10-19 | Phase 6g | Claude Code | Merge A and B into main; reserve 03/LOG-0013–0018 for C | src/a_diagnostics.py, src/b_pre_test.py, tests/*, notebooks/04_a_diagnose.ipynb, notebooks/05_b_pretest.ipynb, docs/*, README.md, AGENTS.md, scripts/run_all.sh | `a15541e` + `7d1d626` |
