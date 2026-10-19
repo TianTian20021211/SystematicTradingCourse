@@ -7,8 +7,10 @@
 
 用 1986–2026 的 Bloomberg 商品期货数据研究 calendar spread。数据层已完成：
 把 generic M1–M4 还原成真实合约，建 rank/contract/return/spread panel。
-A（carry）和 B 的 baseline 都已跑通，但在最简 K=5 版本里都是负结果；
-C 在独立 branch 上推进（未合入 main），D/H 和 robustness 是下一阶段。
+A（carry）、B 和 C（mean reversion）的 baseline 都已跑通，但在最简 K=5
+版本里都是负结果；C 的 rolling-OLS 和 Kalman hedge-ratio variant 也没有
+改善。A/B 已收尾（不再调参/不做 rescue），C 已 closed 并合入 main；
+D/H 是下一阶段。
 
 ## 2. 先读什么
 
@@ -40,7 +42,7 @@ XLSX 只用于生成 `data/metadata/commodities.csv`；日常 notebook 不依赖
 
 ## 4. 环境与运行
 
-一条命令（会安装依赖、跑 tests、执行 A/B notebook）：
+一条命令（会安装依赖、跑 tests、执行 A/B/C notebook）：
 
 ```bash
 bash scripts/run_all.sh
@@ -56,12 +58,12 @@ jupyter lab
 从 repo 根目录依次运行：
 
 ```text
-notebooks/00_data_audit.ipynb      # 只读审计 + 流动性诊断
-notebooks/01_panel_build.ipynb     # 建 panel，写 data/processed/*.parquet
-notebooks/02_carry.ipynb           # A baseline
-notebooks/04_a_diagnose.ipynb      # A 负结果诊断（依赖 02 的输出）
-notebooks/05_b_pretest.ipynb       # B adjacent-carry 预测试
-# 03 留给 C（mean reversion），该 branch 尚未合入 main
+notebooks/00_data_audit.ipynb        # 只读审计 + 流动性诊断
+notebooks/01_panel_build.ipynb       # 建 panel，写 data/processed/*.parquet
+notebooks/02_carry.ipynb             # A baseline
+notebooks/03_mean_reversion.ipynb    # C baseline + hedge-ratio
+notebooks/04_a_diagnose.ipynb        # A 负结果诊断（依赖 02 的输出）
+notebooks/05_b_pretest.ipynb         # B adjacent-carry 预测试
 ```
 
 测试（不需要 raw data）：
@@ -87,8 +89,9 @@ python -m pytest -q
 数据层（Phases R–4）已完成：rank/contract/return/spread/universe/episodes
 panel、liquidity diagnostics、adjacent-pair robustness。
 A baseline 和 A 诊断已完成（`02_carry`、`04_a_diagnose`），B 预测试也已完成
-（`05_b_pretest`）；A/B 都是负结果，已经收尾，不再调参/不做变体。
-下一步是 C 合入和 D/H；先读 `docs/PROGRESS.md` 和
-`docs/backtest_framework.md`。
+（`05_b_pretest`），C baseline + rolling-OLS + Kalman variant 已完成
+（`03_mean_reversion`、`src/kalman.py`）；A/B/C 都是负结果或
+mixed-negative。A/B 已收尾，C 已 closed 并合入 main；下一步是 D/H；
+先读 `docs/PROGRESS.md` 和 `docs/backtest_framework.md`。
 不要用 test set 调参。
 如果发现数据问题，先更新 `docs/logs/AGENT_LOG.md` 和 `docs/decisions.md`。

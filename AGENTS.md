@@ -124,15 +124,20 @@ do not log every `ls`.
 
 ## Current phase
 
-The data layer and the A/B baselines are complete: K=5 backtest panel,
-per-contract mark state, `src/signals.py`, `src/backtest.py`, `src/metrics.py`,
+The data layer and the A/B/C baselines are complete: K=5 backtest panel,
+per-contract mark state, `src/signals.py`, `src/continuous.py`,
+`src/kalman.py`, `src/backtest.py`, `src/metrics.py`,
 `src/a_diagnostics.py`, `src/b_pre_test.py`, and notebooks `02_carry`,
-`04_a_diagnose`, `05_b_pretest`. A and B are **negative results** in their
-simplest forms and are **closed**: no further parameter tuning or rescue
-variants. C lives on `feat/idea-c-mean-reversion` and is **not** merged;
-notebook `03` and LOG-0013–0018 are reserved for it. The next phase is D/H;
-do not change the locked A conventions without a new `docs/decisions.md`
-entry. Keep the panels reproducible from the raw CSV and the notebooks.
+`03_mean_reversion`, `04_a_diagnose`, `05_b_pretest`. A, B, the C 1:1
+baseline, and the C rolling-OLS hedge-ratio variant are **negative results**.
+A and B are **closed**: no further parameter tuning or rescue variants. The C
+Kalman variant is **mixed/negative**, and C is **closed** and **merged into
+`main`**; notebook `03`, LOG-0013–0018 (baseline), LOG-0022–0024 (rolling
+OLS), and LOG-0026 (Kalman/close-out) are the C slots. The next phase is D/H. Do not build a
+daily C paper-replication branch; if revisited, it is a separate
+pre-registered project. Do not change the locked A/C conventions without a
+new `docs/decisions.md` entry. Keep the panels reproducible from the raw CSV
+and the notebooks.
 
 ## Questions / ownership
 

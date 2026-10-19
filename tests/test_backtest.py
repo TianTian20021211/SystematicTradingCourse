@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src import backtest
+from src import backtest, curve, signals
 
 
 def _case(
@@ -71,19 +71,19 @@ def _run(
 
 
 def test_build_target_legs_signs() -> None:
+    dates = pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-06"])
     pair = pd.DataFrame(
         {
-            "date": pd.to_datetime(["2020-01-02"]),
-            "root": ["X"],
-            "commodity": ["Test"],
-            "sector": ["Test"],
-            "contract_near": ["A"],
-            "contract_far": ["B"],
+            "date": dates,
+            "root": ["X"] * 3,
+            "commodity": ["Test"] * 3,
+            "sector": ["Test"] * 3,
+            "contract_near": ["A"] * 3,
+            "contract_far": ["B"] * 3,
         }
     )
     signal = pd.DataFrame(
-        {"date": pd.to_datetime(["2020-01-02"] * 3), "root": ["X"] * 3,
-         "target": [1.0, -1.0, 0.0]}
+        {"date": dates, "root": ["X"] * 3, "target": [1.0, -1.0, 0.0]}
     )
     out = backtest.build_target_legs(signal, pair)
     assert len(out) == 4  # target 0 produces no legs
@@ -210,6 +210,138 @@ def test_multi_leg_target_sums_leg_pnl() -> None:
     ].iloc[0]
     expected = 0.5 / (103.0 + 101.0 + 0.5 * 99.0)
     assert np.isclose(row["return_gross"], expected)
+
+
+def test_build_target_legs_hedge_ratio_weights() -> None:
+    pair = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2020-01-02", "2020-01-03"]),
+            "root": ["X", "X"],
+            "commodity": ["Test", "Test"],
+            "sector": ["Test", "Test"],
+            "contract_near": ["A", "A"],
+            "contract_far": ["B", "B"],
+        }
+    )
+    signal = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2020-01-02", "2020-01-03"]),
+            "root": ["X", "X"],
+            "target": [1.0, -1.0],
+            "hedge_ratio": [2.0, 0.5],
+        }
+    )
+    out = backtest.build_target_legs(signal, pair)
+    assert "hedge_ratio" in out.columns
+
+    long = out.loc[out["target"] == 1.0]
+    assert long.loc[long["leg"] == "near", "units"].item() == 1.0
+    assert long.loc[long["leg"] == "far", "units"].item() == -2.0
+
+    short = out.loc[out["target"] == -1.0]
+    assert short.loc[short["leg"] == "near", "units"].item() == -1.0
+    assert short.loc[short["leg"] == "far", "units"].item() == 0.5
+
+
+def test_build_target_legs_drops_invalid_hedge_ratio() -> None:
+    dates = pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-06"])
+    pair = pd.DataFrame(
+        {
+            "date": dates,
+            "root": ["X"] * 3,
+            "commodity": ["Test"] * 3,
+            "sector": ["Test"] * 3,
+            "contract_near": ["A"] * 3,
+            "contract_far": ["B"] * 3,
+        }
+    )
+    signal = pd.DataFrame(
+        {
+            "date": dates,
+            "root": ["X"] * 3,
+            "target": [1.0, 1.0, 1.0],
+            "hedge_ratio": [0.0, np.nan, -1.0],
+        }
+    )
+    out = backtest.build_target_legs(signal, pair)
+    assert out.empty
+    assert "hedge_ratio" in out.columns
+
+
+def test_mean_reversion_signal_rolls_position() -> None:
+    dates = pd.bdate_range("2020-01-01", periods=30)
+    spread_values = np.full(30, 0.5)
+    spread_values[7:] = 10.0
+    spread_panel = pd.DataFrame(
+        {"date": dates, "root": "X", "spread_index": spread_values}
+    )
+    signal = signals.mean_reversion_signal(
+        spread_panel,
+        signals.MeanReversionParams(window=10),
+        trading_days=dates,
+        pair_grid=spread_panel[["date", "root"]],
+    )
+    assert signal.loc[signal["date"].eq(dates[15]), "target"].item() == -1.0
+
+    contract_rows = []
+    pair_rows = []
+    for index, date in enumerate(dates):
+        a = 100.0 + index
+        b = 90.0 + index
+        c = 70.0 + index
+        for code, price in (("A", a), ("B", b), ("C", c)):
+            contract_rows.append(
+                dict(date=date, root="X", contract_code=code, settle=price, volume=100)
+            )
+        if index < 15:
+            near, far, settle_near, settle_far = "A", "B", a, b
+        else:
+            near, far, settle_near, settle_far = "B", "C", b, c
+        pair_rows.append(
+            dict(
+                date=date, root="X", commodity="Test", sector="Test",
+                contract_near=near, contract_far=far,
+                settle_near=settle_near, settle_far=settle_far,
+                spread_dollar=settle_near - settle_far,
+            )
+        )
+    contract = pd.DataFrame(contract_rows)
+    pairs = pd.DataFrame(pair_rows)
+    targets = backtest.build_target_legs(signal, pairs)
+    result = backtest.run_backtest(
+        pairs, contract, targets, backtest.BacktestConfig()
+    )
+
+    rolls = result.trades.loc[result.trades["reason"] == "roll"]
+    assert not rolls.empty
+    assert rolls["date"].min() == dates[16]
+    assert set(rolls["contract"]) == {"A", "B", "C"}
+    exits = result.trades.loc[
+        (result.trades["reason"] == "exit") & (result.trades["date"] == dates[16])
+    ]
+    assert exits.empty
+
+
+def test_weekly_rebalance_dates_match_legacy_expression() -> None:
+    days = pd.bdate_range("2020-01-01", periods=30)
+    series = pd.Series(days)
+    expected = set(
+        pd.to_datetime(
+            series.groupby(series.dt.to_period("W-FRI")).max()
+        ).tolist()
+    )
+    assert curve.weekly_rebalance_dates(days) == expected
+
+
+def test_weekly_rebalance_dates_holiday_fallback() -> None:
+    days = pd.DatetimeIndex(
+        [
+            day
+            for day in pd.bdate_range("2020-12-21", "2020-12-25")
+            if day != pd.Timestamp("2020-12-25")
+        ]
+    )
+    assert curve.weekly_rebalance_dates(days) == {pd.Timestamp("2020-12-24")}
 
 
 def test_config_guards() -> None:

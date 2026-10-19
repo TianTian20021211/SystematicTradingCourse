@@ -9,6 +9,10 @@ data panels
   rank / contract / pairs / spread
         │
         ▼
+continuous index layer               src/continuous.py
+  date, root, spread_index
+        │
+        ▼
 signal layer                         src/signals.py
   date, root, score, target
         │
@@ -29,6 +33,7 @@ metrics                              src/metrics.py
 
 | 层 | 知道什么 | 不知道什么 |
 |---|---|---|
+| Continuous | price-change chaining、roll 日不 jump | signal 规则、成交、P&L |
 | Signal | carry/mean reversion 怎么算 | 成交、成本、roll |
 | Target legs | 用哪张合约、多少 units | signal 内部逻辑 |
 | Engine | position、roll、missing、cost、P&L | 这是哪个 idea |
@@ -53,13 +58,23 @@ summary = metrics.summarize(result)
 
 ## 加一个新 signal（例如 C）
 
+C 需要一个 roll-safe 的连续价差序列；这是 `src/continuous.py` 的职责，
+signal function 只消费 `spread_index`：
+
 ```python
-signal = signals.mean_reversion_signal(bt["spread"], params)
+leg = continuous.build_continuous_leg_prices(bt["pairs"], bt["contract"])
+spread_index = continuous.build_spread_index(leg)
+signal = signals.mean_reversion_signal(
+    spread_index,
+    signals.MeanReversionParams(window=20),
+    trading_days=curve.trading_calendar(bt["contract"]),
+    pair_grid=bt["pairs"][["date", "root"]],
+)
 targets = backtest.build_target_legs(signal, bt["spread"])
 result = backtest.run_backtest(bt["spread"], bt["contract"], targets, config)
 ```
 
-只新增 signal function，输出同样的 `date, root, score, target`；
+signal function 输出同样的 `date, root, score, target`；
 engine 和 metrics 不变。
 
 ## 改仓位规则
@@ -67,6 +82,7 @@ engine 和 metrics 不变。
 只改 `build_target_legs`：
 
 - A：near/far `units = ±1`；
+- hedge ratio：signal 带 `hedge_ratio` 列时，far `units = −target × h`；
 - B 多腿：一个 group 输出多行；
 - cross-section / inverse-vol：在这一层改权重。
 
@@ -104,6 +120,8 @@ BacktestConfig(
 
 ## 文件
 
+- `src/continuous.py` — roll-chained leg price indices, rolling OLS hedge ratio
+- `src/kalman.py` — Kalman-filter hedge ratio (rolling-likelihood DLM)
 - `src/signals.py` — signal functions
 - `src/backtest.py` — target legs + engine
 - `src/metrics.py` — summary, conditional mean, sector, plot
@@ -114,4 +132,20 @@ BacktestConfig(
 ## 当前状态
 
 A baseline 已跑通。结果见 `notebooks/02_carry.ipynb` 和
-`output/carry_summary.csv`。C/D/B 还没实现；加 C 时只加 signal function。
+`output/carry_summary.csv`。
+
+C（mean reversion）baseline 已实现：连续价差层 + weekly z-score 状态机，
+结果见 `notebooks/03_mean_reversion.ipynb` 和
+`output/mean_reversion_summary.csv`。C 的 baseline 是负结果
+（full-sample net Sharpe 约 −0.03；energy sanity check 也是负的）。
+
+C 的 rolling-OLS hedge-ratio variant 也已完成（60-day levels、strict
+weekly h 调仓、0 bps gross 对照）：h 中位数约 1.008；full/train/test 的
+hedge 版本 vol 更低、return 更低、trade 数约翻倍，Sharpe 没有改善；
+energy 1992–2013 只是从负接近零。不跑 5 bps。
+
+C 的 Kalman hedge-ratio variant（rolling 252-day likelihood、每 60 天重估
+V/W、9 点 q grid）也已完成：aggregate full gross +0.98% / vol 8.9% /
+max DD −28.9%；per-root paper sample 里 NG 为正、CL 为负。5 bps 估算后仍为
+负，且 paper 的 Sharpe >2 没有在 weekly K=5 设置下复现。**C 作为
+mixed/negative 收尾**，不做 daily paper replication。D/B 还没实现。
