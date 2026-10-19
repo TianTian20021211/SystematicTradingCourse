@@ -120,19 +120,27 @@ def validate_roll_queue(rank_panel: pd.DataFrame) -> dict[str, object]:
 
 def add_eligibility(
     panel: pd.DataFrame,
-    d: int = config.D,
+    d: int | None = config.D,
     k: int = config.DELIVERY_BUFFER_K,
 ) -> pd.DataFrame:
     """Flag contracts that are safe to hold for a calendar spread.
 
-    Eligible requires: a priced contract code, no delivery-month exposure,
-    at least ``k`` trading sessions before the delivery month starts, and more
-    than ``d`` sessions before the contract's last observed date.
+    Eligible requires: a priced contract code, no delivery-month exposure, and
+    at least ``k`` trading sessions before the delivery month starts. If ``d``
+    is not None, the contract must also have more than ``d`` sessions before its
+    last observed date. Pass ``d=None`` for ex-ante K-only eligibility (no
+    ``last_trade_proxy`` condition).
     """
 
     result = panel.copy()
-    missing_calendar = result["days_to_delivery_start"].isna() | result["days_to_last_trading"].isna()
-    too_close_expiry = result["days_to_last_trading"].le(d)
+    missing_calendar = result["days_to_delivery_start"].isna()
+    if d is not None:
+        missing_calendar = missing_calendar | result["days_to_last_trading"].isna()
+    too_close_expiry = (
+        result["days_to_last_trading"].le(d)
+        if d is not None
+        else pd.Series(False, index=result.index)
+    )
     too_close_delivery = result["days_to_delivery_start"].lt(k)
     missing_price = result["settle"].isna()
     missing_code = result["contract_code"].isna()
@@ -161,7 +169,7 @@ def add_eligibility(
 
 def select_pairs(
     panel: pd.DataFrame,
-    d: int = config.D,
+    d: int | None = config.D,
     k: int = config.DELIVERY_BUFFER_K,
     max_rank: int = 3,
 ) -> pd.DataFrame:

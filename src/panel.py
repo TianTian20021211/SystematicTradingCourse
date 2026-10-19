@@ -320,7 +320,7 @@ def liquidity_summary(
 
 def build_adjacent_pairs(
     enriched_rank_panel: pd.DataFrame,
-    d: int = config.D,
+    d: int | None = config.D,
     k: int = config.DELIVERY_BUFFER_K,
 ) -> pd.DataFrame:
     """Build all eligible adjacent pairs, flagging the main selected pair.
@@ -386,7 +386,7 @@ def build_adjacent_pairs(
 
 def build_all(
     rank_panel: pd.DataFrame,
-    d: int = config.D,
+    d: int | None = config.D,
     k: int = config.DELIVERY_BUFFER_K,
 ) -> dict[str, pd.DataFrame]:
     """Build the full analysis stack from a rank panel."""
@@ -411,6 +411,127 @@ def build_all(
         "adjacent_pairs": adjacent_pairs,
         "adjacent_spread": adjacent_spread,
     }
+
+
+def build_backtest_panel(
+    rank_panel: pd.DataFrame,
+    d: int | None = None,
+    k: int = config.DELIVERY_BUFFER_K,
+) -> dict[str, pd.DataFrame]:
+    """Build K-only backtest pair/spread panels.
+
+    This is the backtest counterpart of ``build_all``: it defaults to
+    ``d=None`` (no ``last_trade_proxy`` condition), does not build
+    universe/episodes/adjacent panels, and is meant to be saved under distinct
+    ``backtest_*`` names so the D=10 research panels are untouched.
+    """
+
+    contract = build_contract_panel(rank_panel)
+    enriched = enrich_rank_panel(rank_panel, contract)
+    pairs = curve.select_pairs(enriched, d=d, k=k)
+    spread = build_spread_panel(pairs)
+    return {
+        "rank": rank_panel,
+        "contract": contract,
+        "pairs": pairs,
+        "spread": spread,
+    }
+
+
+def _mark_state_for_contract(
+    rows: pd.DataFrame,
+    trading_days: pd.DatetimeIndex,
+) -> pd.DataFrame:
+    """Per-contract mark state on the union trading calendar.
+
+    ``rows`` is one contract's contract-panel rows. The contract's date range is
+    reindexed to the union calendar so absent sessions are counted as invalid.
+    A price is valid when settle is present and the row is not stale; stale means
+    the settle is unchanged vs the last valid settle *and* volume is zero or
+    missing. ``sessions_since_valid`` counts missing, stale, and absent rows.
+    """
+
+    first = rows["first_date"].iloc[0]
+    last = rows["last_date"].iloc[0]
+    calendar = trading_days[(trading_days >= first) & (trading_days <= last)]
+    base = pd.DataFrame({"date": calendar})
+    base = base.merge(
+        rows[["date", "settle", "volume"]],
+        on="date",
+        how="left",
+    )
+    base["is_absent"] = base["settle"].isna() & ~base["date"].isin(rows["date"])
+    base["is_missing"] = base["settle"].isna()
+
+    last_valid = np.nan
+    run = 0
+    marks: list[float] = []
+    sessions: list[int] = []
+    valid_flags: list[bool] = []
+    stale_flags: list[bool] = []
+    for settle, volume in zip(base["settle"].to_numpy(), base["volume"].to_numpy()):
+        has_price = not pd.isna(settle)
+        stale = (
+            has_price
+            and not pd.isna(last_valid)
+            and settle == last_valid
+            and (pd.isna(volume) or volume == 0)
+        )
+        valid = has_price and not stale
+        if valid:
+            last_valid = settle
+            run = 0
+        else:
+            run += 1
+        marks.append(last_valid if not pd.isna(last_valid) else np.nan)
+        sessions.append(run)
+        valid_flags.append(valid)
+        stale_flags.append(stale)
+
+    base["settle_mark"] = marks
+    base["sessions_since_valid"] = sessions
+    base["is_valid"] = valid_flags
+    base["is_stale"] = stale_flags
+    base["last_valid_settle"] = base["settle_mark"]
+    base["root"] = rows["root"].iloc[0]
+    base["contract_code"] = rows["contract_code"].iloc[0]
+    return base[
+        [
+            "date", "root", "contract_code", "settle", "volume",
+            "settle_mark", "last_valid_settle", "sessions_since_valid",
+            "is_valid", "is_stale", "is_missing", "is_absent",
+        ]
+    ]
+
+
+def build_contract_mark_state(
+    contract_panel: pd.DataFrame,
+    trading_days: pd.DatetimeIndex | None = None,
+    contracts: list[str] | None = None,
+) -> pd.DataFrame:
+    """Build per-contract mark state for the backtest.
+
+    ``contracts`` can restrict the grid to contracts used by the backtest
+    (near/far legs) to keep memory bounded. The grid is keyed by
+    ``(date, root, contract_code)`` and is the source of truth for entry
+    blocking, last-valid marking, and the 5-session forced-exit cap.
+    """
+
+    if trading_days is None:
+        trading_days = curve.trading_calendar(contract_panel)
+    panel = contract_panel
+    if contracts is not None:
+        panel = panel.loc[panel["contract_code"].isin(contracts)]
+    panel = panel.sort_values(["root", "contract_code", "date"])
+    parts = [
+        _mark_state_for_contract(rows, trading_days)
+        for _, rows in panel.groupby(["root", "contract_code"], sort=False)
+    ]
+    if not parts:
+        return pd.DataFrame()
+    return pd.concat(parts, ignore_index=True).sort_values(
+        ["date", "root", "contract_code"]
+    ).reset_index(drop=True)
 
 
 def save_panel(

@@ -455,6 +455,61 @@ collaboration.
 **Next:** commit/push, then verify a second `run_all.sh` leaves `git status`
 clean. Stop before signals.
 
+---
+
+## LOG-0010 · 2026-10-19 15:16 · Phase 5 · Claude Code
+
+**Goal:** Establish the foundation for the A (carry) baseline: an ex-ante K=5
+backtest panel, a per-contract mark state, the carry signal, and a live
+progress file for other agents/teammates.
+
+**Actions:**
+- Added `d=None` K-only mode to `add_eligibility` / `select_pairs`; the
+  `missing_calendar` and `too_close_expiry` conditions no longer require
+  `days_to_last_trading` when `d` is None.
+- Added `build_backtest_panel()` and `build_contract_mark_state()` to
+  `src/panel.py`. The backtest panel is K=5 and saved under distinct
+  `backtest_*` names; the D=10 research panels are unchanged.
+- Added `src/signals.py` with `CarryParams` and `carry_signal()`
+  (`sign(P_near − P_far)`; annualized carry stored for diagnostics).
+- Added `docs/PROGRESS.md`: live status, decisions, files, verification, next.
+- Added D-009 to `docs/decisions.md` recording the backtest conventions.
+- Updated `docs/logs/INDEX.md` with LOG-0010.
+
+**Files changed:**
+- `src/curve.py` — `d=None` eligibility
+- `src/panel.py` — `build_backtest_panel`, `build_contract_mark_state`
+- `src/signals.py` — new
+- `docs/PROGRESS.md` — new
+- `docs/decisions.md` — D-009
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 15 passed
+- `build_backtest_panel(rank, d=None, k=5)` → 236,385 pair-dates;
+  M1–M2 159,817 / M2–M3 76,568
+- `carry_signal(backtest_spread)` → target counts: −1 161,058 / +1 73,661 /
+  0 1,666; one NaN `carry_ann` (CL 2020-04-20)
+
+**Why:** D-002's D=10 condition uses the contract's final appearance in the
+full extract, which is ex post and would leak future information into pair
+selection. The backtest needs an ex-ante universe and explicit mark/return/cost
+conventions; the research panels remain useful for QA and description.
+
+**Validation:**
+- Existing 15 tests pass; the K=5 panel row count and pair mix match the
+  independent simulation in the plan.
+- The per-contract mark state was spot-checked on 20 contracts; it counts
+  missing/stale/absent sessions and preserves the last valid price.
+- The negative CL price on 2020-04-20 produces NaN annualized carry but a valid
+  dollar spread and target.
+
+**Commit:** `feat(backtest): add K=5 panel, mark state, and carry signal`
+
+**Next:** implement `src/backtest.py` (pair-specific pending orders,
+t+1 execution, roll/missing/cost state machine), then `src/metrics.py`, tests,
+and `notebooks/02_carry.ipynb`.
+
 
 
 

@@ -123,3 +123,45 @@ Status values: `proposed`, `accepted`, `superseded`.
   representations are transformations, not different trades.
 - **Consequences:** A/B/C/D/H are comparable at the instrument level; any
   per-idea pair change must be documented as a separate robustness experiment.
+
+---
+
+## D-009 · Carry baseline backtest conventions
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** D-002 uses `days_to_last_trading`, which is computed from each
+  contract's final appearance in the full extract (`last_trade_proxy`). That is
+  ex post information and cannot be used for pair selection in a backtest. The
+  research panels remain useful for QA and description, but the backtest needs
+  an ex ante universe and explicit execution/cost conventions so A (and later
+  C/D/B) are comparable.
+- **Decision:**
+  1. **Eligibility:** the backtest uses K=5 ex ante only
+     (`days_to_delivery_start >= 5`; `d=None`), not D=10. The existing D=10
+     research panels are kept and are not overwritten.
+  2. **Mark state:** per-contract `last_valid_settle` and
+     `sessions_since_valid`, counting missing, stale (unchanged settle with
+     zero/missing volume), and absent sessions. The rank-level `stale_run` is
+     not used for the backtest.
+  3. **Signal timing:** weekly rebalance on the last trading day of the week
+     (fixed Friday with holiday fallback); signal at t close, fill at t+1
+     close. No same-close execution.
+  4. **Roll:** detect the pair change at t; close the old pair at t+1 using
+     last valid marks; flag `roll_leg_missing` if the old leg is absent. Open
+     the new pair from the t-close signal at t+1. Never difference spreads
+     across different pairs.
+  5. **Return:** gross-notional return,
+     `position × Δspread / (|P_near| + |P_far|)`, with the denominator using
+     the previous trading day's last valid prices. No dollar multiplier yet.
+  6. **Missing/stale:** no new entry if either leg is invalid; hold at last
+     valid; forced exit on the 6th consecutive invalid session, with a flag.
+  7. **Costs:** 5 bps per leg of that leg's notional, applied to actual net
+     traded legs (entry/exit 2 leg-units, flip/roll 4 leg-units, same-sign
+     rebalance 0).
+  8. **Sample:** 1986–2015 train, 2016–2026 test, each starting flat.
+  9. **Leverage:** none; Sharpe uses daily returns, rf=0, `sqrt(252)`.
+- **Consequences:** A uses an ex ante, testable universe. D=10 remains the
+  research/QA convention; a point-in-time D=10 proxy is deferred. The backtest
+  panels are saved under distinct `backtest_*` names. Any later change to
+  these rules requires a new decision entry.
