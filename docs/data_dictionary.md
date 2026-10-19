@@ -262,6 +262,12 @@ still uses the raw dollar spread.
 `roll_diagnostics()` adds `raw_spread_change`, `spread_index_change`, and
 `expected_change = delta_near − delta_far`.
 
+`rolling_ols_hedge_ratio()` estimates `h_t = Cov(near, far) / Var(far)` on the
+trailing window (default 60 days, `min_periods=60`) and returns
+`hedge_ratio`, `spread_index = near_index − h_t·far_index`,
+`hedge_ratio_valid`, and `hedge_window_count`. Non-positive or non-finite `h`
+is invalid and the hedge index is NaN there.
+
 ### 10.3c Mean-reversion signal (idea C)
 
 `src.signals.mean_reversion_signal()` returns a complete daily target path:
@@ -303,6 +309,7 @@ Conventions:
 | `units` | Signed spread units |
 | `leg` | `near` / `far` |
 | `target` | Signal target |
+| `hedge_ratio` | Optional; far units = `−target × hedge_ratio`; absent for the 1:1 baseline |
 
 ### 10.5 `BacktestResult`
 

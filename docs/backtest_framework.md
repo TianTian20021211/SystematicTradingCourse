@@ -82,6 +82,7 @@ engine 和 metrics 不变。
 只改 `build_target_legs`：
 
 - A：near/far `units = ±1`；
+- hedge ratio：signal 带 `hedge_ratio` 列时，far `units = −target × h`；
 - B 多腿：一个 group 输出多行；
 - cross-section / inverse-vol：在这一层改权重。
 

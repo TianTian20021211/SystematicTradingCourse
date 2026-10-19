@@ -206,3 +206,40 @@ Status values: `proposed`, `accepted`, `superseded`.
 - **Consequences:** The continuous index is a signal-construction object, not a
   back-adjusted price. Any later change to the index construction or the state
   machine requires a new decision entry.
+
+---
+
+## D-011 · Idea C rolling-OLS hedge-ratio variant
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** The 1:1 C baseline is a negative result. Before abandoning the
+  idea, test whether a time-varying hedge ratio improves the same
+  mean-reversion signal.
+- **Decision:**
+  1. **Estimation:** rolling OLS on the levels of the continuous leg indices,
+     `near_index = a + h·far_index + e`; `h = Cov(near, far) / Var(far)`.
+     Window 60 trading days, `min_periods=60`; 20/120 days are robustness.
+  2. **Validity:** `h` must be finite and positive. Invalid `h` makes the
+     hedge index NaN and forces `target=0` (flat); the last valid `h` is not
+     carried forward. No cap in the main experiment; extreme values are
+     reported and capped only as a robustness check.
+  3. **Signal:** hedge index `p_t = near_index_t − h_t·far_index_t`; same
+     state machine as C (L=20, ±2 entry, 0 exit, weekly evaluation, 80%
+     valid observations).
+  4. **Trading:** strict weekly rebalancing to the current `h`: near units =
+     target, far units = `−target·h_t`; if `h` changes, the difference is
+     traded. Pair rolls use the current `h` on the roll date.
+  5. **Costs:** the first experiment uses 0 bps and compares gross-to-gross
+     with the 1:1 baseline at 0 bps. A 5 bps run follows only if the gross
+     hedge result is materially better.
+  6. **Universe:** all 24 commodities, main pair; energy 1992–2013 sanity
+     check; full 1986–2026, train 1986–2015, test 2016–2026.
+  7. **Robustness:** returns-based `h`, 20/120-day windows, and a cap on
+     extreme `h` are separate checks. A Kalman filter remains deferred.
+- **Consequences:** The hedge-ratio variant is a separate instrument from the
+  1:1 C baseline and is not merged into the main C result. Because `h_t`
+  changes, the hedge index can jump when the weight changes; the experiment
+  must report the `h` distribution and change magnitude. If strict ratio
+  rebalancing adds too much turnover, the hold-at-entry variant is a separate
+  robustness experiment.
