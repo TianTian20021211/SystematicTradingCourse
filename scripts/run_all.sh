@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Reproduce the data layer, the A/B/C/D baselines and the v2 re-runs from the
-# raw Bloomberg CSV.
+# Reproduce the data layer and the four per-idea notebooks from the raw CSV.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -24,31 +23,23 @@ echo "== Execute notebooks =="
 jupyter nbconvert --execute --to notebook --inplace notebooks/00_data_audit.ipynb
 jupyter nbconvert --execute --to notebook --inplace notebooks/01_panel_build.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=600 notebooks/02_carry.ipynb
+  --ExecutePreprocessor.timeout=900 notebooks/10_idea_a_carry.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/03_mean_reversion.ipynb
+  --ExecutePreprocessor.timeout=900 notebooks/11_idea_b_adjacent_carry.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=600 notebooks/04_a_diagnose.ipynb
+  --ExecutePreprocessor.timeout=1800 notebooks/12_idea_c_mean_reversion.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
-jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/06_curve_momentum.ipynb
-jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=1800 notebooks/07_backtest_framework.ipynb
+  --ExecutePreprocessor.timeout=900 notebooks/13_idea_d_curve_momentum.ipynb
 
-echo "== v2 re-runs (A/D/C/C-hedge/B) =="
+echo "== Cross-strategy comparison table (optional utility) =="
 "$PYTHON" scripts/run_v2_rerun.py \
   --strategies a,d,c,c_ols,c_kalman,b --force
-jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/08_v2_rerun.ipynb
 
 echo "== Remove volatile notebook execution timestamps =="
 "$PYTHON" scripts/clean_notebook_metadata.py \
   notebooks/00_data_audit.ipynb notebooks/01_panel_build.ipynb \
-  notebooks/02_carry.ipynb notebooks/03_mean_reversion.ipynb \
-  notebooks/04_a_diagnose.ipynb notebooks/05_b_pretest.ipynb \
-  notebooks/06_curve_momentum.ipynb notebooks/07_backtest_framework.ipynb \
-  notebooks/08_v2_rerun.ipynb
+  notebooks/10_idea_a_carry.ipynb notebooks/11_idea_b_adjacent_carry.ipynb \
+  notebooks/12_idea_c_mean_reversion.ipynb notebooks/13_idea_d_curve_momentum.ipynb
 
 echo "== Processed panels =="
 ls -lh data/processed/*.parquet

@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-"""Run the v2 A/D/C/C-hedge/B re-runs and cache the tables.
+"""Run the v2 A/D/C/C-hedge/B re-runs and cache the aggregate tables.
+
+This is a manual aggregate utility for ``output/v2_rerun/comparison.csv``.
+The official narrative is one notebook per idea (10–13); those notebooks
+compute their own strategy and save per-strategy tables.
 
 Usage:
     python scripts/run_v2_rerun.py --strategies a,d,c --force

@@ -2135,3 +2135,47 @@ direction and the root's gross notional.
 **Commit:** `feat(v2): expose valued positions and add position-book figure`
 
 **Next:** Build notebooks 10–13.
+
+---
+
+## LOG-0049 · 2026-10-19 23:52 · Phase 10b · Claude Code
+
+**Goal:** Add one notebook per trading idea, each with PnL, positions and one
+overall Sharpe.
+
+**Actions:**
+- Added `10_idea_a_carry.ipynb`, `11_idea_b_adjacent_carry.ipynb`,
+  `12_idea_c_mean_reversion.ipynb` (1:1 / rolling OLS / Kalman) and
+  `13_idea_d_curve_momentum.ipynb`.
+- Each notebook runs only its own v2 strategy, saves
+  `output/v2_rerun/<name>_{performance,root}.csv` and
+  `output/v2_rerun/<name>_positions_month_end.csv`, and displays
+  `figures.nav_by_cost_layer` plus `figures.positions`.
+- The C notebook runs the three pre-registered variants on one shared
+  `load_v2_inputs` panel and reports one Sharpe per variant.
+- Updated `scripts/run_all.sh` to execute 00/01 and 10–13; kept
+  `scripts/run_v2_rerun.py` as the optional aggregate utility for
+  `comparison.csv`.
+- Executed all four notebooks and cleaned volatile metadata.
+
+**Files changed:**
+- `notebooks/10_idea_a_carry.ipynb`, `11_idea_b_adjacent_carry.ipynb`,
+  `12_idea_c_mean_reversion.ipynb`, `13_idea_d_curve_momentum.ipynb`
+- `scripts/run_all.sh`, `scripts/run_v2_rerun.py`
+
+**Commands:**
+- `jupyter nbconvert --execute --to notebook --inplace ...` for 10–13
+- `python scripts/clean_notebook_metadata.py ...`
+- `python -m pytest -q` → 124 passed
+
+**Why:** The user wants each idea in one notebook, with the same three
+deliverables, instead of the old multi-notebook layout.
+
+**Validation:** all notebooks have zero error outputs; performance matches
+the existing v2 tables (A −0.484 / −2.610, B −1.131 / −4.469, C1 +0.614 /
+−3.695, C2 +0.124 / −3.060, C3 +0.613 / −6.099, D +0.219 / −1.418); figures
+are in `output/figures/idea_*`.
+
+**Commit:** `feat(notebooks): add one notebook per trading idea`
+
+**Next:** Retire notebooks 02–08 and update docs/logs (D-020).
