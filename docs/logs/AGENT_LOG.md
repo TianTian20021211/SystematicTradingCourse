@@ -1933,3 +1933,55 @@ correctly, and flat days must not be dropped from annualisation.
 **Commit:** `feat(v2): add A/D/C/C-hedge/B signal adapters`
 
 **Next:** Add the rerun driver, notebook 08 and refreshed notebook 07.
+
+---
+
+## LOG-0044 · 2026-10-19 22:55 · Phase 9d · Claude Code
+
+**Goal:** Run the v2 re-runs and add notebook 08.
+
+**Actions:**
+- Added `src/v2_rerun.py` (`RerunSettings`, `run_strategy`, `run_all`,
+  `save_results`) and `scripts/run_v2_rerun.py` with caching and
+  `--strategies`.
+- Ran A/D/C/C-OLS/C-Kalman/B at USD 10m; wrote `output/v2_rerun/*.csv`.
+- Added `notebooks/08_v2_rerun.ipynb` (conventions, full/train/test tables,
+  framework comparison, findings) and executed it.
+- Re-executed notebook 07 after the calendar/resize fixes.
+- Added the driver and notebook 08 to `scripts/run_all.sh`.
+
+**Results (full sample, gross → all-in net):**
+- A: −0.48% → −2.61%
+- D: +0.22% → −1.42%
+- C 1:1: +0.61% → −3.70%
+- C OLS: +0.12% → −3.06%
+- C Kalman: +0.61% → −6.10%
+- B: −1.13% → −4.47%
+
+Test gross: D −0.21%, B −1.23%; C +0.16%, C-Kalman +0.98%, C-OLS −0.01%.
+All remain negative/mixed; no test tuning.
+
+**Files changed:** `src/v2_rerun.py`, `scripts/run_v2_rerun.py`,
+`scripts/run_all.sh`, `notebooks/07_backtest_framework.ipynb`,
+`notebooks/08_v2_rerun.ipynb`, `docs/logs/*`
+
+**Commands:**
+- `~/miniconda3/envs/mfe/bin/python scripts/run_v2_rerun.py \
+  --strategies a,d,c,c_ols,c_kalman,b --force`
+- `jupyter nbconvert --execute ... notebooks/08_v2_rerun.ipynb` → OK
+- `jupyter nbconvert --execute ... notebooks/07_backtest_framework.ipynb` → OK
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 117 passed
+
+**Why:** The user asked to re-run A/D/C through v2 and integrate C hedge,
+Kalman and B.
+
+**Validation:**
+- Notebooks 07/08 have zero error outputs.
+- `output/v2_rerun/comparison.csv` has full/train/test × four layers for
+  all six strategies.
+- A's notebook 07 gross is unchanged at −0.48%; turnover 26.133× after
+  the full-calendar fix.
+
+**Commit:** `feat(v2): run A/D/C/C-hedge/B and add notebook 08`
+
+**Next:** Write the v1/v2 comparison doc and update status docs.
