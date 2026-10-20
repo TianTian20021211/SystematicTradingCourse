@@ -270,3 +270,42 @@ def block_bootstrap_ic(
         rows.append(dict(root=root, ic=ic, ci_lo=lo, ci_hi=hi, p_value=p, n=len(g)))
         draws[root] = boot
     return pd.DataFrame(rows), draws
+
+
+def block_bootstrap_mean(
+    values: pd.DataFrame,
+    col: str,
+    block: int = 21,
+    n_boot: int = 2000,
+    min_obs: int = 252,
+    seed: int = 0,
+    null: float = 0.0,
+    stat: str = "mean",
+) -> tuple[pd.DataFrame, dict]:
+    """Per-root moving-block bootstrap of the time-series mean (or median) of ``col``.
+
+    Used for daily fit statistics (R², or a paired daily difference such as
+    the R² gain from adding a component): each root's dates are resampled in
+    blocks of ``block`` consecutive observations.
+
+    Returns:
+        ``summary`` (``root, mean, ci_lo, ci_hi, p_value, n``; ``mean`` holds
+        the chosen statistic; two-sided p for statistic = ``null``) and
+        ``draws`` (root -> bootstrap statistics). Use ``stat="median"`` for
+        heavy-tailed series such as leave-one-out R².
+    """
+
+    f = values[["date", "root", col]].dropna().sort_values(["root", "date"])
+    rng = np.random.default_rng(seed)
+    rows, draws = [], {}
+    for root, g in f.groupby("root"):
+        x = g[col].to_numpy(float)
+        if len(x) < max(min_obs, 2 * block):
+            continue
+        func = np.median if stat == "median" else np.mean
+        boot = func(x[_block_indices(len(x), block, n_boot, rng)], axis=1)
+        p = min(1.0, 2 * min((boot <= null).mean(), (boot >= null).mean()))
+        lo, hi = np.quantile(boot, [0.025, 0.975])
+        rows.append(dict(root=root, mean=func(x), ci_lo=lo, ci_hi=hi, p_value=p, n=len(x)))
+        draws[root] = boot
+    return pd.DataFrame(rows), draws

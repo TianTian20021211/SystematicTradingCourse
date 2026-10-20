@@ -1583,3 +1583,29 @@ Paper timing on the paper sample: 3.55%/yr, Sharpe 2.03; tradable: −0.18%/yr
 **Commit:** `feat(nelson-siegel): replicate idea E; lambda selection; $1m book` (`56ecff6`)
 
 **Next:** D (curve momentum) on v2.
+
+## LOG-0036 · 2026-10-20 · Phase 8c · Claude Code
+
+**Goal:** Idea E follow-ups requested after D-017 (D-018).
+
+**Actions:**
+- `nelson_siegel.fit_quality` (in-sample, adjusted and leave-one-out R² of
+  nested models); `horizon.block_bootstrap_mean` (mean or median);
+  `figures.bootstrap_distribution` (generic, signed colours) with the IC
+  figure as a wrapper; `figures.k_sweep_timing`; sub-period NAV.
+- `simulate.same_settle` and `report.k_sweep(same_settle=..., start, end)`
+  for paper-timing diagnostics through the cost pipeline.
+- New `src/ns_kalman.py`: random-walk DNS filter with causal (r, q)
+  selection, LOO and one-step metrics, Kalman signal strategy, A/B table.
+- Notebook 07: sections 2b, 5b, 5c and a full section 11 A/B; conclusions.
+- Tests: fit quality, block bootstrap, same-settle timing, Kalman filter.
+
+**Commands:**
+- `python -m pytest -q` → 99 passed
+- notebook 07 executed top to bottom (18 figures, no errors)
+
+**Validation:** see D-018 numbers.
+
+**Commit:** `feat(nelson-siegel): fit significance, paper-timing costs, Kalman A/B` (`aa28cd6`)
+
+**Next:** merge into main; D (curve momentum).
