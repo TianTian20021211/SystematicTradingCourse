@@ -2909,3 +2909,42 @@ merge both and push to origin main.
 
 **Next:** Push to `origin main`; then fill the E and portfolio slides and the
 result figures.
+
+---
+
+## LOG-0065 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Final deck edits (user request): academic punctuation, numbered
+captions, data-table slide, white closing slide, and the first three idea-E
+slides with journal-style vector figures.
+
+**What changed:**
+- `presentations/final/main.tex`: no visible semicolons, em dashes or vertical
+  bars in any slide (Tian's and Jiaheng's parts); every table and figure in a
+  numbered `table`/`figure` with a caption below; slide 3 lists all 24 codes
+  with underlying, exchange and sample; Figure 1 redrawn; closing slide is
+  white with "Questions and comments are welcomed."; E slides 1–3 (method with
+  numbered Eq. (1), fit-significance test with Eq. (2) and Figure 4,
+  replication/transfer table).
+- `scripts/make_slide_figures.py` (vector PDFs in `presentations/final/figures/`)
+  and `scripts/make_slide_tables.py` (bare tabulars in
+  `presentations/final/tables/`, raw CSV in `output/slides/`).
+- `src/nelson_siegel.fit_quality` / `_loo_press`: optional `holdout` (e.g.
+  interior contracts only); default behaviour unchanged; new test.
+
+**Why:** the user is preparing the final presentation; the interior
+leave-one-contract-out R² separates interpolation (what a curve model is for)
+from end-point extrapolation, which drove the earlier "curvature hurts"
+reading.
+
+**Validation / results:** deck compiles with XeLaTeX; rendered text has no
+`;`, `—` or `|`. Interior LOO: adding β_S helps 24/24 commodities, adding β_C
+23/24 (none worse); all-contract LOO: β_C helps 10, hurts 10. Replication grid
+(paper universe, 1992–2019, $1m): paper timing gross +3.11%/yr (Sharpe 1.95),
+tradable t+1 gross −0.18% (−0.11); k = 5/20 do not turn it positive.
+`python -m pytest -q` passes.
+
+**Commit:** `feat(slides): final-deck formatting and idea-E slides with vector figures` (`this commit`).
+
+**Next:** E evaluation-figure slide and per-commodity discussion slide;
+notebook 14 should add the interior-LOO result.

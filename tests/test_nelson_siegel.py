@@ -178,3 +178,18 @@ def test_kalman_tracks_constant_curve_and_predicts_it() -> None:
     assert np.allclose(res["beta_post"][-1], beta, atol=1e-6)
     assert np.allclose(res["sse_pred"][1:, 0], 0.0, atol=1e-8)  # a constant curve is predicted exactly
     assert np.allclose(res["press_loo"][1:, 0], 0.0, atol=1e-6)
+
+
+def test_fit_quality_interior_holdout_matches_manual() -> None:
+    rng = np.random.default_rng(3)
+    m = np.array([[0.5, 1.5, 2.5, 3.5]])
+    f = np.array([[60.0, 63.0, 64.0, 66.0]]) + rng.normal(0, 0.1, (1, 4))
+    wide = pd.DataFrame({"date": [pd.Timestamp("2000-01-03")], "root": ["AA"],
+                         **{f"F{k}": f[:, k] for k in range(4)}, **{f"M{k}": m[:, k] for k in range(4)}})
+    q_all = ns.fit_quality(wide, pd.Series(0.5, index=wide.index))
+    q_int = ns.fit_quality(wide, pd.Series(0.5, index=wide.index), holdout=(1, 2))
+    # Level-only interior LOO: predict contracts 1 and 2 by the mean of the other three.
+    press = sum((f[0, k] - np.delete(f[0], k).mean()) ** 2 for k in (1, 2)) * 2
+    sst = ((f[0] - f[0].mean()) ** 2).sum()
+    assert np.isclose(q_int["loo_L"].iloc[0], 1 - press / sst)
+    assert np.isclose(q_all["loo_L"].iloc[0], 1 - 16 / 9)
