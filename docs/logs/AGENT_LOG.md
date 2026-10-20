@@ -3673,4 +3673,4 @@ trading day) instead of D=10. "v2 simulator", "official D-019", "Official v2",
 **Validation / results:** rendered text contains no v1, v2, K=5, D=10,
 decision or log IDs, and no `;`, `—` or `|`.
 
-**Commit:** `style(slides): plain-language engine slide, no internal notation` (`this commit`).
+**Commit:** `style(slides): plain-language engine slide, no internal notation` (`04308b8`).
