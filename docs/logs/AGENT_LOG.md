@@ -3633,4 +3633,4 @@ confounded with sector, descriptive only. CO is cash settled against the ICE
 Brent Index with optional EFP delivery (ICE product guide); FC and LH are cash
 settled against CME indices.
 
-**Commit:** `feat(slides): appendix on contract structure and settlement, title date` (`this commit`).
+**Commit:** `feat(slides): appendix on contract structure and settlement, title date` (`ac436c3`).
