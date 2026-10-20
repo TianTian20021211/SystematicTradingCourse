@@ -3611,4 +3611,4 @@ formatting, Jiaheng's E-onwards slides; backup content is Tian's.
 `—` or `|`, 42 numbered captions; A IC figure shows 11/24 significant roots,
 matching Tian's note. `python -m pytest -q` passes.
 
-**Commit:** merge commit (`this commit`).
+**Commit:** merge commit (`bc93057`).
