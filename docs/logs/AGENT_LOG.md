@@ -3057,6 +3057,6 @@ by the combination finding, and E's verdict is added to the C/D bullet.
 
 **Validation / results:** deck compiles, no overflow on the edited slides.
 
-**Commit:** `feat(slides): E and combination results in roadmap and conclusion` (`this commit`).
+**Commit:** `feat(slides): E and combination results in roadmap and conclusion` (`faeff26`).
 
 **Next:** merge with Tian's slide edits; then merge the branch into main.
