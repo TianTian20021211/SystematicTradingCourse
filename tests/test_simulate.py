@@ -279,8 +279,36 @@ def test_pure_flat_result_has_zero_returns() -> None:
     res = _run(cp, signal=sig, leg_ratio="contracts")
     assert len(res.daily) == 10
     assert np.allclose(res.daily["ret_gross"], 0.0)
+    assert res.positions is not None and res.positions.empty
+    assert "signed_notional" in res.positions.columns
     perf = report.performance_table(res).set_index("layer")
     assert np.isclose(perf.loc["gross", "ann_ret_pct"], 0.0)
+
+
+def test_positions_expose_signed_notional() -> None:
+    res = _run(_contract_panel())
+    assert res.positions is not None
+    assert set(simulate.POSITION_COLUMNS) <= set(res.positions.columns)
+    p = res.positions.dropna(subset=["mark"])
+    assert np.allclose(p["signed_notional"], p["n"] * p["point_value"] * p["mark"])
+    assert np.allclose(p["gross_notional"], p["signed_notional"].abs())
+
+    by_date = res.positions.groupby("date")["gross_notional"].sum()
+    by_root = res.by_root.groupby("date")["gross_notional"].sum()
+    common = by_date.index.intersection(by_root.index)
+    assert np.allclose(by_date.loc[common], by_root.loc[common])
+
+
+def test_overall_sharpe_matches_performance_table() -> None:
+    from src import report
+
+    res = _run(_contract_panel(), leg_ratio="contracts")
+    perf = report.performance_table(res).set_index("layer")
+    assert np.isclose(
+        report.overall_sharpe(res),
+        perf.loc["- impact (all)", "sharpe"],
+        atol=5e-4,
+    )
 
 
 def test_price_derived_notional_ratio_does_not_resize_daily() -> None:

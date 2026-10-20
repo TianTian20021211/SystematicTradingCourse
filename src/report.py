@@ -43,6 +43,18 @@ def performance_table(res: simulate.SimResult, start: str | None = None, end: st
     return pd.DataFrame(rows).round(3)
 
 
+def overall_sharpe(res: simulate.SimResult, layer: str = "ret_net_all") -> float:
+    """Full-sample annualised Sharpe ratio (rf=0) for one return layer.
+
+    Uses the same convention as ``performance_table``: mean / std * sqrt(252).
+    Returns NaN when the layer has zero or non-finite standard deviation.
+    """
+
+    r = res.daily[layer]
+    sd = r.std()
+    return float(r.mean() / sd * np.sqrt(252)) if np.isfinite(sd) and sd > 0 else float("nan")
+
+
 def root_table(res: simulate.SimResult) -> pd.DataFrame:
     """Per-root contribution, costs and turnover (annualised, % of capital).
 

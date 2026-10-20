@@ -2095,3 +2095,43 @@ for traceability.
 **Commit:** `docs(final): make v2 results the official results`
 
 **Next:** E and H; no push.
+
+---
+
+## LOG-0048 · 2026-10-19 23:50 · Phase 10a · Claude Code
+
+**Goal:** Make v2 holdings valuation and per-idea position charts reusable.
+
+**Actions:**
+- Added `SimResult.positions` (`date, root, contract, n, mark, point_value,
+  signed_notional, gross_notional, pnl`) without changing `holdings`.
+- Added `report.overall_sharpe(res, layer="ret_net_all")`.
+- Added `figures.position_panel` and `figures.positions`: month-end signed
+  gross-position heatmap (nearest-expiry leg direction) plus gross exposure /
+  turnover.
+- Added `v2_rerun.save_strategy` so one strategy cannot overwrite
+  `comparison.csv`.
+- Fixed `plotstyle.tex` to strip `\ ` spacing in the mathtext fallback.
+- Added tests for positions, overall Sharpe, position panels, save_strategy
+  and spacing.
+
+**Files changed:**
+- `src/simulate.py`, `src/report.py`, `src/figures.py`, `src/v2_rerun.py`,
+  `src/plotstyle.py`
+- `tests/test_simulate.py`, `tests/test_figures.py`,
+  `tests/test_v2_rerun.py`, `tests/test_plotstyle.py`
+
+**Commands:**
+- `python -m pytest -q` → 124 passed
+- A validation: gross −0.484%, all-in net −2.610%, overall Sharpe −2.595
+
+**Why:** The per-idea notebooks need accurate positions; net signed notional
+is near zero for calendar spreads, so the heatmap uses the nearest-expiry leg
+direction and the root's gross notional.
+
+**Validation:** tests pass; A performance unchanged; position panel is
+24 roots × 490 months with a range of about ±25% of capital.
+
+**Commit:** `feat(v2): expose valued positions and add position-book figure`
+
+**Next:** Build notebooks 10–13.

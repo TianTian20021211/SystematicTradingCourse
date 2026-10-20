@@ -12,3 +12,4 @@ def test_tex_keeps_percent_and_ampersand_escapes():
 def test_tex_removes_spacing_escapes_without_usetex():
     plotstyle.use(usetex=False)
     assert plotstyle.tex(r"A\,B\;C") == "A B C"
+    assert plotstyle.tex(r"included\ impact") == "included impact"

@@ -95,7 +95,7 @@ def tex(s: str) -> str:
 
     if _USETEX:
         return s
-    for a, b in ((r"\,", " "), (r"\;", " "), ("~", " "), (r"\textendash", "-")):
+    for a, b in ((r"\,", " "), (r"\;", " "), (r"\ ", " "), ("~", " "), (r"\textendash", "-")):
         s = s.replace(a, b)
     return s
 

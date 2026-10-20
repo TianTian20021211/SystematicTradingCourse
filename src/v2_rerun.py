@@ -99,6 +99,23 @@ def run_all(
     }
 
 
+def save_strategy(
+    item: dict,
+    out_dir: str | Path | None = None,
+) -> Path:
+    """Write one strategy's performance and root tables.
+
+    The idea notebooks call this instead of ``save_results`` so a single
+    strategy cannot overwrite the cross-strategy ``comparison.csv``.
+    """
+
+    out = Path(out_dir) if out_dir is not None else config.ROOT / "output" / "v2_rerun"
+    out.mkdir(parents=True, exist_ok=True)
+    item["performance"].to_csv(out / f"{item['name']}_performance.csv")
+    item["root"].to_csv(out / f"{item['name']}_root.csv")
+    return out
+
+
 def save_results(
     results: dict[str, dict],
     out_dir: str | Path | None = None,
@@ -109,8 +126,7 @@ def save_results(
     out.mkdir(parents=True, exist_ok=True)
     frames = []
     for name, item in results.items():
-        item["performance"].to_csv(out / f"{name}_performance.csv")
-        item["root"].to_csv(out / f"{name}_root.csv")
+        save_strategy(item, out)
         frame = item["performance"].reset_index()
         frame.insert(0, "strategy", name)
         frames.append(frame)

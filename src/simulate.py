@@ -39,6 +39,12 @@ class SimConfig:
     cost: cost_model.CostParams = field(default_factory=cost_model.CostParams)
 
 
+POSITION_COLUMNS = [
+    "date", "root", "contract", "n", "mark", "point_value",
+    "signed_notional", "gross_notional", "pnl",
+]
+
+
 @dataclass
 class SimResult:
     """Tables produced by ``simulate``."""
@@ -49,6 +55,7 @@ class SimResult:
     daily: pd.DataFrame  # portfolio daily returns per cost layer
     config: SimConfig
     calendar: pd.DatetimeIndex | None = None  # full evaluation calendar
+    positions: pd.DataFrame | None = None  # valued holdings; see POSITION_COLUMNS
 
 
 def _root_book(legs: pd.DataFrame) -> dict:
@@ -223,6 +230,7 @@ def _holdings_pnl(holdings: pd.DataFrame, marks: pd.DataFrame, calendar: pd.Date
             "mark": pd.Series(dtype="float64"),
             "point_value": pd.Series(dtype="float64"),
             "pnl": pd.Series(dtype="float64"),
+            "signed_notional": pd.Series(dtype="float64"),
             "gross_notional": pd.Series(dtype="float64"),
         })
     h = holdings.copy()
@@ -238,7 +246,8 @@ def _holdings_pnl(holdings: pd.DataFrame, marks: pd.DataFrame, calendar: pd.Date
     h["mark"] = h.groupby(["root", "contract"])["mark"].ffill()
     h["point_value"] = h.groupby("root")["point_value"].transform(lambda s: s.ffill().bfill())
     h["pnl"] = h["n"] * h["point_value"] * h["dprice"].fillna(0.0)
-    h["gross_notional"] = (h["n"] * h["point_value"] * h["mark"]).abs()
+    h["signed_notional"] = h["n"] * h["point_value"] * h["mark"]
+    h["gross_notional"] = h["signed_notional"].abs()
     return h
 
 
@@ -357,7 +366,9 @@ def simulate(legs: pd.DataFrame, marks: pd.DataFrame, config: SimConfig | None =
         trades["point_value"] = trades["root"].map(pv)
         trades["tick_size"] = trades["tick_size"].fillna(trades["root"].map(marks.groupby("root")["tick_size"].first()))
         trades = cost_model.trade_costs(trades, cfg.cost)
-    by_root = _by_root(_holdings_pnl(holdings, marks, calendar), trades)
+    enriched = _holdings_pnl(holdings, marks, calendar)
+    positions = enriched.loc[:, POSITION_COLUMNS].copy()
+    by_root = _by_root(enriched, trades)
     status = pd.DataFrame(status_rows, columns=["date", "root", "status"])
     if status.empty:
         by_root["status"] = np.nan
@@ -367,4 +378,5 @@ def simulate(legs: pd.DataFrame, marks: pd.DataFrame, config: SimConfig | None =
     num_cols = by_root.columns.drop(["date", "root", "status"])
     by_root[num_cols] = by_root[num_cols].fillna(0.0)
     daily = _daily(by_root.drop(columns="status"), cfg.capital, calendar)
-    return SimResult(holdings, trades, by_root, daily, cfg, calendar)
+    return SimResult(holdings, trades, by_root, daily, cfg, calendar,
+                     positions=positions)

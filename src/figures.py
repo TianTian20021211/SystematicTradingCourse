@@ -10,15 +10,19 @@ sample means) are named in the legend rather than written over the data.
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 import numpy as np
 import pandas as pd
 
 from . import plotstyle as ps
+from .load import parse_contract_code
 from .report import root_table
 
 LAYER_LABELS = {
@@ -366,3 +370,163 @@ def bootstrap_ic_distribution(summary: pd.DataFrame, draws: dict, strategy: str,
                    + rf"IC of {score} at $t$ with the spread return over {window_label}; "
                    + rf"{block}-day moving-block bootstrap, two-sided $p$-values")
     return ps.finalize(fig, title, legend_from=ax, ncol=3)
+
+
+@lru_cache(maxsize=None)
+def _expiry_id(root: str, contract: str, as_of_year: int) -> float:
+    """Expiry ordinal for ``contract``; NaN when the code cannot be parsed."""
+
+    cid = parse_contract_code(
+        contract, root, pd.Timestamp(year=as_of_year, month=1, day=1)
+    )
+    return float(cid.expiry_id) if cid is not None else np.nan
+
+
+def position_panel(
+    res,
+    root_order: list[str] | None = None,
+    freq: str = "ME",
+) -> pd.DataFrame:
+    """Month-end signed gross position (% of capital) by root.
+
+    A calendar spread is dollar-neutral, so net signed notional is close to
+    zero by construction. The sign here is the direction of the nearest-expiry
+    leg; the magnitude is the root's total gross notional. Values are ``+`` for
+    a long nearest leg, ``-`` for a short one and ``0`` when flat.
+
+    Rows are roots sorted by ``root_order`` (or alphabetically), columns are the
+    last available trading date in each month/quarter.
+    """
+
+    if res.positions is None:
+        raise ValueError("SimResult.positions is missing; rerun simulate()")
+    pos = res.positions
+    if pos.empty:
+        return pd.DataFrame(index=root_order or [], dtype=float)
+
+    if res.calendar is not None:
+        cal = pd.DatetimeIndex(sorted(pd.unique(res.calendar)))
+    else:
+        cal = pd.DatetimeIndex(sorted(pd.unique(pos["date"])))
+    snap = pd.Series(cal, index=cal).groupby(pd.Grouper(freq=freq)).max().dropna()
+    snap = pd.DatetimeIndex(snap.to_numpy())
+
+    p = pos.loc[pos["date"].isin(snap)].copy()
+    if p.empty:
+        return pd.DataFrame(index=root_order or [], dtype=float)
+    p["gross_notional"] = p["gross_notional"].fillna(0.0)
+    p["signed_notional"] = p["signed_notional"].fillna(0.0)
+    p["expiry"] = [
+        _expiry_id(root, contract, pd.Timestamp(date).year)
+        for root, contract, date in zip(p["root"], p["contract"], p["date"])
+    ]
+
+    # Nearest-expiry leg sets the direction; lexicographic contract sorting is
+    # wrong (CLZ26 < CLF27, but F27 expires after Z26).
+    p = p.sort_values(["date", "root", "expiry", "contract"], na_position="last")
+    nearest = p.groupby(["date", "root"], as_index=False).first()
+    gross = p.groupby(["date", "root"], as_index=False)["gross_notional"].sum()
+    net = p.groupby(["date", "root"], as_index=False)["signed_notional"].sum()
+    book = (
+        nearest[["date", "root", "signed_notional"]]
+        .merge(gross, on=["date", "root"])
+        .merge(net.rename(columns={"signed_notional": "net_notional"}),
+               on=["date", "root"])
+    )
+    direction = np.sign(book["signed_notional"])
+    direction = direction.mask(direction == 0, np.sign(book["net_notional"]))
+    book["value"] = direction * book["gross_notional"] * 100.0 / res.config.capital
+
+    panel = book.pivot(index="root", columns="date", values="value")
+    panel = panel.reindex(columns=snap).fillna(0.0)
+    if root_order is not None:
+        panel = panel.reindex(root_order, fill_value=0.0)
+    else:
+        panel = panel.sort_index()
+    return panel
+
+
+def positions(
+    res,
+    strategy: str,
+    test_start: str | None = "2016-01-01",
+    root_order: list[str] | None = None,
+    freq: str = "ME",
+    roll_window: int = 63,
+    vmax_pct: float | None = None,
+):
+    """(a) month-end signed position heatmap; (b) gross exposure and turnover.
+
+    The heatmap sign is the nearest-expiry leg direction and the magnitude is
+    the root's gross notional as a share of capital. The lower panel shows the
+    portfolio's gross exposure and annualised traded notional.
+    """
+
+    panel = position_panel(res, root_order=root_order, freq=freq)
+    fig, (a1, a2) = plt.subplots(
+        2, 1, figsize=(ps.FULL_WIDTH, 5.8),
+        gridspec_kw={"height_ratios": [2.3, 1.0]},
+    )
+
+    if not panel.empty:
+        values = panel.to_numpy()
+        vmax = (float(vmax_pct) if vmax_pct is not None
+                else float(np.nanpercentile(np.abs(values), 99)))
+        if not np.isfinite(vmax) or vmax <= 0:
+            vmax = 1.0
+        cmap = LinearSegmentedColormap.from_list(
+            "signed_positions", [ps.ORANGE, "#f7f6f3", ps.BLUE]
+        )
+        norm = TwoSlopeNorm(vmin=-vmax, vcenter=0.0, vmax=vmax)
+        x0 = mdates.date2num(panel.columns[0])
+        x1 = mdates.date2num(panel.columns[-1])
+        im = a1.imshow(
+            values, aspect="auto", interpolation="nearest", cmap=cmap, norm=norm,
+            extent=[x0, x1, len(panel) - 0.5, -0.5], zorder=1,
+        )
+        a1.set_yticks(np.arange(len(panel.index)), panel.index)
+        a1.tick_params(axis="y", labelsize=6.5, length=0)
+        a1.set_xlim(x0, x1)
+        _date_axis(a1)
+        a1.grid(False)
+        if test_start is not None:
+            a1.axvline(pd.Timestamp(test_start), color=ps.INK_2, lw=0.8, ls="--",
+                       label=ps.tex(rf"Test sample ({pd.Timestamp(test_start).year}\textendash)"))
+        cb = fig.colorbar(im, ax=a1, fraction=0.025, pad=0.01)
+        cb.set_label(ps.tex(r"Signed gross position (\% of capital)"))
+        a1.set_title(ps.tex(r"Month-end position book (blue = long nearest leg, orange = short)"))
+    else:
+        a1.text(0.5, 0.5, "No positions", ha="center", va="center",
+                transform=a1.transAxes, color=ps.INK_2)
+        a1.set_axis_off()
+    ps.panel_label(a1, "a")
+
+    d = res.daily.set_index("date")
+    gross_pct = d["gross_exposure"] * 100.0
+    a2.plot(d.index, gross_pct, color=ps.BLUE, lw=0.55, alpha=0.30)
+    a2.plot(d.index, gross_pct.rolling(21, min_periods=1).mean(),
+            color=ps.BLUE, lw=1.1,
+            label=ps.tex(r"Gross exposure (\% of capital, 21-day mean)"))
+    a2.set_ylabel(ps.tex(r"Gross exposure (\% of capital)"))
+    a2.set_ylim(bottom=0)
+    _date_axis(a2)
+    a2.tick_params(axis="x", labelbottom=True)
+    _shade_test(a2, test_start)
+    ps.zero_line(a2)
+    ps.panel_label(a2, "b")
+
+    a2b = a2.twinx()
+    turnover = d["turnover"].rolling(roll_window, min_periods=1).mean() * 252.0
+    a2b.plot(d.index, turnover, color=ps.ORANGE, lw=1.1,
+             label=ps.tex(rf"Traded notional / capital, annualised ({roll_window}-day mean)"))
+    a2b.set_ylabel(ps.tex(r"Turnover ($\times$ capital / year)"))
+    a2b.set_ylim(bottom=0)
+    a2b.grid(False)
+    a2b.tick_params(axis="y", length=0)
+    a2b.spines["right"].set_visible(False)
+    a2.set_title(ps.tex(r"Exposure and trading activity"))
+
+    title = ps.tex(
+        rf"{strategy}: positions and trading activity, {_usd(res.config.capital)} capital"
+    )
+    return ps.finalize(fig, title, legend_from=[a1, a2, a2b], ncol=3)
