@@ -46,6 +46,10 @@ net −0.61**，但 test IC 仍为正（5 天 0.028，21 天 0.141）；亏损�
 （−42 bp/yr gross）。Notebook 15；复现 `python scripts/run_alpha.py
 --stage select` 后 `--stage test --confirm-read-once`。下一步：按流动性/
 风险预算 sizing、长 horizon，需新 decision 和 walk-forward 评估。
+**D-031 跟进：** IC 在约 42 天到顶、年化 IC 从 1 天起单调衰减；look-ahead
+检验通过；validation 选的低频（每 10 天调仓）test 仍为负；**事后**看
+`[t+1,t+22]` 预测每 22 天调仓 test net +0.57%/yr（Sharpe 0.45）——只能作为
+下一步 walk-forward 的预注册假设。
 
 **正式结果：** v2 重跑（D-019）；v1 数字仅作历史 baseline。旧 notebook
 02–08 已 retired（D-020），见 `docs/notebook_history.md`。

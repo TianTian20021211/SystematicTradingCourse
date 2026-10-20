@@ -74,16 +74,40 @@ def make_signal(fc: pd.DataFrame, rule: str, scale: float = 1.0, cost: pd.Series
     return f[["date", "root", "target"]].reset_index(drop=True)
 
 
+def hold_between_rebalances(sig: pd.DataFrame, every: int) -> pd.DataFrame:
+    """Update each root's target only every ``every`` trading days, hold it otherwise.
+
+    Rebalance dates are every ``every``-th date of the signal's common
+    calendar. Rows are emitted on every date (with the held target) so the
+    1/N budget always counts all held roots; pair rolls are still executed
+    by the simulator on the roll date.
+    """
+
+    if every <= 1:
+        return sig
+    dates = pd.DatetimeIndex(sorted(sig["date"].unique()))
+    rebal = set(dates[::every])
+    out = sig.sort_values(["root", "date"]).copy()
+    out["target"] = out["target"].where(out["date"].isin(rebal))
+    out["target"] = out.groupby("root")["target"].ffill().fillna(0.0)
+    return out.sort_values(["date", "root"]).reset_index(drop=True)
+
+
 def run_rule(fc: pd.DataFrame, rule: str, pairs: pd.DataFrame, marks: pd.DataFrame, k: int,
-             capital: float = 1e6, scale: float = 1.0, round_lots: bool = False) -> simulate.SimResult:
-    """Build legs for one rule and run the v2 simulator (equal 1/N budget)."""
+             capital: float = 1e6, scale: float = 1.0, round_lots: bool = False,
+             every: int = 1) -> simulate.SimResult:
+    """Build legs for one rule and run the v2 simulator (equal 1/N budget).
+
+    ``k`` is the number of overlapping sleeves (daily 1/k rebalancing);
+    ``every`` > 1 instead updates targets only every ``every`` days.
+    """
 
     cost = None
     if rule == "band":
         c = round_trip_cost(pairs)
         c.index = pd.MultiIndex.from_frame(pairs[["date", "root"]])
         cost = pd.Series(c.reindex(pd.MultiIndex.from_frame(fc[["date", "root"]])).to_numpy(), index=fc.index)
-    sig = make_signal(fc, rule, scale=scale, cost=cost)
+    sig = hold_between_rebalances(make_signal(fc, rule, scale=scale, cost=cost), every)
     legs = sizing.legs_from_signal(sig, pairs, scheme="equal", n_mode="active", k=1 if rule == "band" else k)
     cfg = simulate.SimConfig(capital=capital, round_lots=round_lots)
     return simulate.simulate(legs, marks, cfg)

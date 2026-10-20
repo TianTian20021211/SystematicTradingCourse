@@ -1177,3 +1177,61 @@ Status values: `proposed`, `accepted`, `superseded`.
      1/N monetisation fails out of sample. Liquidity/risk-budgeted sizing
      and longer horizons are the next hypotheses and need a new decision;
      2016–2026 is no longer a clean holdout.
+
+---
+
+## D-031 · Alpha combination follow-ups: horizon term structure, low-frequency execution, post-test diagnostics
+
+- **Status:** accepted
+- **Date:** 2026-10-20
+- **Context:** After D-030 the user asked (1) where the IC stops rising with
+  horizon, (2) for a clearer pairwise model-comparison figure, (3) whether
+  the high rolling IC is look-ahead, (4) which model each period uses, what
+  happens without lumber (LB) and how each commodity performs, and (5)
+  whether lower-frequency execution (e.g. k=22) keeps more after costs.
+- **Decision:**
+  1. **Term structure (data ≤ 2015).** Long horizons use **rolled**
+     main-pair returns (`alpha_factors.rolled_forward`: sum of the daily
+     pair returns over `[t+1, t+1+h]`, rolling into the new main pair);
+     fixed-pair targets lose ~25% of rows at 22 days and condition on the
+     near contract not expiring. h ∈ {1, 2, 5, 10, 21, 42, 63, 126, 252};
+     report IC and the annualised IC × √(252/h).
+  2. **Look-ahead check.** Lag the validation forecast by 0/1/2/5 extra root
+     days against the same target window.
+  3. **Low-frequency execution (validation only for choice).** Forecasts
+     `[t+1,t+6]`, `[t+1,t+11]`, `[t+1,t+22]` × rules linear/sign × sleeves
+     k ∈ {1, 5, 10, 22, 44} or rebalance every m ∈ {5, 10, 22} days
+     (`alpha_portfolio.hold_between_rebalances`), $1m, marks cut at
+     2015-12-31; choose by validation all-in net Sharpe.
+  4. **Post-test runs are descriptive.** Ex-LB reruns of the frozen D-030
+     configurations, the low-frequency choice, and six representative
+     low-frequency configurations are run on the full sample *after* the
+     D-030 test read. They do not change any selection and are labelled
+     post-hoc in notebook 15.
+- **Results:**
+  1. Raw IC peaks near h = 42 days (validation `[t+1,t+6]` forecast 0.121)
+     and falls to 0.043 at 252; annualised IC declines monotonically from
+     h = 1 (0.51 → 0.32 at 21 → 0.20 at 63). A carry stays ≈ −0.08 from 21
+     to 252 days in train; C reverses after 21 days; B peaks at 42–126 days.
+     The `[t+1,t+22]` fixed-pair forecast is weaker on rolled returns than
+     the `[t+1,t+6]` forecast (0.047 vs 0.092 at h = 21).
+  2. Look-ahead check: `[t+1,t+6]` IC 0.068 / 0.065 / 0.061 / 0.046 at lag
+     0 / 1 / 2 / 5 (smooth decay, no collapse). The 0.3–0.4 rolling values
+     are within-window Pearson correlations of ~11 independent 22-day
+     targets.
+  3. Validation low-frequency choice: `[t+1,t+6]`, linear, every 10 days,
+     net Sharpe 1.38 (headline 1.34). Smoothing to k = 22/44 cuts turnover
+     to 7×/5× but gross Sharpe to 1.35/1.26. Post-hoc test: the choice
+     loses (net −0.62%/yr; ex-LB −0.27%).
+  4. Ex-LB D-030 headline: test gross +0.25%/yr (Sharpe 0.37), net −0.07%
+     (−0.10).
+  5. Post-hoc: long-horizon forecasts with low-frequency execution are
+     positive in test after all costs — `[t+1,t+22]` sign every 22 days
+     +0.57%/yr (Sharpe 0.45; ex-LB 0.58), `[t+1,t+22]` linear k = 22 +0.42%
+     (0.41) — although their validation net Sharpe (0.65–0.79) ranked below
+     the short-horizon choice.
+- **Consequences:** The D-030 verdict is unchanged (pre-registered headline
+  fails test). The long-horizon / low-frequency result is a hypothesis for a
+  new pre-registered walk-forward study (with rolled-return targets and
+  liquidity/risk budgets), not out-of-sample evidence. New stages
+  `horizons`, `exlb`, `lowfreq`, `lowfreq_desc` in `scripts/run_alpha.py`.

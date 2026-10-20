@@ -185,3 +185,30 @@ def build_factor_panel(inputs: v2_signals.V2Inputs, rank: pd.DataFrame) -> pd.Da
     panel = panel.merge(scale_factors(panel, list(FACTORS)), on=KEYS)
     panel = panel.merge(scale_targets(panel), on=KEYS)
     return panel.sort_values(KEYS).reset_index(drop=True)
+
+
+def rolled_forward(panel: pd.DataFrame, horizons=(1, 2, 5, 10, 21, 42, 63, 126, 252),
+                   min_frac: float = 0.8) -> pd.DataFrame:
+    """Forward return of always holding the current main pair, rolled at pair changes.
+
+    ``roll_h`` at t is the sum of the daily main-pair returns ``r`` over the
+    root's next trading days t+2 ... t+1+h, i.e. the window ``[t+1, t+1+h]``
+    with a fill at the t+1 settle. Unlike the fixed-pair ``fwd_*`` it exists
+    for long horizons (the near contract may expire inside the window); it is
+    the P&L of a position that keeps rolling into the current main pair.
+    Windows with fewer than ``min_frac`` valid daily returns are NaN.
+    """
+
+    f = panel[KEYS + ["r"]].sort_values(KEYS[::-1])
+    g = f.groupby("root", sort=False)
+    cum = g["r"].transform(lambda s: s.fillna(0.0).cumsum())
+    cnt = g["r"].transform(lambda s: s.notna().cumsum())
+    out = f[KEYS].copy()
+    for h in horizons:
+        c_end = cum.groupby(f["root"]).shift(-(1 + h))
+        c_start = cum.groupby(f["root"]).shift(-1)
+        n_end = cnt.groupby(f["root"]).shift(-(1 + h))
+        n_start = cnt.groupby(f["root"]).shift(-1)
+        ok = (n_end - n_start) >= min_frac * h
+        out[f"roll_{h}"] = (c_end - c_start).where(ok)
+    return out.sort_index()

@@ -2748,3 +2748,45 @@ at 5 days, 0.141 at 21 days); LB alone −42 bp/yr gross in test.
 **Next:** liquidity- or risk-budgeted sizing and longer horizons as a new
 pre-registered decision; evaluate with walk-forward since the test slice has
 been read.
+
+---
+
+## LOG-0062 · 2026-10-20 · Phase 14 · Claude Code
+
+**Task:** D-031 follow-ups to the alpha combination: IC term structure to
+252 days, look-ahead check, pairwise model-difference grid, ex-LB reruns,
+per-commodity cumulative P&L, low-frequency execution experiments.
+
+**What changed:**
+- `src/alpha_factors.rolled_forward`; `src/alpha_portfolio.hold_between_rebalances`
+  and `run_rule(every=...)`; new figures in `src/alpha_figures.py`
+  (`ic_term_structure`, `lookahead_check`, `pairwise_diff_grid`,
+  `root_cumulative`, `lowfreq_grid`, `nav_configs`; rolling-IC labels).
+- `scripts/run_alpha.py` stages `horizons`, `exlb`, `lowfreq`,
+  `lowfreq_desc`.
+- Notebook 15: §4 term structure and pairwise grid, §5 look-ahead check,
+  §7 model-per-period note, §7b per-commodity / ex-LB, §7c low frequency,
+  updated conclusions.
+- `tests/test_alpha.py` (+2 tests), D-031, README/HANDOFF pointers.
+
+**Commands:**
+- `python scripts/run_alpha.py --stage horizons --n-boot 500`
+- `python scripts/run_alpha.py --stage exlb`
+- `python scripts/run_alpha.py --stage lowfreq`
+- `python scripts/run_alpha.py --stage lowfreq_desc`
+- `python -m nbconvert --execute --to notebook --inplace notebooks/15_alpha_combination.ipynb`
+- `python -m pytest -q`
+
+**Why:** user questions on the D-030 results (plateau, look-ahead, model
+windows, lumber, per-commodity P&L, lower-frequency trading).
+
+**Validation / results:** IC peaks ~42 days, annualised IC decays from day
+1; look-ahead check passes; validation low-frequency choice (every 10 days)
+net Sharpe 1.38 but negative in test; post-hoc `[t+1,t+22]` every-22-day
+configuration +0.57%/yr net in test (Sharpe 0.45). All post-test runs are
+labelled descriptive.
+
+**Commit:** `feat(alpha): horizon term structure, low-frequency execution and post-test diagnostics (D-031)` (`this commit`).
+
+**Next:** pre-register a walk-forward study of long-horizon forecasts with
+monthly rebalancing, rolled-return targets and liquidity/risk budgets.

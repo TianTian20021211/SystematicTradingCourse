@@ -96,3 +96,20 @@ def test_pair_daily_returns_uses_both_legs():
     marks = pd.DataFrame({"date": pd.to_datetime(["2000-01-04"] * 2), "root": "AA",
                           "contract_code": ["AAH0", "AAK0"], "ret": [0.03, 0.01]})
     assert np.isclose(af.pair_daily_returns(pairs, marks).iloc[0], 0.02)
+
+
+def test_rolled_forward_sums_next_days():
+    p = pd.DataFrame({"date": pd.bdate_range("2000-01-03", periods=8), "root": "AA",
+                      "r": [0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07]})
+    out = af.rolled_forward(p, horizons=(1, 3))
+    # Window [t+1, t+1+h]: the returns realised on rows t+2 ... t+1+h.
+    assert np.isclose(out["roll_1"].iloc[0], 0.02)
+    assert np.isclose(out["roll_3"].iloc[0], 0.02 + 0.03 + 0.04)
+    assert out["roll_3"].iloc[-4:].isna().all()
+
+
+def test_hold_between_rebalances_updates_every_m():
+    sig = pd.DataFrame({"date": pd.bdate_range("2000-01-03", periods=6), "root": "AA",
+                        "target": [1.0, -1.0, -1.0, -1.0, 1.0, 1.0]})
+    out = P.hold_between_rebalances(sig, every=3)
+    assert out["target"].tolist() == [1.0, 1.0, 1.0, -1.0, -1.0, -1.0]

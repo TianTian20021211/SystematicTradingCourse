@@ -38,6 +38,9 @@ echo "== Alpha combination (D-030): select stage, read-once test, notebook 15 ==
 if [ ! -f output/alpha/test_readonce.json ]; then
   "$PYTHON" scripts/run_alpha.py --stage test --confirm-read-once
 fi
+for stage in horizons exlb lowfreq lowfreq_desc; do
+  "$PYTHON" scripts/run_alpha.py --stage "$stage"
+done
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=3600 notebooks/15_alpha_combination.ipynb
 
