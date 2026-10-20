@@ -12,6 +12,8 @@ notebook 07；D-014–D-016。
 **v2 重跑 A/D/C/C-hedge/B：** 已完成（LOG-0044）；notebook 08；
 结论仍是 negative/mixed；详见 `docs/v1_v2_comparison.md`。
 
+**正式结果：** v2 重跑（D-019）；v1 notebook 和旧数字仅作历史 baseline。
+
 **Repo：** https://github.com/TianTian20021211/SystematicTradingCourse
 
 ---
@@ -37,8 +39,9 @@ gross → all-in net：
 | C Kalman | +0.61% | −6.10% |
 | B adjacent carry | −1.13% | −4.47% |
 
-结论仍是 negative/mixed；v1/v2 不可直接比较。详见
-`notebooks/08_v2_rerun.ipynb` 和 `docs/v1_v2_comparison.md`。
+**v2 是正式结果（D-019）**；v1 仅作历史对照。结论仍是 negative/mixed；
+v1/v2 不可直接比较。详见 `notebooks/08_v2_rerun.ipynb` 和
+`docs/v1_v2_comparison.md`。
 
 ---
 
@@ -113,11 +116,12 @@ merge 后保持本地，不要 push。
 
 ## 1. 一句话
 
-**数据层 + A/B/C/D baseline 已完成：K=5 ex-ante panel → carry /
-mean-reversion / curve-momentum signal → return-based event-loop backtest →
-full/train/test benchmark。**  
+**数据层 + v1 A/B/C/D baseline 已完成；v2 重跑 A/D/C/C-hedge/B 已完成，
+并作为正式结果（D-019）。**
+
 **A、B、C 1:1、C rolling-OLS、C Kalman、D 都是负结果或 mixed-negative；
-A/B 已收尾（不再调参/不做 rescue），C/D 已 closed 并合入 main；下一步是 H。**
+A/B 已收尾（不再调参/不做 rescue），C/D 已 closed 并合入 main；
+下一步是 E 和 H。** v1 结果保留为历史 baseline，见 `docs/v1_v2_comparison.md`。
 
 ---
 
@@ -218,6 +222,7 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 | D-016 | Backtest v2：holdings-based simulator、分层成本（half-spread / fee / impact）、horizon / capacity 诊断；v1 保留为 A 的原始 benchmark，v1/v2 数字不直接可比 |
 | D-017 | v2 扩展：optional hedge-ratio legs、`legs_from_rows` 多腿、`resize_key`；B 的 within-root adjacent-carry 排序是 narrow exception，用 `execution="legs"` |
 | D-018 | v2 重跑口径：`d=5`、`k=5`、`min_adv=100`、USD 10m、equal-notional、三层成本；C/D/B 大 band；test 是 post-hoc slice，不用 test 调参 |
+| D-019 | **v2 重跑是正式/最终结果**；v1 notebook 和旧数字保留为历史 baseline，标注 v1，不重写、不进 headline 表 |
 
 完整内容见 `docs/decisions.md`。
 
@@ -261,9 +266,10 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
   full −5.87 / test −5.41。documented negative/mixed。
 - **Backtest v2 framework**：holdings-based simulator、分层成本、
   horizon / k sweep / capacity；notebook 07；`src/specs.py`–`plotstyle.py`。
-- **v2 重跑**：A/D/C/C-rolling-OLS/C-Kalman/B；`src/v2_signals.py`、
-  `src/v2_rerun.py`、`scripts/run_v2_rerun.py`、notebook 08；
-  D-017/D-018；full-sample 结果全部 negative/mixed。
+- **v2 重跑（正式结果，D-019）**：A/D/C/C-rolling-OLS/C-Kalman/B；
+  `src/v2_signals.py`、`src/v2_rerun.py`、`scripts/run_v2_rerun.py`、
+  notebook 08；D-017/D-018；full-sample 结果全部 negative/mixed。
+  v1 notebook 和旧数字是历史 baseline，不删除、不重写。
 - **117 tests**；`docs/backtest_framework.md`；`docs/v1_v2_comparison.md`；
   `docs/PROGRESS.md`。
 

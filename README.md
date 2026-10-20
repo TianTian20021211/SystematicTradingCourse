@@ -4,25 +4,39 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 
 用 1986–2026 的 Bloomberg 商品期货数据，研究同一商品不同到期月之间的 **calendar spread**：曲线形状、roll、carry、价差的可预测性与可交易性。
 
-> 这个 repo 是**数据层 + 研究脚手架**。数据层、A baseline、A 负结果诊断、
-> B 预测试、C baseline、C rolling-OLS hedge-ratio、C Kalman variant、
-> D curve-momentum baseline 和 v2 holdings-based 回测框架已完成；
-> A/B/C/D 都是负结果或 mixed-negative。C 和 D 已 closed。v2 重跑
-> A/D/C/C-hedge/B 已完成（notebook 08），结论仍是 negative/mixed；
+> **正式结果采用 v2 holdings-based 重跑（D-019）。** v2 三层成本下，
+> A/B 的 gross 为负；D/C/C-hedge 的 gross 为正但很弱，all-in net 全为负。
+> 六个策略都没有可交易的 edge。v1 的 5 bps/leg 结果保留为历史 baseline，
+> 不作为最终结果；对照见 `docs/v1_v2_comparison.md`。
+>
+> A/B 已收尾：不再调参数、不做 rescue 变体。C/D 已 closed；
 > 下一步是 E（Nelson–Siegel）和 H（holding-period scan）。
->
-> A/B 的负结果在 **0 bps（不考虑 transaction cost）** 下已经成立；
-> C 的 1:1、rolling OLS 和 Kalman variant 也都不是稳健正的；D 的 gross
-> 很弱，5 bps 后为负，test 的 gross 已经为负。5 bps/leg 只是放大亏损，
-> 不改变符号。
->
-> A/B 已收尾：不再调参数、不做 rescue 变体；报告里只简短说明 A/B 不行。
-> D 作为 documented negative/mixed baseline；D-x（cross-sectional
-> basis-momentum）是单独的 backlog，不混入 D。
+> D-x（cross-sectional basis-momentum）是单独的 backlog，不混入 D。
 
 ---
 
-## 当前状态
+## 最终结果（v2，正式）
+
+Full sample 1986–2026；all-in net 已扣 half-spread、fee 和 impact；
+test 是 2016–2026 的 post-hoc slice。
+
+| 策略 | gross | all-in net | test gross |
+|---|---:|---:|---:|
+| A carry | −0.48% | −2.61% | −0.27% |
+| D curve momentum | +0.22% | −1.42% | −0.21% |
+| C mean reversion 1:1 | +0.61% | −3.70% | +0.16% |
+| C rolling-OLS hedge | +0.12% | −3.06% | −0.01% |
+| C Kalman hedge | +0.61% | −6.10% | +0.98% |
+| B adjacent carry | −1.13% | −4.47% | −1.23% |
+
+详细分层表见 `notebooks/08_v2_rerun.ipynb`；原始 CSV 在
+`output/v2_rerun/comparison.csv`（本地，gitignored）。v1 历史口径
+（5 bps/leg、`d=None`、1:1 contracts）见 `docs/v1_v2_comparison.md`
+和 notebooks 02/03/05/06。
+
+---
+
+## 当前状态（含 v1 历史 baselines；正式结果见上表）
 
 - [x] 原始数据审计：24 commodities × 4 nearby ranks，1986–2026
 - [x] Repo scaffold、agent collaboration protocol、decision/log 体系
@@ -41,7 +55,7 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 - [x] v2 holdings-based framework：分层成本（half-spread / fee / impact）、
       horizon 诊断、k sweep、容量曲线；notebook 07
 - [x] 用 v2 重跑 A/D/C/C-rolling-OLS/C-Kalman/B；notebook 08；
-      v1/v2 对比见 `docs/v1_v2_comparison.md`
+      **v2 为正式结果（D-019）**；v1/v2 对比见 `docs/v1_v2_comparison.md`
 - [ ] E（Nelson–Siegel）；H（holding-period scan）；D-x 是 backlog
 
 `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb`、`02_carry.ipynb`、
@@ -158,6 +172,8 @@ output/                    # 生成的图/报告（gitignored）
 
 ## Key decisions
 
+> D-009–D-013 是 v1 历史口径；正式结果按 D-018/D-019（v2）报告。
+
 - **M1–M4 是 slot，不是合约。** 换月日四个 rank 同时前移；收益必须按 `FUT_CUR_GEN_TICKER` 对齐到真实合约。
 - **Pair eligibility：** 不持有进入交割月的合约；交割月开始前至少 5 个交易日退出；且 `days_to_last_trading > 10`。D=5/20 做稳健性。
 - **Spread：** dollar spread 做主交易/P&L；log spread 做参考。两者都保存在 `spread_panel`。
@@ -187,6 +203,8 @@ output/                    # 生成的图/报告（gitignored）
 - **v2 重跑口径（D-018）：** `d=5`、`k=5`、`min_adv=100`、USD 10m、
   equal-notional、三层成本；C/D/B 用大 `rebalance_band`；test 是
   post-hoc slice，不用 test 调参。
+- **正式结果（D-019）：** v2 重跑是最终报告口径；v1 notebook 和旧数字
+  保留为历史 baseline，不删除、不重写、不进 headline 表。
 
 详见 `docs/decisions.md`。
 

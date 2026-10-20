@@ -10,9 +10,32 @@
 **Plans:** A `~/.claude/plans/polished-crafting-clock.md`;
 C `~/.claude/plans/valiant-pondering-peacock.md`.
 
+> **Official results (D-019):** the v2 re-runs in
+> `notebooks/08_v2_rerun.ipynb` are the final reported results. The v1
+> A/B/C/D sections below are historical baselines and must be labeled `v1`.
+
 This is the live status file for another agent or the teammate. The stable
 end-of-phase snapshot remains `docs/HANDOFF.md`; decisions are in
 `docs/decisions.md`; the action history is in `docs/logs/AGENT_LOG.md`.
+
+---
+
+## Official results (v2)
+
+Full sample 1986–2026; all-in net is after half-spread, fees and impact.
+
+| Strategy | gross | all-in net | test gross |
+|---|---:|---:|---:|
+| A carry | −0.48% | −2.61% | −0.27% |
+| D curve momentum | +0.22% | −1.42% | −0.21% |
+| C mean reversion 1:1 | +0.61% | −3.70% | +0.16% |
+| C rolling-OLS hedge | +0.12% | −3.06% | −0.01% |
+| C Kalman hedge | +0.61% | −6.10% | +0.98% |
+| B adjacent carry | −1.13% | −4.47% | −1.23% |
+
+Source: `output/v2_rerun/comparison.csv`; narrative:
+`notebooks/08_v2_rerun.ipynb`; framework comparison:
+`docs/v1_v2_comparison.md`.
 
 ---
 
@@ -26,23 +49,27 @@ end-of-phase snapshot remains `docs/HANDOFF.md`; decisions are in
 | Carry signal | done | target: −1 161,058 / +1 73,661 / 0 1,666 |
 | Backtest engine | done | daily event loop, pair-specific pending orders |
 | Metrics | done | summary, conditional mean, sector, plot |
-| A benchmark | closed | negative result; no further tuning |
+| A benchmark (v1 historical) | closed | 5 bps/1:1 result; v2 official in notebook 08 |
 | A diagnosis | closed | side × sector × era, K=5 vs K=10, costs |
-| B pre-test | closed | adjacent-carry rank; negative before costs; skip B |
-| C baseline | done / merged | 1:1 weekly; negative net result |
-| C hedge-ratio variant | done / merged | 60-day rolling OLS; negative gross result |
-| C Kalman variant | done / merged | rolling-likelihood DLM; mixed/negative; C closed |
+| B pre-test (v1 historical) | closed | adjacent-carry rank; v2 official in notebook 08 |
+| C baseline (v1 historical) | done / merged | 1:1 weekly; v2 official in notebook 08 |
+| C hedge-ratio variant (v1 historical) | done / merged | 60-day rolling OLS; v2 official in notebook 08 |
+| C Kalman variant (v1 historical) | done / merged | rolling-likelihood DLM; v2 official in notebook 08 |
 | D curve-momentum signal | done | N=2 main pair; 12-month formation; monthly |
-| D baseline | done | full gross +0.55%, net −0.99%; test gross −0.28%; negative/mixed |
+| D baseline (v1 historical) | done | v1 full gross +0.55%, net −0.99%; v2 official in notebook 08 |
 | Monthly rebalance engine | done | `last_trading_day_of_month`; weekly default unchanged |
 | Daily rebalance engine | done | D-015; `rebalance="daily"`; weekly default unchanged |
 | Backtest v2 framework | done / merged | holdings-based, layered costs, horizon, capacity; D-016 |
-| v2 re-runs A/D/C/C-hedge/B | done | notebook 08; full-sample results negative/mixed; D-018 |
+| v2 re-runs A/D/C/C-hedge/B | done / official | notebook 08; D-018 conventions; D-019 final |
+| Official results | done | v2 is the final reported result; v1 is historical |
 | E (Nelson–Siegel) | pending | back in scope under D-014 |
 | Tests | done | 117 passed |
 | Notebooks | done | `02_carry`, `03_mean_reversion`, `04_a_diagnose`, `05_b_pretest`, `06_curve_momentum`, `07_backtest_framework`, `08_v2_rerun` |
 
 ---
+
+> The A/B/C/D sections below are **v1 historical results**. The official
+> final results are the v2 table above.
 
 ## A benchmark result (first pass)
 
@@ -287,6 +314,12 @@ part of D and has not been implemented.
 - Daily rebalance: D-015 (`rebalance="daily"`; weekly default).
 - Backtest v2: D-016 (holdings-based simulator; layered costs; horizon and
   capacity diagnostics; v1 kept as A's original benchmark).
+- v2 extensions: D-017 (hedge-ratio legs, `legs_from_rows`, `resize_key`,
+  B within-root exception).
+- v2 rerun conventions: D-018 (`d=5`, `k=5`, `min_adv=100`, USD 10m,
+  equal-notional, three-layer costs; calendar overrides).
+- Official results: D-019 (v2 is final; v1 notebooks/results are historical
+  and must be labeled v1).
 
 ---
 

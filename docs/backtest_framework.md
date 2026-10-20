@@ -179,7 +179,9 @@ documented negative/mixed baseline，不做 test-set tuning。`D-x`
 ## v2（holdings-based, layered costs）
 
 新框架见 `notebooks/07_backtest_framework.ipynb` 和 D-016。v1（本页）保留不动，作为 A
-的原始 benchmark。v2 的分层：`marks → sizing → simulate (+ costs) → report`，以及独立于执行的
+的原始 benchmark 和历史结果。**D-019 起，v2 重跑是正式/最终结果**；
+v1 notebook 和旧数字必须标注 `v1`，不进 headline 表。v2 的分层：
+`marks → sizing → simulate (+ costs) → report`，以及独立于执行的
 `horizon` 诊断。成本假设和文献见 `docs/transaction_costs.md`。
 
 ```python

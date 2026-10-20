@@ -2057,3 +2057,41 @@ and does not mix v1/v2 numbers.
 
 **Next:** Next conversation confirms D mechanism tests and whether to add the
 A v1-aligned robustness; then implement `src/diagnostics.py` and notebook 09.
+
+---
+
+## LOG-0047 · 2026-10-19 23:30 · Phase 9g · Claude Code
+
+**Goal:** Make the v2 re-runs the official/final results while keeping v1 as
+a historical baseline, per the user's decision.
+
+**Actions:**
+- Added D-019: official results are v2 (`notebooks/08_v2_rerun.ipynb`,
+  `output/v2_rerun/comparison.csv`, `docs/v1_v2_comparison.md`); v1
+  notebooks/results are historical and must be labeled `v1`.
+- README: replaced the headline status with the v2 final result table;
+  v1 is explicitly historical.
+- HANDOFF/PROGRESS/onboarding/backtest_framework: v2 official, v1 historical.
+- No v1 notebook was rewritten or deleted; no code or data changed.
+- No push.
+
+**Files changed:** `docs/decisions.md`, `README.md`, `AGENTS.md`,
+`docs/HANDOFF.md`, `docs/PROGRESS.md`, `docs/onboarding.md`,
+`docs/backtest_framework.md`, `docs/v1_v2_comparison.md`, `docs/logs/*`
+
+**Commands:**
+- `git diff --check` → clean
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 117 passed (docs-only)
+
+**Why:** The user chose the v2 results as the final version, with v1 kept
+for traceability.
+
+**Validation:**
+- Headline numbers match `output/v2_rerun/comparison.csv`.
+- D-019 is consistent with D-016/D-018 and does not change locked
+  conventions.
+- No v1 notebook was modified.
+
+**Commit:** `docs(final): make v2 results the official results`
+
+**Next:** E and H; no push.

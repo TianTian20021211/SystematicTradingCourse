@@ -132,6 +132,10 @@ do not log every `ls`.
   composition); never put price-derived notional ratios in it.
 - Do not mix v1 and v2 numbers in one table; state which engine produced
   each result.
+- **Official results are v2 (D-019).** Headline tables use
+  `notebooks/08_v2_rerun.ipynb` / `output/v2_rerun/comparison.csv`. The v1
+  notebooks and v1 result sections are historical baselines and must be
+  labeled `v1`; do not rewrite them.
 
 ## Current phase
 
@@ -166,8 +170,10 @@ narrow exception to D-016's time-series-only rule. D-018 fixes the v2 re-run
 conventions (`d=5`, `k=5`, `min_adv=100`, USD 10m, equal-notional, three-layer
 costs, calendar overrides). The v2 re-runs of A/D/C/C-hedge/B are complete in
 `notebooks/08_v2_rerun.ipynb` and `docs/v1_v2_comparison.md`; they remain
-negative/mixed. E (Nelson–Siegel curve dynamics) is back in scope under
-D-014. The next phase is E and H; do not tune on the 2016–2026 test sample.
+negative/mixed. **D-019 makes those v2 results the official/final results**;
+the v1 notebooks and v1 result sections are historical baselines. E
+(Nelson–Siegel curve dynamics) is back in scope under D-014. The next phase
+is E and H; do not tune on the 2016–2026 test sample.
 Do not build a daily C paper-replication branch; if revisited, it is a
 separate pre-registered project. Do not change the locked A/C conventions
 without a new `docs/decisions.md` entry. Keep the panels reproducible from

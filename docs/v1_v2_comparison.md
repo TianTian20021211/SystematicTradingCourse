@@ -5,6 +5,10 @@ holdings-based simulator merged from `jiaheng/backtest-v2` (`v2`) differ, and
 what the v2 re-runs of A, D, C, C-hedge and B show. It is a comparison of two
 frameworks, not a claim that one number is the "same strategy computed twice".
 
+**Status (D-019): v2 is the official/final result.** v1 is retained as a
+historical baseline and must be labeled `v1`; do not use v1 numbers in
+headline tables.
+
 ## 1. Architecture
 
 | Dimension | v1 (`src/backtest.py`) | v2 (`src/simulate.py`) |
@@ -27,7 +31,7 @@ frameworks, not a claim that one number is the "same strategy computed twice".
 | Negative prices | Supported | Positive-price-only; CL 2020-04-20 excluded |
 | Test period | Separate flat-start backtest from 2016 | Post-hoc slice of the full simulation |
 
-## 2. Results
+## 2. Results (v2 official; v1 historical)
 
 **Read this table as two different accounting systems.** v1 net is a flat
 5 bps/leg; v2 shows gross → half-spread → fees → impact. v1 uses
@@ -126,10 +130,11 @@ performed.
 
 ## 7. Conclusion
 
-- v1 remains the original A benchmark and the source of the closed
-  A/B/C/D results.
-- v2 is a better accounting framework: it separates spread, fees and impact,
-  exposes horizon decay, and supports capacity analysis.
+- v1 remains the original A benchmark and the historical source of the closed
+  A/B/C/D results. It is not the final reported result.
+- **v2 is the official/final result (D-019).** It is a better accounting
+  framework: it separates spread, fees and impact, exposes horizon decay,
+  and supports capacity analysis.
 - The v2 re-runs do not rescue any idea: A/B gross is negative; D/C/C-hedge
   gross is weak and the layered costs turn every net result negative.
 - The main value of v2 is diagnostic, not a new positive result.

@@ -496,3 +496,29 @@ Status values: `proposed`, `accepted`, `superseded`.
 - **Consequences:** Results are v2-native and not directly comparable with
   v1's 5 bps/leg, weekly/monthly, 1:1-contract numbers. The comparison doc
   must label the differences by construction.
+
+---
+
+## D-019 · v2 re-run results are the official results
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** v1 and v2 are different accounting systems. The v2 re-runs of
+  A/D/C/C-hedge/B are complete under D-018. The project needs one final
+  reported set of numbers; the user chose v2 as the official result while
+  keeping v1 as a historical baseline.
+- **Decision:**
+  1. Official/final result tables use v2: `notebooks/08_v2_rerun.ipynb`,
+     `output/v2_rerun/comparison.csv` and `docs/v1_v2_comparison.md`.
+  2. v1 notebooks `02_carry`, `03_mean_reversion`, `05_b_pretest`,
+     `06_curve_momentum` and the v1 result sections remain in the repo as
+     historical baselines. They must be labeled `v1`; they are not rewritten.
+  3. Headline tables report v2 gross and the three cost layers. Do not mix
+     v1 and v2 numbers in the same table, and do not compare v1 net with v2
+     all-in net as if they used the same accounting.
+  4. The closed/negative conclusions do not change: A/B gross is negative;
+     D/C/C-hedge gross is weak and all-in net is negative. v2 is the final
+     presentation, not a rescue.
+- **Consequences:** README/HANDOFF/PROGRESS/onboarding and notebook 08 use
+  v2 as the final result; v1 is historical. No code or locked data
+  convention changes. No push.

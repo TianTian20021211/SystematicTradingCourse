@@ -12,8 +12,10 @@ A（carry）、B、C（mean reversion）和 D（curve momentum / basis-momentum�
 C 的 rolling-OLS 和 Kalman hedge-ratio variant 也没有改善。A/B 已收尾
 （不再调参/不做 rescue），C/D 已 closed 并合入 main。v2 holdings-based
 回测框架（分层成本、horizon、容量）也已合入 main，notebook 07 是 demo；
-下一步是用 v2 重跑 A/B/C/D、做 H，以及按 D-014 做 E。
-D-x（cross-sectional basis-momentum）是 backlog。
+v2 重跑 A/D/C/C-hedge/B 已完成，**v2 是正式结果（D-019）**，结论仍是
+negative/mixed；v1 notebook 和旧数字保留为历史 baseline。
+下一步是按 D-014 做 E，再做 H。D-x（cross-sectional basis-momentum）是
+backlog。
 
 ## 2. 先读什么
 
@@ -101,7 +103,8 @@ A baseline 和 A 诊断已完成（`02_carry`、`04_a_diagnose`），B 预测试
 A/B/C/D 都是负结果或 mixed-negative。A/B 已收尾，C/D 已 closed 并合入
 main。v2 回测框架（`src/simulate.py` 等、notebook 07）也已合入 main；
 v2 重跑 A/D/C/C-hedge/B（`src/v2_signals.py`、`src/v2_rerun.py`、
-notebook 08、`docs/v1_v2_comparison.md`）已完成，结论仍是 negative/mixed。
+notebook 08、`docs/v1_v2_comparison.md`）已完成，**v2 是正式结果
+（D-019）**；v1 notebook 和旧数字是历史 baseline。结论仍是 negative/mixed。
 下一步是按 D-014 做 E，再做 H；D-x 是 backlog。
 先读 `docs/PROGRESS.md` 和 `docs/backtest_framework.md`。
 不要用 test set 调参。

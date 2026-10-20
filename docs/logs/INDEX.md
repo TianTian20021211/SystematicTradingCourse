@@ -48,3 +48,4 @@
 | LOG-0044 | 2026-10-19 | Phase 9d | Claude Code | v2 re-runs A/D/C/C-hedge/B; notebook 08; refreshed 07 | src/v2_rerun.py, scripts/run_v2_rerun.py, scripts/run_all.sh, notebooks/07, notebooks/08 | `3d5019b` |
 | LOG-0045 | 2026-10-19 | Phase 9e | Claude Code | v1/v2 comparison doc and status close-out | docs/v1_v2_comparison.md, docs/backtest_framework.md, docs/data_dictionary.md, docs/HANDOFF.md, docs/PROGRESS.md, README.md, AGENTS.md | this commit |
 | LOG-0046 | 2026-10-19 | Phase 9f | Claude Code | Failure-diagnostics plan for A/B/D on v2 reruns | docs/diagnostics_plan.md, docs/HANDOFF.md, docs/logs/* | this commit |
+| LOG-0047 | 2026-10-19 | Phase 9g | Claude Code | Make v2 results official (D-019); keep v1 as historical | docs/decisions.md, README.md, AGENTS.md, docs/HANDOFF.md, docs/PROGRESS.md, docs/onboarding.md, docs/backtest_framework.md, docs/v1_v2_comparison.md | this commit |
