@@ -3728,3 +3728,28 @@ combined forecast peaks near h = 42 in validation (0.12) and falls to 0.04 at
 252. Both slides fit.
 
 **Commit:** `feat(slides): alpha correlation and IC-horizon slides` (`97efde8`).
+
+---
+
+## LOG-0087 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Fill every all-in net number in the summary table at USD 1m and
+replace the abstract verdict column.
+
+**What changed:** `scripts/make_slide_tables.py --summary` runs every idea's
+headline strategy through one engine at USD 1m (A flip with its 25% band, B
+flip, C 1:1, D, E rolling-SSR λ held one day, all with a t+1 fill, full
+sample) and writes `presentations/final/tables/summary.tex` with turnover,
+gross and all-in net (Sharpe in parentheses) plus the 22-day ridge row.
+`presentations/final/main.tex`: Table 18 uses it, with a "Bottom line" column
+in plain words, and the conclusion bullets now say that alone every idea is net
+negative. The roadmap verdicts became one-line results, and B and D captions
+state their all-in net at USD 1m (B −0.72%, D −0.39%) instead of the USD 10m
+figures.
+
+**Validation / results:** gross matches the idea slides for B, C, D and E. A's
+engine gross is +0.48% against +0.63% at signal level, because of the band, and
+the caption says so. All-in net at USD 1m: A −0.30, B −0.72, C −1.03, D −0.39,
+E −9.77, combined +0.23.
+
+**Commit:** `feat(slides): one-engine USD 1m summary table` (this commit).

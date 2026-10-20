@@ -168,7 +168,80 @@ def f_groups_tex(run: str = "every 22 days | equal") -> Path:
     return path
 
 
+SUMMARY_ROWS = [("a", "A spread convergence (flip)"), ("b", "B relative value (flip)"), ("c", "C mean reversion"),
+                ("d", "D curve momentum"), ("e", "E Nelson--Siegel slope")]
+
+
+def summary_grid(capital: float = 1e6) -> pd.DataFrame:
+    """Gross and all-in net of every idea's headline strategy, one engine, USD 1m, full sample, t+1 fill."""
+
+    from src import b_flip, sizing, v2_rerun, v2_signals
+
+    rank = pd.read_parquet(config.PROCESSED_DIR / "rank.parquet")
+    inputs = v2_signals.load_v2_inputs(rank, d=5, k=5, min_adv=100)
+    settings = v2_rerun.RerunSettings(capital=capital)
+    results = {
+        "a": simulate.simulate(v2_signals.flip_legs(v2_signals.a_legs(inputs)), inputs.marks,
+                               v2_rerun._config("a", settings)),
+        "b": b_flip.run_b_flip(inputs, rank, capital=capital)["result"],
+        "c": v2_rerun.run_strategy("c", rank, settings, inputs=inputs)["result"],
+        "d": v2_rerun.run_strategy("d", rank, settings, inputs=inputs)["result"],
+    }
+    st = ns.build_slope_strategy(inputs.bt["contract"], inputs.marks, rule="rolling_ssr")
+    legs = sizing.legs_from_signal(st["signal"], st["pairs"], k=1)
+    results["e"] = simulate.simulate(legs, inputs.marks, simulate.SimConfig(capital=capital))
+    rows = []
+    for key, label in SUMMARY_ROWS:
+        perf = report.performance_table(results[key]).set_index("layer")
+        rows.append({"row": label, "turnover_x": perf.loc["gross", "turnover_x"],
+                     "gross": perf.loc["gross", "ann_ret_pct"], "sr_gross": perf.loc["gross", "sharpe"],
+                     "net": perf.loc["- impact (all)", "ann_ret_pct"], "sr_net": perf.loc["- impact (all)", "sharpe"]})
+        print("done", label, rows[-1])
+    return pd.DataFrame(rows)
+
+
+SUMMARY_NOTES = {
+    "A spread convergence (flip)": "gross edge, costs take all of it",
+    "B relative value (flip)": "best gross Sharpe, half-spread exceeds it",
+    "C mean reversion": "costs are 2.7 times the gross",
+    "D curve momentum": "weak gross, unstable across periods",
+    "E Nelson--Siegel slope": "no edge with a $t+1$ fill",
+    "Combined alphas, ridge, every 22 days": "net positive in every period",
+}
+
+
+def summary_tex(grid: pd.DataFrame) -> Path:
+    """Write the cross-idea summary (gross and all-in net at USD 1m) plus the 22-day ridge row."""
+
+    perf = pd.read_parquet(config.OUTPUT_DIR / "alpha" / "perf_ridge.parquet")
+    p = perf.loc[perf["run"].eq("every 22 days") & perf["period"].eq("full")].set_index("layer")
+    ridge = {"row": "Combined alphas, ridge, every 22 days", "turnover_x": p.loc["gross", "turnover_x"],
+             "gross": p.loc["gross", "ann_ret_pct"], "sr_gross": p.loc["gross", "sharpe"],
+             "net": p.loc["- impact (all)", "ann_ret_pct"], "sr_net": p.loc["- impact (all)", "sharpe"]}
+    lines = [r"\begin{tabular}{@{}l r r r l@{}}", r"\toprule",
+             r"Strategy & Turnover & Gross & All-in net & Bottom line \\", r"\midrule"]
+    for i, r in enumerate([*grid.to_dict("records"), ridge]):
+        if i == len(grid):
+            lines.append(r"\midrule")
+        lines.append(" & ".join([r["row"], rf"${r['turnover_x']:.0f}\times$",
+                                 rf"${_signed(r['gross'])}$ $({_signed(r['sr_gross'])})$",
+                                 rf"${_signed(r['net'])}$ $({_signed(r['sr_net'])})$",
+                                 SUMMARY_NOTES[r["row"]]]) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    path = OUT_TEX / "summary.tex"
+    path.write_text("\n".join(lines) + "\n")
+    return path
+
+
 def main() -> None:
+    if "--summary" in sys.argv:
+        cached = OUT_CSV / "summary_grid.csv"
+        grid = pd.read_csv(cached) if "--cached" in sys.argv and cached.exists() else summary_grid()
+        OUT_CSV.mkdir(parents=True, exist_ok=True)
+        grid.to_csv(cached, index=False)
+        print(grid.round(3).to_string())
+        print(summary_tex(grid))
+        return
     if "--groups" in sys.argv:
         print(f_groups_tex())
         return
