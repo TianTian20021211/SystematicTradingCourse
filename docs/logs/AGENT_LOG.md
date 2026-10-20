@@ -3705,4 +3705,4 @@ description (carry level, carry shape, stretch, trend, curve shock).
 
 **Validation / results:** deck compiles, the slide fits, no `;`, `—` or `|`.
 
-**Commit:** `style(slides): define every alpha symbol and family` (this commit).
+**Commit:** `style(slides): define every alpha symbol and family` (`b164d3b`).
