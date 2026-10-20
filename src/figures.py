@@ -103,6 +103,24 @@ def nav_by_cost_layer(res, strategy: str, test_start: str | None = "2016-01-01",
     return ps.finalize(fig, title, legend_from=ax, ncol=3)
 
 
+def nav_compare(series: dict[str, pd.Series], strategy: str,
+                test_start: str | None = "2016-01-01"):
+    """Cumulative gross return of several related portfolios on one axis."""
+
+    fig, ax = plt.subplots(figsize=(ps.FULL_WIDTH, 3.0))
+    colors = (ps.BLUE, ps.ORANGE, ps.AQUA, ps.YELLOW)
+    for color, (label, ret) in zip(colors, series.items()):
+        ret = ret.sort_index()
+        ax.plot(ret.index, ret.cumsum() * 100, color=color, lw=1.1,
+                label=ps.tex(label))
+    _date_axis(ax)
+    _shade_test(ax, test_start)
+    ps.zero_line(ax)
+    ax.set_ylabel(ps.tex(r"Cumulative gross return (\% of capital)"))
+    title = ps.tex(rf"{strategy}: cumulative gross return, before transaction costs")
+    return ps.finalize(fig, title, legend_from=ax, ncol=3)
+
+
 def turnover(res, strategy: str, window: int = 63):
     """(a) Portfolio turnover through time; (b) turnover of each commodity's book."""
 
@@ -302,11 +320,13 @@ def capacity_compare(tables: dict, strategy: str):
     return ps.finalize(fig, title, legend_from=[a1, a2], ncol=2)
 
 
-def horizon_decay(marginal: pd.DataFrame, cumulative: pd.DataFrame, strategy: str):
+def horizon_decay(marginal: pd.DataFrame, cumulative: pd.DataFrame, strategy: str,
+                  formula: str | None = None):
     """(a) Gross signed return on each day ahead; (b) cumulative over the holding period.
 
     ``marginal`` is ``horizon_profile`` on windows [t+h, t+h+1]; ``cumulative``
     on windows [t+1, t+1+h]. Both are gross (no costs) and execution free.
+    ``formula`` overrides the default single-spread formula in the title.
     """
 
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(ps.FULL_WIDTH, 3.0))
@@ -323,13 +343,15 @@ def horizon_decay(marginal: pd.DataFrame, cumulative: pd.DataFrame, strategy: st
     a2.plot(hc, y, color=ps.BLUE, label=ps.tex(r"Mean cumulative return"), **MARKER)
     ps.zero_line(a2)
     a2.set_xlabel(ps.tex(r"Holding period $h$ (fill at $t{+}1$, exit at $t{+}1{+}h$)"))
-    a2.set_ylabel(ps.tex(r"Basis points over the holding period"))
+    a2.set_ylabel(ps.tex(r"Basis points over holding period"))
     a2.set_title(ps.tex(r"Cumulative return by holding period"))
     for ax in (a1, a2):
         ax.set_xticks([1, 5, 10, 15, 20])
     ps.panel_label(a1, "a"), ps.panel_label(a2, "b")
-    title = ps.tex(rf"{strategy}: gross signed spread return by horizon, "
-                   r"sign$(s_t)\times(r_{\mathrm{near}}-r_{\mathrm{far}})$, mean across commodities")
+    if formula is None:
+        formula = (r"sign$(s_t)\times(r_{\mathrm{near}}-r_{\mathrm{far}})$, "
+                   r"mean across commodities")
+    title = ps.tex(rf"{strategy}: gross signed spread return by horizon, {formula}")
     return ps.finalize(fig, title, legend_from=a2, ncol=2)
 
 
@@ -386,6 +408,31 @@ def bootstrap_distribution(summary: pd.DataFrame, draws: dict, value_col: str, y
         handles = [Patch(color=ps.BLUE, label=ps.tex(r"Bootstrap distribution"))] + handles
     ax.legend(handles=handles)
     return ps.finalize(fig, title, legend_from=ax, ncol=4 if signed else 3)
+
+
+def placebo_distribution(draws: np.ndarray, actual: float, strategy: str,
+                         window_label: str, p_value: float | None = None,
+                         n_boot: int | None = None, bins: int = 50):
+    """Histogram of random-ranking placebo means with the actual value marked."""
+
+    fig, ax = plt.subplots(figsize=(ps.FULL_WIDTH, 3.0))
+    ax.hist(draws, bins=bins, color=ps.BLUE, alpha=0.55, edgecolor=ps.SURFACE,
+            lw=0.4, label=ps.tex("Random-ranking placebo"))
+    ax.axvline(actual, color=ps.ORANGE, lw=1.4,
+               label=ps.tex(rf"Actual ranking ({actual:+.2f} bp)"))
+    ps.zero_line(ax)
+    ax.set_xlabel(ps.tex(r"Mean 1:6 fixed-pair return (bp per 5-day window)"))
+    ax.set_ylabel(ps.tex(r"Placebo draws"))
+    if p_value is not None:
+        n = n_boot if n_boot is not None else len(draws)
+        ax.set_title(ps.tex(
+            rf"{strategy}: random-ranking placebo, {n:,} draws, "
+            rf"one-sided $p={p_value:.3f}$"))
+    else:
+        ax.set_title(ps.tex(rf"{strategy}: random-ranking placebo"))
+    ax.text(0.99, 0.95, ps.tex(window_label), transform=ax.transAxes,
+            ha="right", va="top", fontsize=7.5, color=ps.INK_2)
+    return ps.finalize(fig, None, legend_from=ax, ncol=2)
 
 
 def bootstrap_ic_distribution(summary: pd.DataFrame, draws: dict, strategy: str, score: str,

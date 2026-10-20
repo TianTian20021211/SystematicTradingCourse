@@ -25,7 +25,7 @@ jupyter nbconvert --execute --to notebook --inplace notebooks/01_panel_build.ipy
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=900 notebooks/10_idea_a_carry.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/11_idea_b_adjacent_carry.ipynb
+  --ExecutePreprocessor.timeout=1800 notebooks/11_idea_b_adjacent_carry.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=1800 notebooks/12_idea_c_mean_reversion.ipynb
 jupyter nbconvert --execute --to notebook --inplace \

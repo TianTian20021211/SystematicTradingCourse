@@ -73,13 +73,54 @@ def build_adjacent_carries(rank_panel: pd.DataFrame) -> pd.DataFrame:
                     "date", "root", "commodity_near", "sector_near",
                     "rank_near", "rank_far", "contract_code_near",
                     "contract_code_far", "settle_near", "settle_far",
+                    "delivery_year_near", "delivery_month_near",
+                    "delivery_year_far", "delivery_month_far",
                     "spread", "carry_ann",
                 ]
             ].rename(
                 columns={"commodity_near": "commodity", "sector_near": "sector"}
             )
         )
-    return pd.concat(parts, ignore_index=True)
+    out = pd.concat(parts, ignore_index=True)
+    # Keep the raw-rank names for existing callers and add the pair-panel
+    # names used by select_adjacent / build_b_targets.
+    out["contract_near"] = out["contract_code_near"]
+    out["contract_far"] = out["contract_code_far"]
+    return out
+
+
+def build_adjacent_carries_from_pairs(pairs: pd.DataFrame) -> pd.DataFrame:
+    """Annualized carry from an already-built adjacent-pair panel.
+
+    This is the eligible-universe counterpart of
+    :func:`build_adjacent_carries`: the caller supplies the D=10 / liquidity
+    filtered adjacent pairs, and this function only computes the carry.
+    """
+
+    required = [
+        "date", "root", "rank_near", "contract_near", "contract_far",
+        "settle_near", "settle_far", "delivery_year_near",
+        "delivery_month_near", "delivery_year_far", "delivery_month_far",
+    ]
+    missing = set(required).difference(pairs.columns)
+    if missing:
+        raise ValueError(f"pairs missing columns: {sorted(missing)}")
+
+    out = pairs[required].copy()
+    calendar_cols = [
+        "delivery_year_near", "delivery_month_near",
+        "delivery_year_far", "delivery_month_far",
+    ]
+    out = out.loc[out[calendar_cols].notna().all(axis=1)].copy()
+    days = (
+        _month_start(out["delivery_year_far"], out["delivery_month_far"])
+        - _month_start(out["delivery_year_near"], out["delivery_month_near"])
+    ).dt.days
+    spread = out["settle_near"] - out["settle_far"]
+    out["carry_ann"] = (spread / out["settle_far"] * 365.0 / days).where(
+        out["settle_near"].gt(0) & out["settle_far"].gt(0) & days.gt(0)
+    )
+    return out
 
 
 def _legs(frame: pd.DataFrame, near_units: float, far_units: float) -> pd.DataFrame:
@@ -94,55 +135,119 @@ def _legs(frame: pd.DataFrame, near_units: float, far_units: float) -> pd.DataFr
     return pd.concat([near, far], ignore_index=True)
 
 
+def _valid_adjacent(adjacent: pd.DataFrame) -> pd.DataFrame:
+    """Rows with at least two valid adjacent carries per date/root."""
+
+    valid = adjacent.loc[adjacent["carry_ann"].notna()].copy()
+    counts = valid.groupby(["date", "root"]).size().rename("count")
+    valid = valid.merge(counts, on=["date", "root"], how="left")
+    return valid.loc[valid["count"].ge(2)].copy()
+
+
+def _pick_adjacent(valid: pd.DataFrame, rule: str) -> pd.DataFrame:
+    """Pick one adjacent pair per date/root under a selection rule."""
+
+    if rule in {"carry_high", "carry_low"}:
+        stats = (
+            valid.groupby(["date", "root"])["carry_ann"]
+            .agg(["max", "min"])
+            .reset_index()
+        )
+        stats = stats.loc[stats["max"].gt(stats["min"])]
+        if stats.empty:
+            return valid.iloc[0:0]
+        col = "max" if rule == "carry_high" else "min"
+        picked = valid.merge(stats[["date", "root", col]], on=["date", "root"])
+        picked = picked.loc[np.isclose(picked["carry_ann"], picked[col])]
+        return (
+            picked.sort_values(["date", "root", "rank_near"])
+            .drop_duplicates(["date", "root"])
+            .copy()
+        )
+    if rule in {"front", "back"}:
+        ascending = [True, True, rule == "front"]
+        return (
+            valid.sort_values(["date", "root", "rank_near"], ascending=ascending)
+            .groupby(["date", "root"], as_index=False)
+            .head(1)
+            .copy()
+        )
+    raise ValueError(f"Unknown adjacent selection rule: {rule!r}")
+
+
+def select_adjacent(
+    adjacent: pd.DataFrame,
+    long_rule: str = "carry_high",
+    short_rule: str = "carry_low",
+) -> pd.DataFrame:
+    """Choose the long and short adjacent spread for each date/root.
+
+    ``carry_high``/``carry_low`` preserve the original B selection (including
+    its near-tie handling); ``front``/``back`` pick the lowest/highest
+    maturity adjacent pair and are used for the static maturity control.
+    """
+
+    valid = _valid_adjacent(adjacent)
+    if valid.empty:
+        return pd.DataFrame()
+    long = _pick_adjacent(valid, long_rule).rename(
+        columns={
+            "rank_near": "rank_long",
+            "contract_near": "long_near",
+            "contract_far": "long_far",
+            "carry_ann": "carry_long",
+        }
+    )
+    short = _pick_adjacent(valid, short_rule).rename(
+        columns={
+            "rank_near": "rank_short",
+            "contract_near": "short_near",
+            "contract_far": "short_far",
+            "carry_ann": "carry_short",
+        }
+    )
+    out = long[
+        ["date", "root", "rank_long", "long_near", "long_far", "carry_long"]
+    ].merge(
+        short[
+            ["date", "root", "rank_short", "short_near", "short_far", "carry_short"]
+        ],
+        on=["date", "root"],
+        how="inner",
+    )
+    out = out.loc[out["rank_long"].ne(out["rank_short"])]
+    return out.reset_index(drop=True)
+
+
 def build_b_targets(
     rank_panel: pd.DataFrame,
     pair_panel: pd.DataFrame,
+    adjacent: pd.DataFrame | None = None,
+    long_rule: str = "carry_high",
+    short_rule: str = "carry_low",
 ) -> pd.DataFrame:
-    """Build leg-level B targets: long the highest adjacent carry, short the lowest.
+    """Build leg-level B targets: long one adjacent spread, short another.
 
-    The K=5 main pair is included in every group with zero units if it is not
-    one of the B legs, so the engine's pair validation still works. Groups with
-    no nonzero legs are dropped.
+    The default (``carry_high`` long / ``carry_low`` short) is the original
+    B. ``adjacent`` lets the caller pass an eligible adjacent-carry panel;
+    the default raw-rank panel preserves the original B. The K=5 main pair is
+    included in every group with zero units if it is not one of the B legs,
+    so the engine's pair validation still works. Groups with no nonzero legs
+    are dropped.
     """
 
-    adj = build_adjacent_carries(rank_panel)
-    valid = (
-        adj.loc[adj["carry_ann"].notna()]
-        .sort_values(["date", "root", "rank_near"])
-        .copy()
-    )
-    stats = (
-        valid.groupby(["date", "root"])["carry_ann"]
-        .agg(["max", "min", "count"])
-        .reset_index()
-    )
-    stats = stats.loc[(stats["count"] >= 2) & (stats["max"].gt(stats["min"]))]
-    if stats.empty:
+    adj = build_adjacent_carries(rank_panel) if adjacent is None else adjacent.copy()
+    selection = select_adjacent(adj, long_rule, short_rule)
+    if selection.empty:
         return pd.DataFrame()
-
-    high = valid.merge(stats[["date", "root", "max"]], on=["date", "root"])
-    high = high.loc[np.isclose(high["carry_ann"], high["max"])].drop_duplicates(
-        ["date", "root"]
+    long = selection.rename(
+        columns={"long_near": "contract_near", "long_far": "contract_far"}
     )
-    low = valid.merge(stats[["date", "root", "min"]], on=["date", "root"])
-    low = low.loc[np.isclose(low["carry_ann"], low["min"])].drop_duplicates(
-        ["date", "root"]
-    )
-
-    high = high.rename(
-        columns={
-            "contract_code_near": "contract_near",
-            "contract_code_far": "contract_far",
-        }
-    )
-    low = low.rename(
-        columns={
-            "contract_code_near": "contract_near",
-            "contract_code_far": "contract_far",
-        }
+    short = selection.rename(
+        columns={"short_near": "contract_near", "short_far": "contract_far"}
     )
     legs = pd.concat(
-        [_legs(high, 1.0, -1.0), _legs(low, -1.0, 1.0)], ignore_index=True
+        [_legs(long, 1.0, -1.0), _legs(short, -1.0, 1.0)], ignore_index=True
     )
     legs = (
         legs.groupby(["date", "root", "contract"], as_index=False)["units"]

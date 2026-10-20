@@ -49,6 +49,12 @@ legs. The v2 columns are the primary result of this phase (D-018).
 | C Kalman hedge | +0.98 | n/a (0 bps) | +0.61 | −0.18 | −0.50 | −6.10 | 54.7× |
 | B adjacent carry | −1.14 | −2.84 | −1.13 | −2.18 | −2.37 | −4.47 | 31.0× |
 
+**B-flip note (2026-10-20):** the B row above is the original
+pre-registered negative and is unchanged. Notebook 11 additionally reports
+B-flip (long lowest carry / short highest) as a post-hoc **gross-only**
+signal study; it is not an official net result and is not added to this
+comparison (D-026).
+
 ### 2.2 Train / test gross, annualised %
 
 | Strategy | v1 train | v1 test | v2 train | v2 test |

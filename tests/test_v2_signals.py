@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from src import panel, v2_signals
+from src import marks, panel, v2_signals
 
 
 def _rank_fixture() -> pd.DataFrame:
@@ -27,6 +27,66 @@ def _rank_fixture() -> pd.DataFrame:
                 volume=1000.0, open_interest=100.0,
             ))
     return pd.DataFrame(rows)
+
+
+def _synthetic_marks(rank: pd.DataFrame) -> pd.DataFrame:
+    contract = panel.build_contract_panel(rank)
+    if "stale" not in contract.columns:
+        contract = contract.assign(stale=False)
+    specs = pd.DataFrame(
+        {"point_value_usd": [1.0], "tick_size": [0.01]},
+        index=pd.Index(["X"], name="root"),
+    )
+    return marks.build_marks(contract, specs)
+
+
+def _variant_inputs(rank: pd.DataFrame) -> v2_signals.V2Inputs:
+    return v2_signals.V2Inputs(
+        bt={"rank": rank, "contract": panel.build_contract_panel(rank)},
+        marks=_synthetic_marks(rank),
+        pairs=pd.DataFrame(),
+    )
+
+
+def test_flip_legs_negates_active_units_only() -> None:
+    rank = _rank_fixture()
+    inputs = _variant_inputs(rank)
+    legs = v2_signals.b_legs(inputs, rank)
+    flipped = v2_signals.flip_legs(legs)
+    last_legs = legs.loc[legs["date"] == legs["date"].max()]
+    last_flip = flipped.loc[flipped["date"] == flipped["date"].max()]
+    assert last_flip.set_index("contract")["units"].to_dict() == {
+        "P2": -1.0, "P3": 2.0, "P4": -1.0,
+    }
+    assert np.allclose(
+        last_flip.set_index("contract")["units"],
+        -last_legs.set_index("contract")["units"],
+    )
+
+
+def test_b_flip_and_static_legs_on_eligible_fixture() -> None:
+    rank = _rank_fixture()
+    inputs = _variant_inputs(rank)
+
+    flip = v2_signals.b_flip_legs(inputs, rank, d=None, min_adv=None)
+    last = flip.loc[flip["date"] == flip["date"].max()]
+    assert last.set_index("contract")["units"].to_dict() == {
+        "P2": -1.0, "P3": 2.0, "P4": -1.0,
+    }
+
+    static = v2_signals.b_static_legs(inputs, rank, d=None, min_adv=None)
+    last = static.loc[static["date"] == static["date"].max()]
+    assert last.set_index("contract")["units"].to_dict() == {
+        "P1": 1.0, "P2": -1.0, "P3": -1.0, "P4": 1.0,
+    }
+
+
+def test_b_flip_liquidity_filter_can_empty_the_book() -> None:
+    rank = _rank_fixture()
+    inputs = _variant_inputs(rank)
+    assert v2_signals.b_flip_legs(
+        inputs, rank, d=None, min_adv=1e9
+    ).empty
 
 
 def test_b_legs_nets_shared_contracts_and_uses_one_group() -> None:

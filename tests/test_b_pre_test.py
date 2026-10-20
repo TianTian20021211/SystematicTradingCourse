@@ -57,6 +57,66 @@ def test_adjacent_carries_and_high_low_legs() -> None:
     assert legs["P3"] == "extra"
 
 
+def test_carries_from_pairs_match_raw() -> None:
+    rank, _ = _rank_pair()
+    raw = b.build_adjacent_carries(rank)
+    from_pairs = b.build_adjacent_carries_from_pairs(raw)
+    merged = raw[["date", "root", "rank_near", "carry_ann"]].merge(
+        from_pairs[["date", "root", "rank_near", "carry_ann"]],
+        on=["date", "root", "rank_near"],
+        suffixes=("_raw", "_pairs"),
+    )
+    assert len(merged) == len(raw)
+    assert np.allclose(
+        merged["carry_ann_raw"], merged["carry_ann_pairs"], equal_nan=True
+    )
+
+
+def test_select_adjacent_rules() -> None:
+    rank, _ = _rank_pair()
+    carries = b.build_adjacent_carries(rank)
+
+    flip = b.select_adjacent(carries, "carry_low", "carry_high")
+    assert set(flip["rank_long"]) == {3}
+    assert set(flip["rank_short"]) == {2}
+
+    static = b.select_adjacent(carries, "front", "back")
+    assert set(static["rank_long"]) == {1}
+    assert set(static["rank_short"]) == {3}
+
+
+def test_flip_and_static_targets() -> None:
+    rank, pair = _rank_pair()
+    carries = b.build_adjacent_carries(rank)
+
+    flip = b.build_b_targets(
+        rank, pair, adjacent=carries,
+        long_rule="carry_low", short_rule="carry_high",
+    )
+    units = flip.set_index("contract")["units"].to_dict()
+    assert units["P1"] == 0.0
+    assert units["P2"] == -1.0
+    assert units["P3"] == 2.0
+    assert units["P4"] == -1.0
+
+    static = b.build_b_targets(
+        rank, pair, adjacent=carries,
+        long_rule="front", short_rule="back",
+    )
+    units = static.set_index("contract")["units"].to_dict()
+    assert units["P1"] == 1.0
+    assert units["P2"] == -1.0
+    assert units["P3"] == -1.0
+    assert units["P4"] == 1.0
+
+
+def test_select_adjacent_needs_two_pairs() -> None:
+    rank, _ = _rank_pair()
+    rank = rank.loc[rank["rank"].le(2)]
+    carries = b.build_adjacent_carries(rank)
+    assert b.select_adjacent(carries, "carry_low", "carry_high").empty
+
+
 def test_decision_rule() -> None:
     def summary(gross: float, net: float) -> pd.DataFrame:
         return pd.DataFrame(

@@ -43,6 +43,20 @@ Source: `output/v2_rerun/comparison.csv`; narrative:
 notebooks 10–14; framework comparison:
 `docs/v1_v2_comparison.md`.
 
+### B-flip signal research (D-026, 2026-10-20)
+
+Notebook 11 now leads with B-flip (post-hoc, gross-only): long the
+lowest-carry adjacent spread, short the highest; D=10 eligible,
+`min_adv=100`, USD 10m, weekly. Full-sample gross +0.499%/yr, Sharpe 1.064,
+t_NW 7.14, turnover 31.4×. Raw exact flip +1.131%/yr, Sharpe 1.263;
+D=10 static front/back +0.108%/yr, Sharpe 0.208. Signal level 1:6
++3.98 bps (t 9.6), 1:21 +12.4 bps (t 8.6); 37/41 positive years; 22/24
+roots positive mean; placebo p<0.001. Standalone net is negative
+(half-spread 84 bps/yr vs gross 50 bps/yr). Original B remains
+negative/closed; B-flip is not in the official comparison and is not
+OOS-validated. Candidate tuning (not run): k-smoothing, D=5/20, ADV=1000,
+rebalance frequency, liquidity weighting.
+
 ---
 
 ## Status
