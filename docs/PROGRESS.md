@@ -85,7 +85,9 @@ rebalance frequency, liquidity weighting.
 | Official results | done | v2 is the final reported result; v1 is historical |
 | E (Nelson–Siegel) | done / closed | notebook 14; D-021–D-023; not tradable |
 | A flip (D-025) | done / adopted candidate | gross only; notebook 10 §7; test not significant |
-| Tests | done | 145 passed |
+| B-flip signal research (D-026) | done / post-hoc gross-only | notebook 11 headline; standalone net negative; not in official comparison |
+| D signal validity (D-028) | done | 1m IC 0.049; 2/24 FDR; detectable but unstable, not independent |
+| Tests | done | 171 passed |
 | Notebooks | done | `00`, `01`, `10_idea_a_carry`, `11_idea_b_adjacent_carry`, `12_idea_c_mean_reversion`, `13_idea_d_curve_momentum`, `14_idea_e_nelson_siegel` |
 
 ---

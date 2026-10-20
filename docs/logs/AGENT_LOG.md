@@ -2586,3 +2586,42 @@ params and no test-set tuning.
 **Next:** merged into `main` with the parallel A/B/C work; parameter response
 curves and main-spec selection are a separate phase; do not tune on the
 2016–2026 test sample.
+
+---
+
+## LOG-0059 · 2026-10-20 · Phase 13 · Claude Code
+
+**Goal:** Merge the four parallel idea worktrees (A flip diagnostics, B-flip,
+C daily audit, D signal validity) into local `main` after all agents finished.
+
+**Actions:**
+- Committed the two worktrees whose changes were still uncommitted: A
+  `976e923` (D-025) and C `39d85a8` (D-027). B (`ee36a9e`) and D (`fd9a58d`)
+  had already committed their work.
+- Resolved the four-way decision/log ID collision (all four had claimed
+  D-025 / LOG-0055): A keeps D-025 / LOG-0055; B is D-026 / LOG-0056
+  (`76bb653`), C D-027 / LOG-0057 (`48d5b8f`), D D-028 / LOG-0058
+  (`f907ea8`).
+- Merged with `--no-ff` in order A (`0b231b2`), B (`e4ea216`), C
+  (`4ec1129`), D (`b02c9dd`), combining every agent's README, HANDOFF,
+  PROGRESS, decisions, diagnostics-plan and log edits.
+- Added the missing D-026/D-027 summary rows, refreshed the INDEX hashes and
+  the test count, and recorded this entry.
+
+**Commands:**
+- `python -m pytest -q` → 171 passed
+- Four `git merge --no-ff` runs; conflict markers verified at zero.
+
+**Why:** The user ran A/B/C/D in parallel worktrees and asked for one merge
+into `main` once all agents were done.
+
+**Validation:** All four feature branches are ancestors of `main`; the merged
+tree passes the full synthetic suite. Notebooks were executed by the
+individual agents and were not re-run during this merge. Nothing was pushed;
+`main` is local only.
+
+**Commit:** `this commit`.
+
+**Next:** review the four merged sections; choose the next research step
+(H holding-period scan, or the A-flip cost/sizing layer). Worktrees and their
+branches are intentionally left in place.

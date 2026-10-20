@@ -320,6 +320,8 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 | D-023 | E follow-ups：fit significance、paper-timing costs、Kalman A/B not adopted |
 | D-024 | 云端 E 并入 D-020 布局；E 决策/日志重编号 |
 | D-025 | A flip：`target_flip = -sign(spread)` 为 adopted candidate carry signal；gross 信息检验、成本 deferred、不做 test tuning |
+| D-026 | B-flip：within-root carry 反转（long lowest、short highest）；D=10、min_adv=100、weekly、k=1；post-hoc gross-only，原 B 仍 closed，不进 official comparison |
+| D-027 | Daily C information audit：1986–2005 train / 2006–2015 validation / 2016–2026 test once；daily C1/C2/C3 + selection/gate；validation gate 失败，test 未读，C stays closed |
 | D-028 | D signal-validity：D-013 固定、不扫参数；rank-index t+1 forward（1/3/6/12m）；per-root IC/hit/quantile/R²；incremental vs static/A/C；decades/carry/vol + rolling 36m；placebo；6m block bootstrap、FDR、max-\|IC\|；结果 detectable but unstable，not independent |
 
 完整内容见 `docs/decisions.md`。
