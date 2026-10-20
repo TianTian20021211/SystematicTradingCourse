@@ -3687,3 +3687,22 @@ sentence removed; "$10m" removed from the C and D gross P&L captions and the D
 period table caption.
 
 **Commit:** `style(slides): drop the A-D capital figure` (`cf94110`).
+
+---
+
+## LOG-0085 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Explain every symbol on the alpha-definition slide and what each
+alpha family is meant to capture.
+
+**What changed:** `presentations/final/main.tex`: labels on the A–D idea slides;
+the combination opening slide now has a notation paragraph that points back to
+those slides and Eq. (1), renames the annualized carry to $\kappa_t$ (the A
+slide already uses $C_t$ for the raw spread), defines $\tau_t$, the adjacent
+carries, $r_t$, the C residual z-score (1:1 dollar hedge, chained across rolls),
+$\overline{F}_t$ and the trailing mean, and gives each family a one-line
+description (carry level, carry shape, stretch, trend, curve shock).
+
+**Validation / results:** deck compiles, the slide fits, no `;`, `—` or `|`.
+
+**Commit:** `style(slides): define every alpha symbol and family` (this commit).

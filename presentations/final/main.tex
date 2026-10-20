@@ -385,6 +385,7 @@ A and B are convergence designs, C to E are paper-based. The final section combi
 \section{A: Spread convergence}
 
 \begin{frame}{A \textperiodcentered\ Spread convergence: the idea}
+\label{sl:a}
 \begin{columns}[c, onlytextwidth]
 \begin{column}{0.55\textwidth}
 \footnotesize
@@ -494,6 +495,7 @@ Test 2016--2026 & $+0.46$ & $0.51$ & $1.58$ & $0.84$ \\
 \section{B: Curve relative value convergence}
 
 \begin{frame}{B \textperiodcentered\ Curve relative value convergence: the idea}
+\label{sl:b}
 \begin{columns}[c, onlytextwidth]
 \begin{column}{0.55\textwidth}
 \footnotesize
@@ -595,6 +597,7 @@ is a stability slice, not out of sample.}
 \section{C: Spread mean reversion}
 
 \begin{frame}{C \textperiodcentered\ Spread mean reversion: the idea}
+\label{sl:c}
 \paperref{lubnau2015trading}
 \begin{columns}[c, onlytextwidth]
 \begin{column}{0.56\textwidth}
@@ -713,6 +716,7 @@ CL $-0.26$, NG $+0.31$.}
 \section{D: Curve momentum}
 
 \begin{frame}{D \textperiodcentered\ Curve momentum: the trade idea}
+\label{sl:d}
 \begin{columns}[c, onlytextwidth]
 \begin{column}{0.57\textwidth}
 \footnotesize
@@ -1038,33 +1042,51 @@ forecast and trade worse. We keep the daily OLS fit.}
 
 \begin{frame}{Combining the ideas: from strategies to alphas}
 \footnotesize
-\begin{itemize}
-  \item Each idea makes economic sense, but each is \key{weak and works only in
-        some regimes}: the A and B flips are gross only, C is eaten by costs,
-        D is unstable, E works only at the paper's timing
-  \item So we \key{distil every paper's strategy into continuous alphas} on the
-        same main pair, combine them with a model, and trade the forecast
-\end{itemize}
-\vspace{-0.4ex}
+Each idea makes economic sense but is \key{weak and works only in some
+regimes}. So we \key{distil every strategy into continuous alphas} on the same
+main pair, combine them with a model, and trade the forecast.
+
+\vspace{0.2ex}
 {\scriptsize
-With $r_t$ the main-pair spread return, $C_t$ its annualized carry, $c^{(k)}_t$
-the carry of the $k$-th eligible adjacent spread, and $S_t$ the roll-chained
-spread index:
-\begin{align*}
-\text{A:}\quad & a^{\text{carry}}_t=C_t, &
-                 & a^{\text{carry,dev}}_t=C_t-\overline{C}_{t,252}\\
-\text{B:}\quad & b^{\text{curve}}_t=c^{(\text{front})}_t-c^{(\text{back})}_t, &
-                 & b^{\text{rel}}_t=C_t-\tfrac{1}{K}\textstyle\sum_k c^{(k)}_t\\
-\text{C:}\quad & c^{z,L}_t=-\dfrac{S_t-\overline{S}_{t,L}}{\operatorname{sd}_{t,L}(S)},\ L\in\{20,60\}, &
-                 & c^{\text{rev}}_t=-\textstyle\sum_{s=t-4}^{t}r_s\\
-\text{D:}\quad & d^{\text{mom},L}_t=\textstyle\sum_{s=t-L+1}^{t}r_s,\ L\in\{21,63,252\} & & \\
-\text{E:}\quad & e^{S}_t=\Delta\beta_{S,t}/\overline{F}_t, &
-                 & e^{C}_t=\Delta\beta_{C,t}/\overline{F}_t
-\end{align*}}
-\vspace{-0.6ex}
-{\scriptsize\color{slate}Each alpha uses settles up to $t$, is scaled per commodity by its
-expanding root mean square and clipped at $\pm4$. Signs are kept, the model learns
-the direction.}
+\textbf{Notation.} $C_t=F_{\text{near},t}-F_{\text{far},t}$ is the main spread
+(slide~\pageref{sl:a}) and $\tau_t$ the days between its two delivery months. Its \key{annualized carry} is
+$\kappa_t=(C_t/F_{\text{far},t})\cdot365/\tau_t$, positive in backwardation.
+$\kappa^{(k)}_t$ is the same carry for the $k$-th eligible adjacent spread
+M$k$--M$(k{+}1)$ of slide~\pageref{sl:b}, with $K\le3$ of them, front the
+nearest and back the farthest. $r_t=r_{\text{near},t}-r_{\text{far},t}$ is the
+daily return of the main pair with equal-notional legs. $z^{L}_t$ is the
+residual z-score of slide~\pageref{sl:c} over $L$ days with the 1:1 dollar
+hedge $\beta_t=1$, chained across rolls. $\beta_{S,t},\beta_{C,t}$ are the slope and
+curvature of Eq.~(\ref{eq:ns}) and $\overline{F}_t$ the mean price of the four
+contracts. $\overline{x}_{t,L}$ is a trailing $L$-day mean.}
+
+{\scriptsize
+\begin{itemize}\setlength{\itemsep}{0pt}
+  \item[A] \key{Carry level}: how steep is the spread per year, and is that
+        unusual?\hfill
+        $a^{\text{carry}}_t=\kappa_t,\quad
+         a^{\text{carry,dev}}_t=\kappa_t-\overline{\kappa}_{t,252}$
+  \item[B] \key{Carry shape along the curve}: is the front steeper than the
+        back, and is the main pair rich or cheap against its neighbors?\\
+        $b^{\text{curve}}_t=\kappa^{(\text{front})}_t-\kappa^{(\text{back})}_t,\quad
+         b^{\text{rel}}_t=\kappa_t-\tfrac{1}{K}\textstyle\sum_k\kappa^{(k)}_t$
+  \item[C] \key{Stretch}: is the spread far from its recent mean? Expect a pull
+        back.\hfill
+        $c^{z,L}_t=-z^{L}_t,\ L\in\{20,60\},\quad
+         c^{\text{rev}}_t=-\textstyle\sum_{s=t-4}^{t}r_s$
+  \item[D] \key{Trend}: has the near leg been beating the far leg? Expect it to
+        continue.\\
+        $d^{\text{mom},L}_t=\textstyle\sum_{s=t-L+1}^{t}r_s,\ L\in\{21,63,252\}$,
+        the additive $m_{near}-m_{far}$ of slide~\pageref{sl:d} over 1, 3 and
+        12 months
+  \item[E] \key{Curve shock}: did today's curve steepen or bend?\hfill
+        $e^{S}_t=\Delta\beta_{S,t}/\overline{F}_t,\quad
+         e^{C}_t=\Delta\beta_{C,t}/\overline{F}_t$
+\end{itemize}}
+\vspace{-0.3ex}
+{\scriptsize\color{slate}Each alpha uses settles up to $t$, is scaled per
+commodity by its expanding root mean square and clipped at $\pm4$. The model
+learns the signs.}
 \end{frame}
 
 \begin{frame}{Is an alpha informative? Time-series IC with a day-block bootstrap}
