@@ -124,3 +124,57 @@ def test_paper_tc2_is_proportional() -> None:
     out = costs.trade_costs(t, costs.paper_scenarios()["TC2"])
     assert np.isclose(out["cost_fee"].item(), 2 * 50 * 100 * 0.835e-4)
     assert out["cost_half_spread"].item() == 0 and out["cost_impact"].item() == 0
+
+
+def test_same_settle_fills_on_signal_day_and_earns_that_day() -> None:
+    dates = pd.bdate_range("2020-01-06", periods=8)
+    cp = pd.DataFrame([dict(date=d, root="X", contract_code=c, settle=100.0 + (i if c == "A" else 0.0),
+                            volume=1e3, stale=False) for i, d in enumerate(dates) for c in ("A", "B")])
+    specs_ = pd.DataFrame({"point_value_usd": [1.0], "tick_size": [0.01], "tick_value_usd": [0.01]},
+                          index=pd.Index(["X"], name="root"))
+    pairs = pd.DataFrame({"date": dates, "root": "X", "contract_near": "A", "contract_far": "B",
+                          "settle_near": 100.0, "settle_far": 100.0})
+    sig = pairs[["date", "root"]].assign(target=np.where(np.arange(8) >= 3, 1.0, 0.0))
+    mk = marks.build_marks(cp, specs_)
+    legs = sizing.legs_from_signal(sig, pairs)
+    lagged = simulate.simulate(legs, mk, simulate.SimConfig(capital=1e6))
+    same = simulate.simulate(simulate.same_settle(legs, mk), mk, simulate.SimConfig(capital=1e6))
+    assert lagged.trades["date"].min() == dates[4]
+    assert same.trades["date"].min() == dates[3]  # filled at the signal's own settle
+    first = same.by_root.set_index("date")["pnl_gross"]
+    assert first[dates[4]] > 0  # earns the t -> t+1 move of A
+
+
+def test_fit_quality_perfect_on_noise_free_curves() -> None:
+    wide, _ = _wide(n_days=20, lam=0.3)
+    q = ns.fit_quality(wide, pd.Series(0.3, index=wide.index))
+    assert np.allclose(q["r2_LSC"], 1.0) and np.allclose(q["adj_LSC"], 1.0) and np.allclose(q["loo_LSC"], 1.0)
+    assert np.allclose(q["r2_L"], 0.0) and np.allclose(q["adj_L"], 0.0)
+    assert (q["r2_LS"] <= q["r2_LSC"] + 1e-12).all()  # nested in-sample R² never falls
+
+
+def test_block_bootstrap_mean_detects_shift() -> None:
+    from src import horizon
+
+    rng = np.random.default_rng(5)
+    dates = pd.bdate_range("2000-01-03", periods=600)
+    df = pd.concat([pd.DataFrame({"date": dates, "root": "POS", "x": 0.3 + rng.normal(size=600)}),
+                    pd.DataFrame({"date": dates, "root": "NUL", "x": rng.normal(size=600)})])
+    s, d = horizon.block_bootstrap_mean(df, "x", block=10, n_boot=500)
+    s = s.set_index("root")
+    assert s.loc["POS", "p_value"] < 0.01 and s.loc["NUL", "p_value"] > 0.01  # a 5% test rejects a true null 5% of the time
+    med, _ = horizon.block_bootstrap_mean(df, "x", block=10, n_boot=200, stat="median")
+    assert np.isclose(med.set_index("root").loc["POS", "mean"], df.loc[df["root"] == "POS", "x"].median())
+
+
+def test_kalman_tracks_constant_curve_and_predicts_it() -> None:
+    from src import ns_kalman as nk
+
+    M = np.array([1.0, 2.0, 3.0, 4.0])
+    beta = np.array([50.0, -3.0, 2.0])
+    X = ns.loadings(M[None, :], np.array([1.7933 / M.mean()]))[0]
+    obs = [(pd.Timestamp("2020-01-01") + pd.Timedelta(days=i), X @ beta, M, 1.7933 / M.mean()) for i in range(30)]
+    res = nk.run_filter(obs, np.array([1e-5]), np.array([1e-6]), loo=True)
+    assert np.allclose(res["beta_post"][-1], beta, atol=1e-6)
+    assert np.allclose(res["sse_pred"][1:, 0], 0.0, atol=1e-8)  # a constant curve is predicted exactly
+    assert np.allclose(res["press_loo"][1:, 0], 0.0, atol=1e-6)

@@ -273,3 +273,19 @@ def simulate(legs: pd.DataFrame, marks: pd.DataFrame, config: SimConfig | None =
     num_cols = by_root.columns.drop(["date", "root", "status"])
     by_root[num_cols] = by_root[num_cols].fillna(0.0)
     return SimResult(holdings, trades, by_root, _daily(by_root.drop(columns="status"), cfg.capital), cfg)
+
+
+def same_settle(legs: pd.DataFrame, marks: pd.DataFrame) -> pd.DataFrame:
+    """Re-date leg targets so they fill at the settle that produced the signal.
+
+    ``simulate`` fills a target dated d at the next trading day. Moving each
+    target to the previous trading day makes the fill happen at the signal's
+    own settle (P&L from t to t+1): the timing used by Bianchi et al. (2023).
+    This is a diagnostic: a settle cannot be traded after it is observed.
+    """
+
+    calendar = pd.DatetimeIndex(sorted(marks["date"].unique()))
+    pos = calendar.searchsorted(pd.DatetimeIndex(legs["date"]))
+    out = legs.loc[pos > 0].copy()
+    out["date"] = calendar[pos[pos > 0] - 1]
+    return out

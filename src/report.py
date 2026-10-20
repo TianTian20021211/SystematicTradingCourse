@@ -68,8 +68,12 @@ def root_table(res: simulate.SimResult) -> pd.DataFrame:
     return out.sort_values("net_pct_yr").round(4)
 
 
-def k_sweep(signal, pairs, marks, ks, config: simulate.SimConfig | None = None, **sizing_kw) -> pd.DataFrame:
+def k_sweep(signal, pairs, marks, ks, config: simulate.SimConfig | None = None, same_settle: bool = False,
+            start: str | None = None, end: str | None = None, **sizing_kw) -> pd.DataFrame:
     """Rerun the strategy with k overlapping sleeves (trade 1/k per day).
+
+    ``same_settle=True`` fills at the signal's own settle (paper timing, not
+    tradable; see ``simulate.same_settle``).
 
     Returns:
         One row per k: annualised return, Sharpe and Newey-West t-stat per
@@ -78,8 +82,11 @@ def k_sweep(signal, pairs, marks, ks, config: simulate.SimConfig | None = None, 
 
     rows = []
     for k in ks:
-        res = simulate.simulate(sizing.legs_from_signal(signal, pairs, k=k, **sizing_kw), marks, config)
-        perf = performance_table(res).set_index("layer")
+        legs = sizing.legs_from_signal(signal, pairs, k=k, **sizing_kw)
+        if same_settle:
+            legs = simulate.same_settle(legs, marks)
+        res = simulate.simulate(legs, marks, config)
+        perf = performance_table(res, start, end).set_index("layer")
         row = {"k": k, "turnover_x": perf["turnover_x"].iat[0]}
         for layer in perf.index:
             row[f"ret_{layer}"] = perf.loc[layer, "ann_ret_pct"]

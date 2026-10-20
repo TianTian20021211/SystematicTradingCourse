@@ -307,3 +307,50 @@ def build_slope_strategy(contract_panel: pd.DataFrame, marks_: pd.DataFrame, rul
     pairs["liquid"] = pairs[["adv_near", "adv_far"]].min(axis=1).ge(min_adv)
     signal = signal.assign(target=signal["target"].where(pairs["liquid"].to_numpy(), 0.0))
     return dict(curve=curve, wide=wide, fits=fits, sig=sig, pairs=pairs, signal=signal)
+
+
+MODELS = {"L": [0], "LS": [0, 1], "LC": [0, 2], "LSC": [0, 1, 2]}
+
+
+def _loo_press(X: np.ndarray, F: np.ndarray) -> np.ndarray:
+    """Leave-one-contract-out prediction SSE (PRESS) per row.
+
+    Each of the n contracts is predicted from a fit on the other n-1; NaN if
+    a fold is singular (e.g. 3 parameters cannot be fitted on 2 points).
+    """
+
+    n = F.shape[1]
+    press = np.zeros(len(F))
+    for k in range(n):
+        keep = [j for j in range(n) if j != k]
+        beta, _ = _ols(X[:, keep, :], F[:, keep])
+        press += (F[:, k] - np.einsum("bj,bj->b", X[:, k, :], beta)) ** 2
+    return press
+
+
+def fit_quality(wide: pd.DataFrame, lam: pd.Series) -> pd.DataFrame:
+    """In-sample, adjusted and leave-one-out R² of nested NS models per root-day.
+
+    Models: L (level only), LS, LC, LSC (full). With n = 4 contracts and p
+    slope regressors, adjusted R² = 1 - (1 - R²)(n - 1)/(n - p - 1); the
+    level-only model has R² = adjusted R² = 0 by construction. The LOO
+    ("predictive") R² is 1 - PRESS / SST.
+
+    Returns:
+        ``date, root`` plus ``r2_<m>``, ``adj_<m>``, ``loo_<m>`` for each model.
+    """
+
+    F, M = _arrays(wide)
+    X = loadings(M, lam.to_numpy(float))
+    n = F.shape[1]
+    sst = ((F - F.mean(axis=1, keepdims=True)) ** 2).sum(axis=1)
+    out = wide[["date", "root"]].copy()
+    with np.errstate(divide="ignore", invalid="ignore"):
+        for name, cols in MODELS.items():
+            _b, ssr = _ols(X[..., cols], F)
+            r2 = np.where(sst > 0, 1.0 - ssr / sst, np.nan)
+            p = len(cols) - 1
+            out[f"r2_{name}"] = r2
+            out[f"adj_{name}"] = 1.0 - (1.0 - r2) * (n - 1) / (n - p - 1)
+            out[f"loo_{name}"] = np.where(sst > 0, 1.0 - _loo_press(X[..., cols], F) / sst, np.nan)
+    return out

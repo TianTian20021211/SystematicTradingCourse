@@ -79,10 +79,11 @@ def _log_x(ax, ticks=None, usd: bool = False) -> None:
         ax.set_xlabel(ps.tex(r"Strategy capital (USD, log scale)"))
 
 
-def nav_by_cost_layer(res, strategy: str, test_start: str | None = "2016-01-01"):
-    """Cumulative return of the strategy after each successive cost layer."""
+def nav_by_cost_layer(res, strategy: str, test_start: str | None = "2016-01-01",
+                      start: str | None = None, end: str | None = None):
+    """Cumulative return of the strategy after each successive cost layer (optionally a sub-period)."""
 
-    d = res.daily.set_index("date")
+    d = res.daily.set_index("date").loc[start:end]
     fig, ax = plt.subplots(figsize=(ps.FULL_WIDTH, 3.0))
     for color, (col, label) in zip(ps.ORDINAL_BLUE, LAYER_LABELS.items()):
         ann = d[col].mean() * 252 * 100
@@ -328,45 +329,69 @@ def horizon_decay(marginal: pd.DataFrame, cumulative: pd.DataFrame, strategy: st
     return ps.finalize(fig, title, legend_from=a2, ncol=2)
 
 
-def bootstrap_ic_distribution(summary: pd.DataFrame, draws: dict, strategy: str, score: str,
-                              window_label: str, block: int, alpha: float = 0.05):
-    """Per-commodity block-bootstrap distribution of the time-series IC.
+def bootstrap_distribution(summary: pd.DataFrame, draws: dict, value_col: str, ylabel: str, title: str,
+                           alpha: float = 0.05, test: bool = True, signed: bool = False):
+    """Per-commodity block-bootstrap distributions as vertical histograms.
 
-    One vertical histogram per commodity (sorted by IC), its point estimate,
-    95% percentile interval and two-sided bootstrap p-value. Commodities with
-    p < alpha are drawn in blue, the rest in grey.
+    One histogram per commodity (sorted by ``value_col``) with its point
+    estimate and 95% percentile interval. With ``test=True`` the two-sided
+    bootstrap p-value is printed and commodities with p < alpha are blue;
+    with ``test=False`` (no meaningful null, e.g. a level of R²) all are blue.
+    ``signed=True`` (for gains) colours significant positives blue and
+    significant negatives orange.
     """
 
-    s = summary.sort_values("ic").reset_index(drop=True)
+    s = summary.sort_values(value_col).reset_index(drop=True)
     lo = min(np.quantile(d, 0.001) for d in draws.values())
     hi = max(np.quantile(d, 0.999) for d in draws.values())
+    if test:
+        lo, hi = min(lo, 0.0), max(hi, 0.0)
     bins = np.linspace(lo, hi, 41)
     fig, ax = plt.subplots(figsize=(ps.FULL_WIDTH, 3.6))
     for i, r in s.iterrows():
         dens, edges = np.histogram(draws[r["root"]], bins=bins, density=True)
-        color = ps.BLUE if r["p_value"] < alpha else "#a9a8a4"
-        ax.barh(edges[:-1], dens / dens.max() * 0.42, height=np.diff(edges), left=i,
+        significant = not test or r["p_value"] < alpha
+        color = ps.BLUE if significant else "#a9a8a4"
+        if signed and significant and r[value_col] < 0:
+            color = ps.ORANGE
+        ax.barh(edges[:-1], dens / max(dens.max(), 1e-12) * 0.42, height=np.diff(edges), left=i,
                 align="edge", color=color, lw=0)
         ax.plot([i - 0.08, i - 0.08], [r["ci_lo"], r["ci_hi"]], color=ps.INK, lw=0.8)
-        ax.plot(i - 0.08, r["ic"], "o", color=ps.INK, ms=2.6)
-        p = r["p_value"]
-        ptxt = r"$p<0.001$" if p < 0.001 else rf"$p={p:.3f}$"
-        ax.text(i + 0.1, hi + 0.03 * (hi - lo), ps.tex(ptxt), rotation=90, ha="center", va="bottom",
-                fontsize=6.3, color=ps.INK_2)
-    ps.zero_line(ax)
+        ax.plot(i - 0.08, r[value_col], "o", color=ps.INK, ms=2.6)
+        if test:
+            p = r["p_value"]
+            ptxt = r"$p<0.001$" if p < 0.001 else rf"$p={p:.3f}$"
+            ax.text(i + 0.1, hi + 0.03 * (hi - lo), ps.tex(ptxt), rotation=90, ha="center", va="bottom",
+                    fontsize=6.3, color=ps.INK_2)
+    if test:
+        ps.zero_line(ax)
     ax.set_xticks(range(len(s)), s["root"])
     ax.tick_params(axis="x", length=0)
     ax.set_xlim(-0.6, len(s) - 0.3)
-    ax.set_ylim(lo, hi + 0.42 * (hi - lo))
-    ax.set_ylabel(ps.tex(r"Time-series Spearman IC"))
-    handles = [Patch(color=ps.BLUE, label=ps.tex(rf"Bootstrap distribution, $p<{alpha:g}$")),
-               Patch(color="#a9a8a4", label=ps.tex(rf"Bootstrap distribution, $p\geq{alpha:g}$")),
-               Line2D([], [], color=ps.INK, marker="o", ms=2.6, lw=0.8, label=ps.tex(r"Estimate and 95\% interval"))]
+    ax.set_ylim(lo, hi + (0.42 if test else 0.05) * (hi - lo))
+    ax.set_ylabel(ps.tex(ylabel))
+    handles = [Line2D([], [], color=ps.INK, marker="o", ms=2.6, lw=0.8, label=ps.tex(r"Estimate and 95\% interval"))]
+    if test and signed:
+        handles = [Patch(color=ps.BLUE, label=ps.tex(rf"Significantly better, $p<{alpha:g}$")),
+                   Patch(color=ps.ORANGE, label=ps.tex(rf"Significantly worse, $p<{alpha:g}$")),
+                   Patch(color="#a9a8a4", label=ps.tex(rf"Not significant"))] + handles
+    elif test:
+        handles = [Patch(color=ps.BLUE, label=ps.tex(rf"Bootstrap distribution, $p<{alpha:g}$")),
+                   Patch(color="#a9a8a4", label=ps.tex(rf"Bootstrap distribution, $p\geq{alpha:g}$"))] + handles
+    else:
+        handles = [Patch(color=ps.BLUE, label=ps.tex(r"Bootstrap distribution"))] + handles
     ax.legend(handles=handles)
+    return ps.finalize(fig, title, legend_from=ax, ncol=4 if signed else 3)
+
+
+def bootstrap_ic_distribution(summary: pd.DataFrame, draws: dict, strategy: str, score: str,
+                              window_label: str, block: int, alpha: float = 0.05):
+    """Per-commodity block-bootstrap distribution of the time-series IC."""
+
     title = ps.tex(rf"{strategy}: is each commodity's time-series IC different from zero?" + "\n"
                    + rf"IC of {score} at $t$ with the spread return over {window_label}; "
                    + rf"{block}-day moving-block bootstrap, two-sided $p$-values")
-    return ps.finalize(fig, title, legend_from=ax, ncol=3)
+    return bootstrap_distribution(summary, draws, "ic", r"Time-series Spearman IC", title, alpha=alpha)
 
 
 def ns_betas(fits: pd.DataFrame, wide: pd.DataFrame, roots: list[str], strategy: str):
@@ -441,3 +466,34 @@ def timing_comparison(profiles: dict, strategy: str):
     title = ps.tex(rf"{strategy}: does the signal survive a one-day execution lag? "
                    r"sign$(s_t)\times(r_{\mathrm{near}}-r_{\mathrm{far}})$, 95\% NW CI")
     return ps.finalize(fig, title, legend_from=ax, ncol=2)
+
+
+def k_sweep_timing(tables: dict, strategy: str):
+    """k sweep under several execution timings: turnover, gross and first-order net return.
+
+    ``tables`` maps a timing label to a ``report.k_sweep`` table. Bands are
+    95% Newey-West intervals of the annual return.
+    """
+
+    fig, axes = plt.subplots(1, 3, figsize=(ps.FULL_WIDTH, 2.8))
+    panels = ((None, r"Traded notional / capital, per year", r"Turnover"),
+              ("gross", r"Annual return (\% of capital)", r"Gross"),
+              ("- fees", r"Annual return (\% of capital)", r"Net of half-spread and fees"))
+    for color, (name, t) in zip(ps.CATEGORICAL, tables.items()):
+        k = t["k"]
+        axes[0].plot(k, t["turnover_x"], color=color, label=ps.tex(name), **MARKER)
+        for ax, (layer, _y, _t) in zip(axes[1:], panels[1:]):
+            ret = t[f"ret_{layer}"]
+            half = _ci(ret, t[f"t_{layer}"])
+            ax.fill_between(k, ret - half, ret + half, color=color, alpha=0.15, lw=0)
+            ax.plot(k, ret, color=color, **MARKER)
+    for ax, (_l, ylab, title), letter in zip(axes, panels, "abc"):
+        _log_x(ax, ticks=list(next(iter(tables.values()))["k"]))
+        ax.set_xlabel(ps.tex(r"Sleeves $k$"))
+        ax.set_ylabel(ps.tex(ylab))
+        ax.set_title(ps.tex(title))
+        ps.panel_label(ax, letter)
+    for ax in axes[1:]:
+        ps.zero_line(ax)
+    title = ps.tex(rf"{strategy}: smoothing the position over $k$ days under two execution timings (bands: 95\% NW CI)")
+    return ps.finalize(fig, title, legend_from=axes[0], ncol=2)

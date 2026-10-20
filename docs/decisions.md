@@ -508,3 +508,39 @@ Status values: `proposed`, `accepted`, `superseded`.
   notebook 06 now runs at USD 1m. Revisiting E requires intraday or
   trade-at-settlement data to test whether the same-settle effect is
   executable.
+
+---
+
+## D-018 · Idea E follow-ups: fit significance, paper-timing costs, Kalman A/B
+
+- **Status:** accepted
+- **Date:** 2026-10-20
+- **Context:** After D-017, three questions remained: does each NS component
+  describe the curve significantly better, does the paper's same-settle
+  strategy survive costs or smoothing, and does a Kalman dynamic NS improve on
+  the daily OLS snapshot.
+- **Decision:**
+  1. **Fit significance:** per-commodity 21-day moving-block bootstrap of
+     daily fit statistics; nested models compared with paired bootstraps on
+     adjusted R² (in-sample R² cannot fall when a regressor is added) and on
+     leave-one-contract-out R² (median; heavy tails). Result: slope helps on
+     22–24/24 commodities in every metric; curvature helps out of sample on
+     11/24 and hurts on 9/24 (seasonal curves: LC, LH, FC, LB, XB, SB, S, CT,
+     NG).
+  2. **Paper timing with costs:** `simulate.same_settle` re-dates targets so
+     the engine fills at the signal's own settle (diagnostic only). Paper
+     sample, paper λ, USD 1m: gross 3.11%/yr (Sharpe 1.95); paper TC1–TC3 net
+     1.2–2.5%/yr; v2 half-spread alone takes it to −0.04%/yr and fees to
+     −1.35%/yr. k-day smoothing lowers turnover but dilutes the one-day edge
+     faster; no k is positive net of spread and fees at either timing.
+  3. **Kalman A/B:** random-walk state-space NS (`src/ns_kalman.py`), noise
+     scaled by the previous mean price, (r, q) chosen per root by one-step
+     log likelihood on 1986–2005, A/B on 2006–2026 with paired block
+     bootstraps. Kalman is better on leave-one-out fit (24/24) but worse on
+     one-step-ahead curve forecasts (20/24), and its ΔβS signal is worse at
+     the tradable timing ([t+1, t+2] −0.57 bp, t = −1.7). Adoption rule
+     (significant improvement on most commodities) is not met: **not
+     adopted**.
+- **Consequences:** E stays closed as not tradable (D-017). For curve-shape
+  descriptors used elsewhere, slope is robust; curvature only for smooth
+  curves.
