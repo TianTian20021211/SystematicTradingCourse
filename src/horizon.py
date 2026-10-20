@@ -14,6 +14,18 @@ import pandas as pd
 DEFAULT_HORIZONS = [(1, 2), (1, 3), (1, 4), (1, 6), (1, 11), (1, 21), (11, 21)]
 
 
+def marginal_horizons(max_lead: int = 20) -> list[tuple[int, int]]:
+    """One-day windows [t+h, t+h+1] for h = 1..max_lead (return on day h ahead)."""
+
+    return [(h, h + 1) for h in range(1, max_lead + 1)]
+
+
+def cumulative_horizons(max_hold: int = 20) -> list[tuple[int, int]]:
+    """Holding windows [t+1, t+1+h] for h = 1..max_hold (fill at t+1, hold h days)."""
+
+    return [(1, 1 + h) for h in range(1, max_hold + 1)]
+
+
 def _cum_marks(marks: pd.DataFrame, calendar: pd.DatetimeIndex) -> pd.DataFrame:
     """Cumulative settle change per contract, indexed by calendar position."""
 

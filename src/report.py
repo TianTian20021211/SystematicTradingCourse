@@ -72,8 +72,8 @@ def k_sweep(signal, pairs, marks, ks, config: simulate.SimConfig | None = None, 
     """Rerun the strategy with k overlapping sleeves (trade 1/k per day).
 
     Returns:
-        One row per k: annualised gross / net return, Sharpe per layer and
-        turnover.
+        One row per k: annualised return, Sharpe and Newey-West t-stat per
+        cost layer, and turnover.
     """
 
     rows = []
@@ -84,6 +84,7 @@ def k_sweep(signal, pairs, marks, ks, config: simulate.SimConfig | None = None, 
         for layer in perf.index:
             row[f"ret_{layer}"] = perf.loc[layer, "ann_ret_pct"]
             row[f"sr_{layer}"] = perf.loc[layer, "sharpe"]
+            row[f"t_{layer}"] = perf.loc[layer, "t_nw"]
         rows.append(row)
     return pd.DataFrame(rows)
 
