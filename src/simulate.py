@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 
 from . import costs as cost_model
+from .marks import trading_calendar
 
 
 @dataclass(frozen=True)
@@ -47,28 +48,61 @@ class SimResult:
     by_root: pd.DataFrame  # date x root P&L, costs, notionals (USD)
     daily: pd.DataFrame  # portfolio daily returns per cost layer
     config: SimConfig
+    calendar: pd.DatetimeIndex | None = None  # full evaluation calendar
 
 
 def _root_book(legs: pd.DataFrame) -> dict:
     """Map signal date -> (key, contracts, units, budget) for one root.
 
-    ``key`` = (group_id, target); the budget is compared separately against
-    the rebalance band. A flat row yields no contracts.
+    ``key`` = (group_id, target, resize_key). ``resize_key`` lets a
+    strategy signal a resize when units change without the target changing
+    (weekly hedge ratio, multi-leg composition). The budget is compared
+    separately against the rebalance band. A flat row yields no contracts.
+
+    The adapter contract is one non-flat group per (date, root). Mixing a
+    flat row with an active group, or emitting two active groups on the same
+    root-date, would silently merge positions; raise instead.
     """
 
+    if "resize_key" in legs.columns:
+        resize_keys = legs["resize_key"].fillna("").astype(str)
+    else:
+        resize_keys = pd.Series([""] * len(legs), index=legs.index)
     rows: dict = {}
-    cols = zip(legs["date"], legs["group_id"], legs["contract"], legs["units"], legs["budget"], legs["target"])
-    for date, group, contract, units, budget, target in cols:
-        entry = rows.setdefault(date, [group, round(float(target), 12), [], [], float(budget)])
-        if group != "flat" and isinstance(contract, str):
-            entry[2].append(contract)
-            entry[3].append(units)
+    cols = zip(
+        legs["date"], legs["group_id"], legs["contract"], legs["units"],
+        legs["budget"], legs["target"], resize_keys,
+    )
+    for date, group, contract, units, budget, target, resize_key in cols:
+        entry = rows.setdefault(date, {
+            "group": None, "target": 0.0, "resize_key": "",
+            "flat": False, "contracts": [], "units": [], "budget": float(budget),
+        })
+        if group == "flat":
+            entry["flat"] = True
+            continue
+        target = round(float(target), 12)
+        if entry["group"] is None:
+            entry["group"], entry["target"], entry["resize_key"] = group, target, resize_key
+        elif (entry["group"], entry["target"], entry["resize_key"]) != (group, target, resize_key):
+            raise ValueError(
+                "multiple non-flat leg groups on the same (date, root): "
+                f"{date} {entry['group']} vs {group}; net them in the adapter"
+            )
+        if isinstance(contract, str):
+            entry["contracts"].append(contract)
+            entry["units"].append(units)
     book = {}
-    for date, (group, target, contracts, units, budget) in rows.items():
-        if not contracts:
-            book[date] = (("flat", 0.0), [], np.array([]), 0.0)
+    for date, entry in rows.items():
+        if entry["flat"] and entry["group"] is not None:
+            raise ValueError(
+                f"mixed flat and active leg rows on the same (date, root): {date}"
+            )
+        if not entry["contracts"]:
+            book[date] = (("flat", 0.0, ""), [], np.array([]), 0.0)
         else:
-            book[date] = ((group, target), contracts, np.array(units, float), budget)
+            key = (entry["group"], entry["target"], entry["resize_key"])
+            book[date] = (key, entry["contracts"], np.array(entry["units"], float), entry["budget"])
     return book
 
 
@@ -178,6 +212,19 @@ def _run_root(root, legs_r, marks_r, calendar, pv, cfg) -> tuple[list, list, lis
 def _holdings_pnl(holdings: pd.DataFrame, marks: pd.DataFrame, calendar: pd.DatetimeIndex) -> pd.DataFrame:
     """P&L on day t+1 of holdings at the end of day t, plus end-of-day notional."""
 
+    if holdings.empty:
+        return pd.DataFrame({
+            "date": pd.Series(dtype="datetime64[ns]"),
+            "root": pd.Series(dtype="object"),
+            "contract": pd.Series(dtype="object"),
+            "n": pd.Series(dtype="float64"),
+            "pnl_date": pd.Series(dtype="datetime64[ns]"),
+            "dprice": pd.Series(dtype="float64"),
+            "mark": pd.Series(dtype="float64"),
+            "point_value": pd.Series(dtype="float64"),
+            "pnl": pd.Series(dtype="float64"),
+            "gross_notional": pd.Series(dtype="float64"),
+        })
     h = holdings.copy()
     pos = calendar.searchsorted(h["date"])
     h["pnl_date"] = calendar[np.minimum(pos + 1, len(calendar) - 1)]
@@ -198,6 +245,17 @@ def _holdings_pnl(holdings: pd.DataFrame, marks: pd.DataFrame, calendar: pd.Date
 def _by_root(h: pd.DataFrame, trades: pd.DataFrame) -> pd.DataFrame:
     """Date x root USD table: P&L, costs, traded and held notional."""
 
+    if h.empty and trades.empty:
+        return pd.DataFrame({
+            "date": pd.Series(dtype="datetime64[ns]"),
+            "root": pd.Series(dtype="object"),
+            "pnl_gross": pd.Series(dtype="float64"),
+            "gross_notional": pd.Series(dtype="float64"),
+            "traded_notional": pd.Series(dtype="float64"),
+            "cost_half_spread": pd.Series(dtype="float64"),
+            "cost_fee": pd.Series(dtype="float64"),
+            "cost_impact": pd.Series(dtype="float64"),
+        })
     pnl = h.groupby(["pnl_date", "root"])["pnl"].sum().rename_axis(["date", "root"])
     held = h.groupby(["date", "root"])["gross_notional"].sum()
     cost_cols = ["notional", "cost_half_spread", "cost_fee", "cost_impact"]
@@ -206,8 +264,17 @@ def _by_root(h: pd.DataFrame, trades: pd.DataFrame) -> pd.DataFrame:
     return out.reset_index().sort_values(["date", "root"]).reset_index(drop=True)
 
 
-def _daily(by_root: pd.DataFrame, capital: float) -> pd.DataFrame:
-    """Portfolio daily returns for each cost layer, turnover and gross exposure."""
+def _daily(
+    by_root: pd.DataFrame,
+    capital: float,
+    calendar: pd.DatetimeIndex | None = None,
+) -> pd.DataFrame:
+    """Portfolio daily returns for each cost layer, turnover and gross exposure.
+
+    When ``calendar`` is supplied, reindex to it and zero-fill flat days.
+    Omitting those days would annualise over active observations only and
+    overstate return, volatility, Sharpe and cost ratios.
+    """
 
     d = by_root.drop(columns="root").groupby("date").sum()
     out = pd.DataFrame(index=d.index)
@@ -217,7 +284,37 @@ def _daily(by_root: pd.DataFrame, capital: float) -> pd.DataFrame:
     out["ret_net_all"] = out["ret_net_fee"] - d["cost_impact"] / capital
     out["turnover"] = d["traded_notional"] / capital
     out["gross_exposure"] = d["gross_notional"] / capital
-    return out.reset_index()
+    out = out.reset_index()
+    if "date" not in out.columns:
+        out = out.rename(columns={out.columns[0]: "date"})
+    if calendar is not None:
+        cal = pd.DatetimeIndex(calendar)
+        cal.name = "date"
+        out = out.set_index("date").reindex(cal).fillna(0.0).reset_index()
+    return out
+
+
+def _empty_trades() -> pd.DataFrame:
+    """Typed empty trades table with the cost columns ``_by_root`` expects."""
+
+    return pd.DataFrame({
+        "date": pd.Series(dtype="datetime64[ns]"),
+        "root": pd.Series(dtype="object"),
+        "contract": pd.Series(dtype="object"),
+        "dn": pd.Series(dtype="float64"),
+        "price": pd.Series(dtype="float64"),
+        "reason": pd.Series(dtype="object"),
+        "adv": pd.Series(dtype="float64"),
+        "sigma": pd.Series(dtype="float64"),
+        "point_value": pd.Series(dtype="float64"),
+        "tick_size": pd.Series(dtype="float64"),
+        "notional": pd.Series(dtype="float64"),
+        "adv_imputed": pd.Series(dtype="bool"),
+        "participation": pd.Series(dtype="float64"),
+        "cost_half_spread": pd.Series(dtype="float64"),
+        "cost_fee": pd.Series(dtype="float64"),
+        "cost_impact": pd.Series(dtype="float64"),
+    })
 
 
 def simulate(legs: pd.DataFrame, marks: pd.DataFrame, config: SimConfig | None = None) -> SimResult:
@@ -235,7 +332,7 @@ def simulate(legs: pd.DataFrame, marks: pd.DataFrame, config: SimConfig | None =
     """
 
     cfg = config or SimConfig()
-    calendar = pd.DatetimeIndex(sorted(marks["date"].unique()))
+    calendar = trading_calendar(marks)
     pv = marks.groupby("root")["point_value"].first()
     hold_rows, trade_rows, status_rows = [], [], []
     for root, legs_r in legs.groupby("root"):
@@ -246,19 +343,28 @@ def simulate(legs: pd.DataFrame, marks: pd.DataFrame, config: SimConfig | None =
         status_rows += s
     holdings = pd.DataFrame(hold_rows, columns=["date", "root", "contract", "n"])
     trades = pd.DataFrame(trade_rows, columns=["date", "root", "contract", "dn", "price", "reason"])
-    m = marks.rename(columns={"contract_code": "contract"})
-    trades = trades.merge(m[["date", "root", "contract", "adv", "sigma", "point_value", "tick_size"]], on=["date", "root", "contract"], how="left")
-    # Expiry exits have no marks row on the exit day: use the last known inputs.
-    last = m.groupby(["root", "contract"])[["adv", "sigma"]].last()
-    key = pd.MultiIndex.from_frame(trades[["root", "contract"]])
-    for col in ("adv", "sigma"):
-        trades[col] = trades[col].fillna(pd.Series(last[col].reindex(key).to_numpy(), index=trades.index))
-    trades["point_value"] = trades["root"].map(pv)
-    trades["tick_size"] = trades["tick_size"].fillna(trades["root"].map(marks.groupby("root")["tick_size"].first()))
-    trades = cost_model.trade_costs(trades, cfg.cost)
+    if trades.empty:
+        trades = _empty_trades()
+    else:
+        trades["date"] = pd.to_datetime(trades["date"])
+        m = marks.rename(columns={"contract_code": "contract"})
+        trades = trades.merge(m[["date", "root", "contract", "adv", "sigma", "point_value", "tick_size"]], on=["date", "root", "contract"], how="left")
+        # Expiry exits have no marks row on the exit day: use the last known inputs.
+        last = m.groupby(["root", "contract"])[["adv", "sigma"]].last()
+        key = pd.MultiIndex.from_frame(trades[["root", "contract"]])
+        for col in ("adv", "sigma"):
+            trades[col] = trades[col].fillna(pd.Series(last[col].reindex(key).to_numpy(), index=trades.index))
+        trades["point_value"] = trades["root"].map(pv)
+        trades["tick_size"] = trades["tick_size"].fillna(trades["root"].map(marks.groupby("root")["tick_size"].first()))
+        trades = cost_model.trade_costs(trades, cfg.cost)
     by_root = _by_root(_holdings_pnl(holdings, marks, calendar), trades)
     status = pd.DataFrame(status_rows, columns=["date", "root", "status"])
-    by_root = by_root.merge(status, on=["date", "root"], how="outer")
+    if status.empty:
+        by_root["status"] = np.nan
+    else:
+        status["date"] = pd.to_datetime(status["date"])
+        by_root = by_root.merge(status, on=["date", "root"], how="outer")
     num_cols = by_root.columns.drop(["date", "root", "status"])
     by_root[num_cols] = by_root[num_cols].fillna(0.0)
-    return SimResult(holdings, trades, by_root, _daily(by_root.drop(columns="status"), cfg.capital), cfg)
+    daily = _daily(by_root.drop(columns="status"), cfg.capital, calendar)
+    return SimResult(holdings, trades, by_root, daily, cfg, calendar)

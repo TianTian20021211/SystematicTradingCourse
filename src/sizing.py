@@ -12,7 +12,10 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-LEG_COLUMNS = ["date", "root", "group_id", "contract", "units", "budget", "target"]
+LEG_COLUMNS = [
+    "date", "root", "group_id", "contract", "units", "budget", "target",
+    "resize_key",
+]
 
 
 def smooth_target(signal: pd.DataFrame, k: int) -> pd.DataFrame:
@@ -23,7 +26,8 @@ def smooth_target(signal: pd.DataFrame, k: int) -> pd.DataFrame:
     pair that is current today.
 
     Args:
-        signal: ``date, root, target`` (one row per root-date).
+        signal: ``date, root, target`` (one row per root-date); extra
+            columns such as ``hedge_ratio`` are preserved.
         k: Number of overlapping sleeves; ``k=1`` returns the input.
 
     Returns:
@@ -101,7 +105,9 @@ def legs_from_signal(
     """Map a spread signal (+1 long near / short far) to leg targets.
 
     Args:
-        signal: ``date, root, target``; target in [-1, 1].
+        signal: ``date, root, target``; target in [-1, 1]. An optional
+            ``hedge_ratio`` column replaces the default leg ratio; invalid
+            or non-positive values force an explicit flat row.
         pairs: Pair panel with ``contract_near/far, settle_near/far``; must
             also carry ``spread_vol`` when ``scheme="inverse_vol"``.
         scheme: ``"equal"`` (1/N per root, default), ``"inverse_vol"`` or
@@ -120,22 +126,166 @@ def legs_from_signal(
         can tell "go flat" from "no signal today" (no row: keep holdings).
     """
 
-    sig = smooth_target(signal[["date", "root", "target"]], k)
+    has_hedge = "hedge_ratio" in signal.columns
+    sig = smooth_target(signal.copy(), k)
     keep = ["date", "root", "contract_near", "contract_far", "settle_near", "settle_far"]
     keep += [c for c in ("spread_vol", "liquid", "dollar_adv") if c in pairs.columns]
     f = pairs[keep].merge(sig, on=["date", "root"], how="inner")
     f = f.loc[f["target"].notna()].copy()
     if "liquid" in f.columns:
         f.loc[~f["liquid"].astype(bool), "target"] = 0.0
+    if has_hedge:
+        h = pd.to_numeric(f["hedge_ratio"], errors="coerce")
+        f.loc[~np.isfinite(h) | h.le(0), "target"] = 0.0
     f["budget"] = (_budget(f, scheme, n_mode, alpha) * f["target"].abs()).fillna(0.0)
-    flat = f.loc[f["target"].eq(0)].assign(group_id="flat", contract=np.nan, units=0.0, budget=0.0)
-    f = f.loc[f["budget"].gt(0) & f["settle_near"].gt(0) & f["settle_far"].gt(0)]
-    ratio = f["settle_near"] / f["settle_far"] if leg_ratio == "notional" else 1.0
-    f = f.assign(group_id=f["root"] + "_" + f["contract_near"] + "_" + f["contract_far"])
+    flat = f.loc[f["target"].eq(0)].assign(
+        group_id="flat", contract=np.nan, units=0.0, budget=0.0, resize_key=""
+    )
+    f = f.loc[f["budget"].gt(0) & f["settle_near"].gt(0) & f["settle_far"].gt(0)].copy()
+    if has_hedge:
+        ratio = pd.to_numeric(f["hedge_ratio"], errors="coerce")
+        resize_key = "_h" + ratio.round(6).astype(str)
+    else:
+        ratio = f["settle_near"] / f["settle_far"] if leg_ratio == "notional" else 1.0
+        resize_key = ""
+    f = f.assign(
+        group_id=f["root"] + "_" + f["contract_near"] + "_" + f["contract_far"],
+        resize_key=resize_key,
+    )
     sign = np.sign(f["target"])
     near = f.assign(contract=f["contract_near"], units=sign)
     far = f.assign(contract=f["contract_far"], units=-sign * ratio)
     out = pd.concat([near, far, flat], ignore_index=True)[LEG_COLUMNS]
+    return out.sort_values(["date", "root", "contract"]).reset_index(drop=True)
+
+
+def legs_from_rows(
+    legs: pd.DataFrame,
+    budget: float | pd.Series | pd.DataFrame,
+) -> pd.DataFrame:
+    """Map explicit leg rows to ``LEG_COLUMNS`` for ``simulate``.
+
+    Args:
+        legs: ``date, root, contract, units, target``; optional ``group_id``
+            and ``resize_key``. A ``group_id="flat"`` row is an explicit exit.
+        budget: gross-notional fraction of capital per ``(date, root)``
+            group: scalar, Series indexed by ``(date, root)``, or DataFrame
+            with ``date, root, budget``.
+
+    Returns:
+        ``LEG_COLUMNS`` with at most one non-flat group per ``(date, root)``.
+        ``resize_key`` defaults to the sorted contract/units composition so a
+        leg-set change triggers a resize even when the target is unchanged.
+    """
+
+    required = {"date", "root", "contract", "units", "target"}
+    missing = required.difference(legs.columns)
+    if missing:
+        raise ValueError(f"legs missing columns: {sorted(missing)}")
+    out = legs.copy()
+    out["date"] = pd.to_datetime(out["date"])
+    missing_group = "group_id" not in out.columns
+    if missing_group:
+        out["group_id"] = ""
+    else:
+        out["group_id"] = out["group_id"].fillna("").astype(str)
+    flat = out["group_id"].eq("flat")
+    flat_rows = out.loc[flat].copy()
+    active = out.loc[~flat].copy()
+    if active.empty and flat_rows.empty:
+        return pd.DataFrame(columns=LEG_COLUMNS)
+
+    if not active.empty:
+        if active["contract"].isna().any():
+            raise ValueError("active leg rows must have a non-null contract")
+        if active["target"].isna().any():
+            raise ValueError("active leg rows must have a target")
+        if missing_group or active["group_id"].eq("").all():
+            labels = (
+                active.assign(_c=active["contract"].astype(str))
+                .groupby(["date", "root"])["_c"]
+                .agg("|".join)
+                .rename("group_id")
+                .reset_index()
+            )
+            active = active.drop(columns="group_id").merge(
+                labels, on=["date", "root"], how="left"
+            )
+        elif active["group_id"].eq("").any():
+            raise ValueError("group_id must be supplied for all active rows or none")
+        active["contract"] = active["contract"].astype(str)
+        active = active.sort_values(["date", "root", "group_id", "contract"])
+        agg = {"units": ("units", "sum"), "target": ("target", "first")}
+        if "resize_key" in active.columns:
+            agg["resize_key"] = ("resize_key", "first")
+        active = (
+            active.groupby(["date", "root", "group_id", "contract"], as_index=False)
+            .agg(**agg)
+        )
+        active = active.loc[active["units"].ne(0)].copy()
+        if active.empty:
+            return pd.DataFrame(columns=LEG_COLUMNS)
+        n_groups = active.groupby(["date", "root"])["group_id"].nunique()
+        if (n_groups > 1).any():
+            bad = n_groups[n_groups > 1].index[0]
+            raise ValueError(
+                "multiple non-flat leg groups on the same (date, root): "
+                f"{bad}; net them in the adapter"
+            )
+
+        if isinstance(budget, (int, float, np.integer, np.floating)):
+            active["budget"] = float(budget)
+        elif isinstance(budget, pd.DataFrame):
+            b = budget.copy()
+            b["date"] = pd.to_datetime(b["date"])
+            if not {"date", "root", "budget"}.issubset(b.columns):
+                raise ValueError("budget frame needs date, root, budget")
+            active = active.merge(
+                b[["date", "root", "budget"]], on=["date", "root"], how="left"
+            )
+        else:
+            idx = pd.MultiIndex.from_frame(active[["date", "root"]])
+            active["budget"] = np.asarray(pd.Series(budget).reindex(idx))
+        if active["budget"].isna().any():
+            raise ValueError("budget missing for some (date, root) groups")
+
+        comp = (
+            active.assign(
+                _leg=active["contract"] + ":" + active["units"].round(6).astype(str)
+            )
+            .groupby(["date", "root", "group_id"])["_leg"]
+            .agg("|".join)
+            .rename("_composition")
+            .reset_index()
+        )
+        active = active.merge(comp, on=["date", "root", "group_id"], how="left")
+        if "resize_key" in active.columns:
+            active["resize_key"] = (
+                active["resize_key"].fillna(active["_composition"]).astype(str)
+            )
+        else:
+            active["resize_key"] = active["_composition"]
+        active["units"] = active["units"].astype(float)
+        active["budget"] = active["budget"].astype(float)
+        active["target"] = active["target"].astype(float)
+
+    if not flat_rows.empty:
+        if flat_rows.duplicated(["date", "root"]).any():
+            raise ValueError("duplicate flat rows on the same (date, root)")
+        if not active.empty:
+            flat_keys = set(zip(flat_rows["date"], flat_rows["root"]))
+            active_keys = set(zip(active["date"], active["root"]))
+            if flat_keys & active_keys:
+                raise ValueError(
+                    "mixed flat and active leg rows on the same (date, root)"
+                )
+        flat_rows = flat_rows.assign(
+            group_id="flat", contract=np.nan, units=0.0,
+            budget=0.0, target=0.0, resize_key="",
+        )
+
+    frames = [df for df in (active, flat_rows) if not df.empty]
+    out = pd.concat(frames, ignore_index=True)[LEG_COLUMNS]
     return out.sort_values(["date", "root", "contract"]).reset_index(drop=True)
 
 

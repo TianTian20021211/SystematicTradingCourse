@@ -251,3 +251,75 @@ def test_block_bootstrap_ic_detects_signal_and_null() -> None:
     assert out.loc["SIG", "p_value"] < 0.01 and out.loc["SIG", "ci_lo"] > 0
     assert out.loc["NUL", "p_value"] > 0.05
     assert len(draws["SIG"]) == 500
+
+
+def test_flat_days_are_zero_filled_and_annualized_over_calendar() -> None:
+    from src import report
+
+    cp = _contract_panel(n=60)
+    dates = pd.bdate_range("2020-01-06", periods=60)
+    sig = pd.DataFrame(dict(
+        date=dates, root="X",
+        target=np.where(np.arange(60) < 10, 1.0, 0.0),
+    ))
+    res = _run(cp, signal=sig, leg_ratio="contracts")
+    assert len(res.daily) == 60
+    perf = report.performance_table(res).set_index("layer")
+    expected = res.daily["ret_gross"].sum() / 60 * 252 * 100
+    # performance_table rounds to three decimals.
+    assert abs(perf.loc["gross", "ann_ret_pct"] - expected) < 0.01
+
+
+def test_pure_flat_result_has_zero_returns() -> None:
+    from src import report
+
+    cp = _contract_panel(n=10)
+    dates = pd.bdate_range("2020-01-06", periods=10)
+    sig = pd.DataFrame(dict(date=dates, root="X", target=0.0))
+    res = _run(cp, signal=sig, leg_ratio="contracts")
+    assert len(res.daily) == 10
+    assert np.allclose(res.daily["ret_gross"], 0.0)
+    perf = report.performance_table(res).set_index("layer")
+    assert np.isclose(perf.loc["gross", "ann_ret_pct"], 0.0)
+
+
+def test_price_derived_notional_ratio_does_not_resize_daily() -> None:
+    cp = _contract_panel()
+    res = _run(cp, target=1.0)
+    assert len(res.trades) == 2
+
+
+def test_resize_key_change_triggers_one_resize() -> None:
+    cp = _contract_panel()
+    dates = pd.bdate_range("2020-01-06", periods=12)
+    sig = pd.DataFrame(dict(date=dates, root="X", target=1.0))
+    pairs = _pairs(cp)
+    legs = sizing.legs_from_signal(sig, pairs, leg_ratio="contracts")
+    legs.loc[legs["date"] >= dates[5], "resize_key"] = "x"
+    res = simulate.simulate(
+        legs, marks.build_marks(cp, SPECS), simulate.SimConfig(capital=1e6)
+    )
+    assert len(res.trades) == 4
+    assert (res.trades["date"] == dates[6]).sum() == 2
+
+
+def test_multiple_groups_same_root_date_raise() -> None:
+    legs = pd.DataFrame([
+        dict(date=pd.Timestamp("2020-01-02"), root="X", group_id="g1",
+             contract="A", units=1.0, budget=1.0, target=1.0, resize_key=""),
+        dict(date=pd.Timestamp("2020-01-02"), root="X", group_id="g2",
+             contract="B", units=-1.0, budget=1.0, target=1.0, resize_key=""),
+    ])
+    with pytest.raises(ValueError, match="multiple non-flat"):
+        simulate._root_book(legs)
+
+
+def test_mixed_flat_and_active_rows_raise() -> None:
+    legs = pd.DataFrame([
+        dict(date=pd.Timestamp("2020-01-02"), root="X", group_id="g1",
+             contract="A", units=1.0, budget=1.0, target=1.0, resize_key=""),
+        dict(date=pd.Timestamp("2020-01-02"), root="X", group_id="flat",
+             contract=np.nan, units=0.0, budget=0.0, target=0.0, resize_key=""),
+    ])
+    with pytest.raises(ValueError, match="mixed flat"):
+        simulate._root_book(legs)

@@ -1855,3 +1855,46 @@ once the v2 numbers are visible.
 **Commit:** `docs(decisions): pre-register v2 extensions and rerun conventions`
 
 **Next:** Implement core v2 fixes and tests.
+
+---
+
+## LOG-0042 · 2026-10-19 22:30 · Phase 9b · Claude Code
+
+**Goal:** Fix v2 reporting and resize-key correctness, and add hedge-ratio /
+multi-leg leg-building support.
+
+**Actions:**
+- `SimResult.calendar`; `_daily` reindexes to the full marks calendar and
+  zero-fills flat days, so `performance_table`, `root_table`,
+  `capacity_curve` and figures annualise over the full sample.
+- `_root_book` key is now `(group_id, target, resize_key)`. `resize_key`
+  is optional and defaults to `""`; `_root_book` raises if a root-date has
+  multiple non-flat groups or mixes flat and active rows.
+- `sizing.LEG_COLUMNS` gains `resize_key`.
+- `sizing.legs_from_signal` accepts an optional `hedge_ratio` column:
+  far units = `-sign(target) * h`; invalid h -> explicit flat; `resize_key`
+  = `_h{round(h, 6)}`.
+- `sizing.legs_from_rows` maps explicit multi-leg rows (netting shared
+  contracts) to `LEG_COLUMNS` with a composition `resize_key`.
+- Empty-trade / pure-flat results now return typed empty tables instead of
+  failing on dtype merges.
+- Added tests in `tests/test_simulate.py` and `tests/test_sizing.py`.
+
+**Files changed:** `src/simulate.py`, `src/sizing.py`, `src/report.py`,
+`tests/test_simulate.py`, `tests/test_sizing.py`, `docs/logs/*`
+
+**Commands:**
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 114 passed
+
+**Why:** D-017/D-018 require hedge-ratio and multi-leg signals to resize
+correctly, and flat days must not be dropped from annualisation.
+
+**Validation:**
+- Existing 103 tests plus 11 new tests pass.
+- Flat-tail test annualises over 60 days; notional-ratio daily changes do
+  not trigger resizes; `resize_key` changes trigger exactly one resize.
+- Pure-flat result returns 10 zero-return days.
+
+**Commit:** `fix(simulate): calendar annualization, resize keys, hedge legs`
+
+**Next:** Add v2 signal adapters for A/D/C/C-OLS/C-Kalman/B.

@@ -52,7 +52,8 @@ def root_table(res: simulate.SimResult) -> pd.DataFrame:
     """
 
     b = res.by_root
-    years = b["date"].nunique() / 252
+    n_days = len(res.calendar) if res.calendar is not None else b["date"].nunique()
+    years = n_days / 252
     cap = res.config.capital
     g = b.groupby("root")
     out = pd.DataFrame({
@@ -98,7 +99,8 @@ def capacity_curve(res: simulate.SimResult, capitals) -> pd.DataFrame:
     """
 
     d = res.daily.set_index("date")
-    years = len(d) / 252
+    n_days = len(res.calendar) if res.calendar is not None else len(d)
+    years = n_days / 252
     gross = d["ret_gross"].mean() * 252 * 1e4
     rows = []
     for cap in capitals:
