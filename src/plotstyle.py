@@ -88,12 +88,14 @@ def tex(s: str) -> str:
     """Make a LaTeX-authored label safe for the active renderer.
 
     Labels are written with LaTeX escapes (``\\%``, ``\\&``, ``\\,``); without
-    usetex those escapes are rendered literally, so they are undone.
+    usetex most are undone, but ``\\%`` and ``\\&`` must stay escaped: in
+    matplotlib mathtext a bare ``%`` starts a comment and breaks the closing
+    ``$``. Keeping the escapes works in both renderers.
     """
 
     if _USETEX:
         return s
-    for a, b in ((r"\%", "%"), (r"\&", "&"), (r"\,", " "), (r"\;", " "), ("~", " "), (r"\textendash", "-")):
+    for a, b in ((r"\,", " "), (r"\;", " "), ("~", " "), (r"\textendash", "-")):
         s = s.replace(a, b)
     return s
 

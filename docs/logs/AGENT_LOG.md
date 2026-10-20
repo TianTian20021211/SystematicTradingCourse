@@ -1788,3 +1788,39 @@ re-run through v2 for comparison.
 
 **Next:** Run A/B/C/D signals through v2 and compare v1 vs v2; implement E
 (curve dynamics) on v2; keep local unless asked to push.
+
+---
+
+## LOG-0040 · 2026-10-19 21:50 · Phase 8g · Claude Code
+
+**Goal:** Make the merged v2 figure stack run without a LaTeX installation.
+
+**Actions:**
+- `src/plotstyle.tex` no longer unescapes `\%` / `\&` when falling back to
+  matplotlib mathtext. A bare `%` starts a mathtext comment and swallowed the
+  closing `$`, so notebook 07 failed on the capacity title
+  `Gross ($-0.48\%$ p.a., ...)`.
+- Added `tests/test_plotstyle.py` for the two escape paths.
+- Executed notebook 07 end to end into a temporary directory; no error
+  outputs.
+
+**Files changed:** `src/plotstyle.py`, `tests/test_plotstyle.py`,
+`docs/logs/*`
+
+**Commands:**
+- `jupyter nbconvert --execute ... notebooks/07_backtest_framework.ipynb`
+  → OK
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 103 passed
+- `jq` check of the executed notebook → 0 error outputs
+
+**Why:** The v2 framework must run in this environment, which has no LaTeX;
+mathtext fallback is the supported path.
+
+**Validation:**
+- Notebook 07 executes top to bottom; A results match the incoming outputs
+  (gross −0.48%/yr at USD 10m).
+- 103 tests pass.
+
+**Commit:** `fix(plotstyle): keep math escapes in mathtext fallback`
+
+**Next:** Re-run A/B/C/D through v2; compare v1/v2.
