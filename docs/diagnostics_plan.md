@@ -123,25 +123,33 @@ Expected output: three figures/tables, all in the main text.
 - Cost layers and turnover; B's v2 adapter is `b_legs` → `legs_from_rows`.
 - One paragraph is enough; B already has a pre-registered skip rule.
 
-### 3.5 Mechanism — D (to confirm)
+### 3.5 Mechanism — D (implemented, D-028)
 
-D is basis momentum: 12-month formation, monthly target, N=2. The plan is:
+D is basis momentum: 12-month formation, monthly target, N=2. The protocol
+is now fixed in D-028 and implemented in `src/d_validity.py` with a
+“D signal validity” section in `notebooks/13_idea_d_curve_momentum.ipynb`.
+The battery is:
 
-- Per-instrument card (same as A/B).
-- **Signal mechanism:** does the score predict forward spread return? Use
-  `horizon.ts_ic`, `horizon.horizon_profile`, and the expanding-bin returns;
-  check sign, monotonicity, and decay.
-- **Static baseline:** compare D with static always-+1 (D-013: static gross
-  +0.35%, net −0.84%). D's gross is only slightly higher and its turnover is
-  higher; the report must say whether D adds anything beyond a static tilt.
-- **Horizon:** monthly holding; v2 horizon diagnostics currently cover up to
-  21 days. Add 1/3/6-month windows only if needed; H is the formal
-  holding-period scan and is a separate step.
-- **Cost decomposition:** gross +0.22% vs all-in −1.42% — is the failure “no
-  gross edge” or “cost drag”? Report both.
-- **Time stability:** rolling Sharpe and subperiod signs; D's test gross is
-  already negative.
-- Exact D mechanism tests are the first decision for the next conversation.
+- **Signal mechanism:** per-root time-series IC, hit rate, expanding
+  quintiles, and predictive R² for the raw score; horizon profile at
+  1/3/6/12 months; same-close versus t+1 timing.
+- **Independence:** nested adjusted R² static → +D → +A carry → +C z;
+  residual IC after controls; static always-long versus D timing.
+- **Stability:** fixed decades, carry sign, spread-volatility terciles,
+  rolling 36-month IC / positive share.
+- **Placebo:** sign flip, within-root 6-month block shuffle, lags 1/3/6/12,
+  and a future-score lead of 24 months.
+- **Inference:** per-root block bootstrap (6-month main, 12-month
+  sensitivity), `n_boot=2000`, `min_obs=60` months, FDR within each
+  metric/horizon family, and a max-|IC| noise benchmark.
+
+D's official trading result remains the v2 negative/mixed baseline; this
+section is an information study, not a rescue. The headline result is in
+D-028 and `docs/HANDOFF.md`.
+
+The original cost decomposition, static baseline and time-stability items
+remain useful for the final report but are now secondary to the validity
+battery.
 
 ### 3.6 Robustness
 
@@ -264,12 +272,17 @@ D is basis momentum: 12-month formation, monthly target, N=2. The plan is:
 
 ## 8. Next-conversation checklist
 
-- Confirm the D mechanism tests (section 3.5).
+- **D is done:** the signal-validity battery is implemented under D-028
+  (`src/d_validity.py`, notebook 13 section 7, `tests/test_d_validity.py`).
 - Confirm whether C/E stay cited-only or need a one-page comparison.
-- Confirm the per-instrument figure layout (24 roots, CI + rolling share).
+- Confirm the per-instrument figure layout for A/B (24 roots, CI + rolling
+  share).
 - Confirm whether to add a v1-aligned robustness for A only (1:1 contracts,
   weekly, flat 5 bps) or keep v2 as the only main result.
-- Then implement `src/diagnostics.py` and notebook 15.
+- A/B diagnostics remain separate; do not mix them into the D validity
+  branch.
+- The A flip diagnostics are implemented in `src/diagnostics.py` and
+  notebook 10 §7; no separate notebook 15 is needed under D-020.
 
 ---
 

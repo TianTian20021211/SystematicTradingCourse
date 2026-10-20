@@ -70,6 +70,9 @@ information audit 是另一条线：daily C1/C2/C3 的 validation gross SR 为
 - [x] C Kalman variant：rolling-likelihood DLM；mixed/negative，C closed
 - [x] D curve-momentum / basis-momentum baseline：N=2、12m、monthly；
       gross 弱、net 负，D documented negative/mixed
+- [x] D signal validity（D-028）：per-root IC/hit/quantile/R²、1/3/6/12m
+      horizon、incremental vs static/A/C、stability、placebo；结论是
+      detectable but unstable，not independent
 - [x] Monthly rebalance engine support
 - [x] v2 holdings-based framework：分层成本（half-spread / fee / impact）、
       horizon 诊断、k sweep、容量曲线；见 `docs/backtest_framework.md`
@@ -240,6 +243,10 @@ output/                    # 生成的图/报告（gitignored）
 - **A flip（D-025）：** 原始 A 方向 closed negative；`target_flip =
   -sign(spread_dollar)` 是 adopted candidate carry signal；gross-only
   信息检验在 notebook 10 §7；成本留到 final portfolio，不做 test tuning。
+- **D signal validity（D-028）：** D-013 固定、不扫参数；rank-index
+  t+1 forward（1/3/6/12m）、per-root IC/hit/quantile/R²、incremental vs
+  static/A/C、decades/carry/vol + rolling 36m、placebo；6m block bootstrap、
+  FDR、max-|IC|。结论：detectable but unstable，not independent。
 
 详见 `docs/decisions.md`。
 
