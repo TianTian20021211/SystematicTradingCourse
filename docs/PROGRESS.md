@@ -298,7 +298,7 @@ part of D and has not been implemented.
 
 ---
 
-## D signal validity (D-025, 2026-10-20)
+## D signal validity (D-028, 2026-10-20)
 
 D was reframed as an information study: no costs, no parameter grid, and no
 change to the D-013 trading spec. The implementation is
@@ -325,7 +325,7 @@ static/carry; not stable independent information. D's official trading
 result remains the v2 negative/mixed baseline. Parameter scans/response
 curves are deferred; do not use the test sample for selection.
 
-**Log IDs:** D-025 uses `LOG-0055`.
+**Log IDs:** D-028 uses `LOG-0058`.
 
 ---
 
@@ -358,7 +358,7 @@ curves are deferred; do not use the test sample for selection.
   equal-notional, three-layer costs; calendar overrides).
 - Official results: D-019 (v2 is final; v1 notebooks/results are historical
   and must be labeled v1).
-- D signal validity: D-025 (D-013 fixed; rank-index t+1 forward returns;
+- D signal validity: D-028 (D-013 fixed; rank-index t+1 forward returns;
   per-root IC/hit/quantiles/R²; horizon 1/3/6/12; incremental vs static/A/C;
   decades/carry/vol and 36m rolling; placebo; 6m block bootstrap, FDR,
   max-|IC| benchmark; no parameter grid).

@@ -753,7 +753,7 @@ Status values: `proposed`, `accepted`, `superseded`.
 
 ---
 
-## D-025 · Idea D signal-validity protocol
+## D-028 · Idea D signal-validity protocol
 
 - **Status:** accepted
 - **Date:** 2026-10-20

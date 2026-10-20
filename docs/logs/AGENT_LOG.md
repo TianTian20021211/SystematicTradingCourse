@@ -2336,9 +2336,9 @@ D-020 layout; the two histories collided on decision, log and notebook IDs.
 **Next:** Align A's information tests with `horizon.horizon_profile`,
 `ts_ic`/`block_bootstrap_ic`, and `block_bootstrap_mean`.
 
-## LOG-0055 · 2026-10-20 · Phase 12 · Claude Code
+## LOG-0058 · 2026-10-20 · Phase 12 · Claude Code
 
-**Goal:** Add a cost-free signal-validity study for idea D (D-025), keeping
+**Goal:** Add a cost-free signal-validity study for idea D (D-028), keeping
 the D-013 trading baseline unchanged and doing the work in an isolated
 worktree because several agents share the repo.
 
@@ -2353,7 +2353,7 @@ worktree because several agents share the repo.
 - Added `tests/test_d_validity.py` (9 synthetic tests).
 - Added notebook 13 section 7 (“D signal validity”) and updated section 8
   (“Reading”) with the validity verdict; executed notebook 13.
-- Added D-025 to `docs/decisions.md`; updated `docs/diagnostics_plan.md`
+- Added D-028 to `docs/decisions.md`; updated `docs/diagnostics_plan.md`
   §3.5 and §8, `docs/HANDOFF.md` §0c, `docs/PROGRESS.md`.
 - Did not edit the main working tree; its uncommitted A/B peer work remains
   untouched. Did not import or depend on the untracked

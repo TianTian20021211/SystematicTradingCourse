@@ -10,7 +10,7 @@ D-021–D-023。
 **D curve-momentum / basis-momentum：** 已实现并收尾为
 documented negative/mixed；monthly engine support 已加入。
 
-**D signal validity：** 已完成（D-025 / LOG-0055）；1m IC 0.049，但只有
+**D signal validity：** 已完成（D-028 / LOG-0058）；1m IC 0.049，但只有
 2/24 root FDR 显著，稳定性有限；结论是 detectable but unstable，
 且大部分与 static/carry 重叠。
 **Backtest v2（jiaheng/backtest-v2）：** 已合入 main（LOG-0039）；
@@ -118,7 +118,7 @@ merge 后保持本地，不要 push。
   short bottom；是独立 idea，不混入 D。
 - D parameter robustness（phase 2）：N=4、weekly、6-month formation、
   liquidity thresholds、inverse-vol、exponential decay、D-vs-A correlation、
-  carry-regime conditioning。等 D-025 validity 流程跑通后再由用户选参数。
+  carry-regime conditioning。等 D-028 validity 流程跑通后再由用户选参数。
 - Push / PR / merge 到 `origin`：故意只留本地。
 
 ---
@@ -126,7 +126,7 @@ merge 后保持本地，不要 push。
 ## 0c. D signal validity（2026-10-20）
 
 **Branch：** `feat/d-signal-validity`（worktree；未 push）。**Decision：**
-D-025。**Log：** LOG-0055。
+D-028。**Log：** LOG-0058。
 
 D 现在有两层结论：trading result 仍是 v2 negative/mixed；另加一个
 **不看成本**的 signal-validity study，回答“score 里有没有信息、信息在哪、
@@ -285,7 +285,7 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 | D-022 | E 结果：paper timing Sharpe 2.03，t+1 后消失；closed as not tradable |
 | D-023 | E follow-ups：fit significance、paper-timing costs、Kalman A/B not adopted |
 | D-024 | 云端 E 并入 D-020 布局；E 决策/日志重编号 |
-| D-025 | D signal-validity：D-013 固定、不扫参数；rank-index t+1 forward（1/3/6/12m）；per-root IC/hit/quantile/R²；incremental vs static/A/C；decades/carry/vol + rolling 36m；placebo；6m block bootstrap、FDR、max-\|IC\|；结果 detectable but unstable，not independent |
+| D-028 | D signal-validity：D-013 固定、不扫参数；rank-index t+1 forward（1/3/6/12m）；per-root IC/hit/quantile/R²；incremental vs static/A/C；decades/carry/vol + rolling 36m；placebo；6m block bootstrap、FDR、max-\|IC\|；结果 detectable but unstable，not independent |
 
 完整内容见 `docs/decisions.md`。
 
@@ -329,7 +329,7 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
   static +1 gross +0.35% / net −0.84%，D 的 gross 略高但 turnover 更高、
   net 更差；monthly net Sharpe full −0.90 / test −1.66，bootstrap t
   full −5.87 / test −5.41。documented negative/mixed。
-- **D signal validity（D-025）**：`src/d_validity.py`、
+- **D signal validity（D-028）**：`src/d_validity.py`、
   `tests/test_d_validity.py`、notebook 13 §7；per-root IC/hit/quantile/R²、
   1/3/6/12m horizon、incremental vs static/A/C、decades/carry/vol、
   rolling 36m、placebo。结论：detectable but unstable，not independent。

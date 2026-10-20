@@ -56,7 +56,7 @@ E（Nelson–Siegel）不在这个 v2 表中：它是 paper replication，paper 
 - [x] C Kalman variant：rolling-likelihood DLM；mixed/negative，C closed
 - [x] D curve-momentum / basis-momentum baseline：N=2、12m、monthly；
       gross 弱、net 负，D documented negative/mixed
-- [x] D signal validity（D-025）：per-root IC/hit/quantile/R²、1/3/6/12m
+- [x] D signal validity（D-028）：per-root IC/hit/quantile/R²、1/3/6/12m
       horizon、incremental vs static/A/C、stability、placebo；结论是
       detectable but unstable，not independent
 - [x] Monthly rebalance engine support
@@ -217,7 +217,7 @@ output/                    # 生成的图/报告（gitignored）
   2.03 在 t+1 fill 后消失，E closed as not tradable；notebook 14。
 - **云端合并（D-024）：** E 并入 D-020 布局；E 决策重编号为 D-021–D-023，
   notebook 改为 14。
-- **D signal validity（D-025）：** D-013 固定、不扫参数；rank-index
+- **D signal validity（D-028）：** D-013 固定、不扫参数；rank-index
   t+1 forward（1/3/6/12m）、per-root IC/hit/quantile/R²、incremental vs
   static/A/C、decades/carry/vol + rolling 36m、placebo；6m block bootstrap、
   FDR、max-|IC|。结论：detectable but unstable，not independent。

@@ -122,10 +122,10 @@ Expected output: three figures/tables, all in the main text.
 - Cost layers and turnover; B's v2 adapter is `b_legs` → `legs_from_rows`.
 - One paragraph is enough; B already has a pre-registered skip rule.
 
-### 3.5 Mechanism — D (implemented, D-025)
+### 3.5 Mechanism — D (implemented, D-028)
 
 D is basis momentum: 12-month formation, monthly target, N=2. The protocol
-is now fixed in D-025 and implemented in `src/d_validity.py` with a
+is now fixed in D-028 and implemented in `src/d_validity.py` with a
 “D signal validity” section in `notebooks/13_idea_d_curve_momentum.ipynb`.
 The battery is:
 
@@ -144,7 +144,7 @@ The battery is:
 
 D's official trading result remains the v2 negative/mixed baseline; this
 section is an information study, not a rescue. The headline result is in
-D-025 and `docs/HANDOFF.md`.
+D-028 and `docs/HANDOFF.md`.
 
 The original cost decomposition, static baseline and time-stability items
 remain useful for the final report but are now secondary to the validity
@@ -271,7 +271,7 @@ battery.
 
 ## 8. Next-conversation checklist
 
-- **D is done:** the signal-validity battery is implemented under D-025
+- **D is done:** the signal-validity battery is implemented under D-028
   (`src/d_validity.py`, notebook 13 section 7, `tests/test_d_validity.py`).
 - Confirm whether C/E stay cited-only or need a one-page comparison.
 - Confirm the per-instrument figure layout for A/B (24 roots, CI + rolling
