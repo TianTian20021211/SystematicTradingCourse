@@ -409,6 +409,91 @@ def f_screen_heatmap(width_cm: float = 13.6, height_cm: float = 6.9) -> Path:
     return path
 
 
+def f_alpha_corr(end: str = "2005-12-31", width_cm: float = 7.0, height_cm: float = 4.8) -> Path:
+    """Median per-commodity time-series Spearman correlation between the scaled alphas, train only."""
+
+    from matplotlib.colors import LinearSegmentedColormap
+
+    cols = [f"z_{f}" for f in FACTOR_ORDER]
+    p = pd.read_parquet(ALPHA_DIR / "panel_full.parquet", columns=["date", "root"] + cols)
+    p = p.loc[p["date"] <= end]
+    per_root = np.stack([g[cols].corr("spearman").to_numpy() for _, g in p.groupby("root")])
+    corr = np.nanmedian(per_root, axis=0)
+    n = len(FACTOR_ORDER) - 1  # strict lower triangle: rows alphas 2..12, columns alphas 1..11
+    sub = corr[1:, :-1]
+    shown = np.where(np.tril(np.ones((n, n), bool)), sub, np.nan)
+    cmap = LinearSegmentedColormap.from_list("corr", [ps.ORANGE, "#f7f6f2", ps.BLUE])
+    fig, ax = plt.subplots(figsize=(width_cm * CM, height_cm * CM))
+    im = ax.imshow(shown, cmap=cmap, vmin=-1, vmax=1, aspect="auto")
+    for i in range(n):
+        for j in range(i + 1):
+            txt = f"{sub[i, j]:.2f}".replace("0.", ".", 1)
+            ax.text(j, i, ps.tex(rf"${txt}$"), ha="center", va="center", fontsize=4.0,
+                    color="white" if abs(sub[i, j]) > 0.7 else ps.INK)
+    for edge in (1.5, 3.5, 6.5, 9.5):  # family boundaries between A, B, C, D and E
+        ax.plot([-0.5, edge], [edge - 1, edge - 1], color=ps.INK, lw=0.5)
+        ax.plot([edge, edge], [edge - 1, n - 0.5], color=ps.INK, lw=0.5)
+    ax.set_xticks(range(n), [ps.tex(f.replace("_", r"\_")) for f in FACTOR_ORDER[:-1]], rotation=90, fontsize=5.4)
+    ax.set_yticks(range(n), [ps.tex(f.replace("_", r"\_")) for f in FACTOR_ORDER[1:]], fontsize=5.4)
+    ax.tick_params(length=0)
+    ax.grid(False)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    cb = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+    cb.set_label(ps.tex("Median Spearman correlation"), fontsize=6.0)
+    cb.ax.tick_params(labelsize=5.5)
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / "f_alpha_corr.pdf"
+    fig.savefig(path)
+    plt.close(fig)
+    return path
+
+
+TERM_SHOWN = {"pred_fwd_1_6": "Combined forecast", "a_carry": r"a\_carry", "b_rel_carry": r"b\_rel\_carry",
+              "c_rev5": r"c\_rev5"}
+
+
+def f_ic_horizon(period: str = "valid", width_cm: float = 6.6, height_cm: float = 5.4) -> Path:
+    """IC against horizon up to 252 days (rolled returns) next to the AR(1) drift model of the shape."""
+
+    term = pd.read_parquet(ALPHA_DIR / "ic_term_structure.parquet").query("period == @period")
+    fig, (ax, bx) = plt.subplots(2, 1, figsize=(width_cm * CM, height_cm * CM), sharex=True)
+    colors = [ps.BLUE, ps.ORANGE, ps.AQUA, ps.YELLOW]
+    for (score, label), color in zip(TERM_SHOWN.items(), colors):
+        s = term.loc[term["score"].eq(score)].sort_values("h")
+        ax.fill_between(s["h"], s["ci_lo"], s["ci_hi"], color=color, alpha=0.15, lw=0)
+        ax.plot(s["h"], s["ic"], color=color, lw=1.2, marker="o", ms=2.2, label=ps.tex(label))
+    ps.zero_line(ax)
+    ax.set_xscale("log")
+    ax.set_xticks([1, 5, 21, 63, 252], ["1", "5", "21", "63", "252"])
+    ax.xaxis.set_minor_locator(mpl.ticker.NullLocator())
+    ax.set_ylabel(ps.tex("Validation IC"))
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), fontsize=5.2, ncol=2, columnspacing=0.8,
+              handlelength=1.4)
+    h = np.unique(np.geomspace(1, 252, 200))
+    for half, color in zip((5, 21, 63), ps.ORDINAL_BLUE[1:]):
+        rho = 0.5 ** (1 / half)
+        curve = (1 - rho ** h) / np.sqrt(h)
+        bx.plot(h, curve / curve.max(), color=color, lw=1.2, label=ps.tex(rf"Half-life {half}"))
+        peak = 1.2564 / -np.log(rho)
+        bx.axvline(peak, color=color, lw=0.6, ls=(0, (2, 1.5)))
+        bx.text(peak, 1.04, ps.tex(rf"{half}d"), color=color, ha="center", va="bottom", fontsize=5.4,
+                bbox=dict(fc=ps.SURFACE, ec="none", pad=0.6))
+    bx.set_xscale("log")
+    bx.set_xticks([1, 5, 21, 63, 252], ["1", "5", "21", "63", "252"])
+    bx.xaxis.set_minor_locator(mpl.ticker.NullLocator())
+    bx.set_xlabel(ps.tex(r"Horizon $h$ (trading days)"))
+    bx.set_ylabel(ps.tex(r"Model IC, peak 1"))
+    bx.text(0.02, 0.04, ps.tex("Labels: half-life"), transform=bx.transAxes, fontsize=5.2, color=ps.INK_2)
+    bx.set_ylim(0, 1.2)
+    bx.set_yticks([0, 0.5, 1.0])
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / "f_ic_horizon.pdf"
+    fig.savefig(path)
+    plt.close(fig)
+    return path
+
+
 MODEL_ORDER = ["ols", "ridge_1e3", "ridge_1e5", "lasso_1e-3", "lasso_1e-2", "enet", "rf", "xgb"]
 MODEL_LABEL = {"ols": "OLS", "ridge_1e3": "R3", "ridge_1e5": "R5", "lasso_1e-3": "L3", "lasso_1e-2": "L2",
                "enet": "EN", "rf": "RF", "xgb": "XGB"}
@@ -606,6 +691,10 @@ def a_ic_bootstrap(pairs, mk, signal, width_cm: float = 13.6, height_cm: float =
 def main() -> None:
     ps.use()
     mpl.rcParams.update(SLIDE_FONT)
+    if "--corr" in sys.argv:
+        print(f_alpha_corr())
+        print(f_ic_horizon())
+        return
     print(stylized_curves())
     gains = ns_r2_gains()
     for name, (summ, _) in gains.items():

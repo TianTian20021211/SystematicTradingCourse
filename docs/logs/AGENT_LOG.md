@@ -3706,3 +3706,25 @@ description (carry level, carry shape, stretch, trend, curve shock).
 **Validation / results:** deck compiles, the slide fits, no `;`, `—` or `|`.
 
 **Commit:** `style(slides): define every alpha symbol and family` (`b164d3b`).
+
+---
+
+## LOG-0086 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Add an alpha correlation slide after the screen and an IC-horizon
+slide after the model comparison.
+
+**What changed:** `scripts/make_slide_figures.py`: `f_alpha_corr` (median
+per-commodity time-series Spearman correlation of the scaled alphas, train,
+strict lower triangle with family boundaries) and `f_ic_horizon` (validation
+IC of the combined forecast and three alphas for h = 1 to 252 on rolled
+returns, above the AR(1) fading-drift model IC(h) ∝ (1 − ρ^h)/√h for
+half-lives 5, 21, 63 days); `--corr` draws only these two.
+`presentations/final/main.tex`: two new slides.
+
+**Validation / results:** within-family correlations B 0.97, E 0.88, C 0.51 to
+0.78; c_rev5 vs d_mom21 −0.45; E |ρ| ≤ 0.15 against everything else. The
+combined forecast peaks near h = 42 in validation (0.12) and falls to 0.04 at
+252. Both slides fit.
+
+**Commit:** `feat(slides): alpha correlation and IC-horizon slides` (this commit).

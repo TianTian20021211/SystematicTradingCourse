@@ -1141,6 +1141,34 @@ grows with $h$, C and E peak at $[t,\,t+1]$, B helps only at long $h$, D never p
 \end{figure}
 \end{frame}
 
+\begin{frame}{How much do the alphas overlap?}
+\begin{columns}[c, onlytextwidth]
+\begin{column}{0.60\textwidth}
+\begin{figure}
+\centering
+\includegraphics{figures/f_alpha_corr.pdf}
+\caption{Median over 24 commodities of the time-series Spearman correlation,
+train 1986--2005. Lines separate the families.}
+\end{figure}
+\end{column}
+\begin{column}{0.37\textwidth}
+\footnotesize
+\begin{itemize}
+  \item \key{Within a family the alphas are close}: B 0.97, E 0.88, C 0.51 to
+        0.78. The main pair is usually the front adjacent spread, so
+        $b^{\text{rel}}_t\approx b^{\text{curve}}_t$
+  \item \key{C and D are one signal with two windows}: $c^{\text{rev}}_t=-d^{\text{mom},5}_t$,
+        so they correlate at $-0.45$ to $-0.79$
+  \item Carry goes with momentum ($+0.3$) and against reversion ($-0.3$): a
+        steep spread has usually been rising
+  \item \key{E is nearly orthogonal} to everything else ($|\rho|\le0.15$)
+  \item About five independent directions, and collinear inputs are one more
+        reason for a shrinkage model
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
 \begin{frame}{Which model? Eight forecasters compared out of sample}
 \footnotesize
 \begin{itemize}
@@ -1158,6 +1186,43 @@ grows with $h$, C and E peak at $[t,\,t+1]$, B helps only at long $h$, D never p
 \caption{Validation mean IC, 95\% bootstrap CI. Blue linear, grey trees, orange
 ridge. R: ridge, L: lasso ($\alpha=10^{3},10^{5},10^{-3},10^{-2}$), EN: elastic net.}
 \end{figure}
+\end{frame}
+
+\begin{frame}{Why does IC rise with the horizon, and where does it stop?}
+\begin{columns}[c, onlytextwidth]
+\begin{column}{0.56\textwidth}
+\begin{figure}
+\centering
+\includegraphics{figures/f_ic_horizon.pdf}
+\caption{Top: validation IC over $[t+1,\,t+1+h]$, 95\% day-block CI, wide at a
+year with only ten independent windows. Bottom: the drift model.}
+\end{figure}
+\end{column}
+\begin{column}{0.41\textwidth}
+\scriptsize
+If $s_t$ predicts a drift $\mu_{t+k}=\rho^{k}\mu_t$ that fades, under
+daily noise $\sigma^2$,
+\[
+\mathrm{IC}(h)\propto\frac{\operatorname{cov}\bigl(s_t,\sum_{k\le h}r_{t+k}\bigr)}{\sigma\sqrt{h}}
+\propto\frac{1-\rho^{h}}{\sqrt{h}}
+\]
+\vspace{-1.2ex}
+\begin{itemize}
+  \item Short $h$: the drift adds up linearly, the noise as $\sqrt{h}$, so
+        $\mathrm{IC}\propto\sqrt{h}$ \key{rises}
+  \item Long $h$: the drift is spent, only noise is added, so
+        $\mathrm{IC}\propto1/\sqrt{h}$ \key{falls}. Peak near 1.8 half-lives
+\end{itemize}
+\textbf{In the data}
+\begin{itemize}
+  \item \key{The combined forecast peaks near 42 days}, a half-life of about
+        one month
+  \item a\_carry peaks at 21 to 63 days, c\_rev5 turns negative after a
+        month, b\_rel\_carry is the slowest
+  \item \key{A 22-day book sits near the peak} with low turnover
+\end{itemize}
+\end{column}
+\end{columns}
 \end{frame}
 
 \begin{frame}{Trading the ridge forecast: four rebalancing schemes}
