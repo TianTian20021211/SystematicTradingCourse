@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Reproduce the data layer and the four per-idea notebooks from the raw CSV.
+# Reproduce the data layer and the five per-idea notebooks from the raw CSV.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -30,6 +30,8 @@ jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=1800 notebooks/12_idea_c_mean_reversion.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=900 notebooks/13_idea_d_curve_momentum.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=3600 notebooks/14_idea_e_nelson_siegel.ipynb
 
 echo "== Cross-strategy comparison table (optional utility) =="
 "$PYTHON" scripts/run_v2_rerun.py \
@@ -39,7 +41,8 @@ echo "== Remove volatile notebook execution timestamps =="
 "$PYTHON" scripts/clean_notebook_metadata.py \
   notebooks/00_data_audit.ipynb notebooks/01_panel_build.ipynb \
   notebooks/10_idea_a_carry.ipynb notebooks/11_idea_b_adjacent_carry.ipynb \
-  notebooks/12_idea_c_mean_reversion.ipynb notebooks/13_idea_d_curve_momentum.ipynb
+  notebooks/12_idea_c_mean_reversion.ipynb notebooks/13_idea_d_curve_momentum.ipynb \
+  notebooks/14_idea_e_nelson_siegel.ipynb
 
 echo "== Processed panels =="
 ls -lh data/processed/*.parquet

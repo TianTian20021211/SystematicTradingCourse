@@ -460,7 +460,7 @@ Status values: `proposed`, `accepted`, `superseded`.
      spread-order cost pairing is not group-aware.
 - **Consequences:** C rolling-OLS/Kalman and B can run through v2; A, D and
   C 1:1 stay two-leg and use the default path. The extension is additive;
-  existing v2 signals and notebook 07 keep their interface.
+  existing v2 signals and the 10–14 notebooks keep their interface.
 
 ---
 
@@ -539,7 +539,8 @@ Status values: `proposed`, `accepted`, `superseded`.
   1. The notebook layout is: `00_data_audit`, `01_panel_build`,
      `10_idea_a_carry`, `11_idea_b_adjacent_carry`,
      `12_idea_c_mean_reversion` (1:1, rolling OLS, Kalman subsections),
-     `13_idea_d_curve_momentum`. Exactly one notebook per idea.
+     `13_idea_d_curve_momentum`, and `14_idea_e_nelson_siegel`. Exactly
+     one notebook per idea.
   2. Every idea notebook runs only its own strategy on v2 and shows:
      (a) cumulative PnL after each cost layer; (b) a two-panel position
      figure with a month-end signed per-root heatmap and gross
@@ -556,6 +557,196 @@ Status values: `proposed`, `accepted`, `superseded`.
      `-` = the opposite, `0` = flat. Heatmap colour is signed gross notional
      divided by capital. Net signed dollar exposure is not used because a
      calendar spread is dollar-neutral by construction.
-- **Consequences:** The working tree has four idea notebooks instead of seven
-  historical ones. v1 numbers remain in docs and are recoverable from git.
-  No data/backtest convention changes.
+- **Consequences:** The working tree has five idea notebooks (10–14) instead
+  of seven historical ones. v1 numbers remain in docs and are recoverable
+  from git. No data/backtest convention changes.
+- **Note (2026-10-20):** D-024 adds E as `14_idea_e_nelson_siegel` after the
+  cloud E work was merged; the layout is now five idea notebooks.
+
+---
+
+## D-021 · Idea E: Nelson–Siegel curve-dynamics replication protocol
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** Bianchi, Fan, Miffre & Zhang (2023, JBF 154) fit a
+  Nelson–Siegel (NS) curve each day to the nearest four contracts of each
+  commodity and trade the sign of the one-day change in the slope (S) and
+  curvature (C) betas, holding for one day (gross Sharpe 1.41 for S; net
+  0.44–1.04; post-GFC net 0.20). Three facts shape the protocol: (i) λ_t is
+  set by rule, not estimated, so with four contracts and three betas the fit
+  is a one-degree-of-freedom OLS and ΔβS is close to a fixed linear
+  combination of the four price changes; (ii) their non-NS benchmark
+  ΔS_t = Δ(F¹ − F⁴) already earns Sharpe 1.31 (Table 10), so the NS
+  increment must be measured, not assumed; (iii) their trades are "set up at
+  the end of day t and implemented for one day", i.e. filled at the same
+  settle that produced the signal, which this project treats as not
+  tradable (D-009, D-015).
+- **Decision:**
+  1. **Order of work.** (a) Replicate the paper's S and C strategies as
+     specified; (b) compare the paper's timing with the tradable timing;
+     (c) run the non-NS benchmark ΔS_t; (d) only if the edge survives a t+1
+     fill, run the filtering/shrinkage extensions in item 10.
+  2. **Contract set.** Per root and day, the eligible contracts among M1–M4
+     are those with a tradable settle, not in their delivery month, and
+     before their last trading day (the paper holds a contract until the
+     last trading day before the front enters its maturity month).
+     - Snapshot OLS (main replication): fit only when exactly four eligible
+       contracts exist. Otherwise no fit and an explicit flat target for that
+       root-day (three contracts would be an exact, zero-dof fit).
+     - Kalman/state-space variants (item 10): update with whatever eligible
+       contracts exist (minimum three), dropping missing rows from the
+       measurement equation.
+     - The number of days lost to the four-contract rule is reported per
+       root.
+  3. **Maturity.** M = calendar days from t to the contract's last trading
+     day, divided by 365.25/12 (months). The last trading day is on the
+     exchange calendar and therefore ex ante. For expired contracts it is the
+     contract's last appearance in the generic M1–M4 roll (Bloomberg rolls at
+     expiry); for contracts still trading at the end of the extract
+     (`is_censored`), it is the delivery-month start plus the root's median
+     historical offset. Robustness: maturity to the delivery-month start.
+  4. **Fit.** Price levels (as in the paper, Eq. 1), λ_t = 1.7933 / M̄_t
+     where M̄_t is the mean maturity of the fitted contracts (the curvature
+     loading peaks at λM ≈ 1.7933; paper footnote 4); betas by OLS. Store
+     βL, βS, βC, λ, R² and the R² of the L+S and L+C sub-models (paper
+     Table 3: 96.5%, 37.5%, 82.7% on average).
+  5. **Signals.** S: sign(ΔβS,t); C: sign(ΔβC,t), with Δ between
+     consecutive fitted days of the same root. Days on which the fitted
+     contract set changed (rolls) are flagged; the main replication keeps
+     them (as the paper does), a robustness run drops them.
+  6. **Instruments and weights.** S trades the slope spread of the first
+     and fourth fitted contracts (long 1st / short 4th when ΔβS > 0), equal
+     notional legs. C trades the butterfly short 1st / long 2nd / short 4th
+     when ΔβC > 0 with leg weights |w1| = |w4| = ½|w2| (paper: 1/(4N),
+     1/(2N), 1/(4N)). This deviates from the D-008 common pair by design;
+     the D-008 pair is a robustness run for S.
+  7. **Timing.** Main (tradable): signal at the t settle, fill at the t+1
+     settle, first P&L t+1 -> t+2, one-day holding, `rebalance="daily"`
+     (D-015). The paper's timing, window [t, t+1], is reported only as an
+     execution-free diagnostic and is labelled not tradable.
+  8. **Aggregation.** Time series per root; no cross-sectional ranking
+     (settlement times differ across exchanges). Equal weight across active
+     roots by default, liquidity weight (dollar ADV^½) as robustness. The
+     paper's equal split of capital between the long and short sides is not
+     imposed and the difference is stated in the results.
+  9. **Samples.** (i) Replication: the paper's 21 commodities (our 24 minus
+     CO, NG, SB) from 1992-01-02 to 2019-06-28; (ii) full panel: 24
+     commodities, 1986–2015 train / 2016–2026 test. No parameter is chosen
+     on the test sample.
+  10. **Extensions (conditional on item 1d).** Random-walk state-space NS
+      (Kalman filter; equivalent to shrinking each day's fit toward the
+      previous filtered betas), AR(1)/VAR(1) dynamic NS with the forecast
+      E[Δβ_{t+1} | F_t] as the signal (Diebold–Li; Grønborg–Lunde), and
+      3/5-day moving averages of ΔβS (paper Table 9). Noise variances and
+      AR parameters are estimated on the training sample or an expanding
+      window, never on the full sample.
+  11. **Costs and reporting.** v2 three-layer costs (D-016), plus the
+      paper's TC1–TC3 scenarios for comparability. Report the full v2 set:
+      cost layers, turnover, marginal and cumulative horizon decay, k sweep,
+      and the per-commodity block-bootstrap IC of ΔβS.
+- **Consequences:** New `src/nelson_siegel.py` (eligible set, maturities,
+  daily fit, signals), a multi-leg weight path in `src/sizing.py` for the C
+  butterfly and the 1st/4th spread, and `notebooks/14_idea_e_nelson_siegel.ipynb`.
+  The 1-dof critique of `docs/project_brief.md` §4 is addressed by items 1c,
+  4 and 10. Changing any item requires a new decision entry.
+
+---
+
+## D-022 · Idea E results: lambda as a causal hyperparameter, $1m capital, E closed
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** D-021 fixed the replication protocol. Two refinements were
+  requested before running it: treat the NS decay λ as a hyperparameter chosen
+  among causal rules on a validation sample, and size the framework for a
+  USD 100k–1m book (below that many contracts cannot be bought in whole lots).
+- **Decision:**
+  1. **λ rules** (`nelson_siegel.LAMBDA_RULES`), all causal: `paper`
+     (1.7933 / mean maturity), `fixed_2/4/6` (curvature peak at 2/4/6 months),
+     `rolling_ssr` (per root, grid λ minimising the summed fit SSR over the
+     previous 252 fitted days, day t excluded). Amends D-021 item 4.
+  2. **Selection:** the highest tradable gross Sharpe (t+1 fill, daily, equal
+     weight) on the validation sample 2006-01-01–2015-12-31; the test sample
+     2016–2026 is read once for the selected rule.
+  3. **Capital:** `SimConfig.capital` default and the notebooks use USD 1m;
+     capacity grids span USD 100k–100m. `SimConfig.round_lots=True` rounds
+     each leg to whole contracts and skips spreads with a leg below half a
+     lot; `capacity_curve` assumes fractional contracts.
+  4. **Paper costs:** `costs.paper_scenarios()` reproduces Bianchi et al.'s
+     TC1–TC3 per side (USD 0.75; 0.835 bp of notional via
+     `CostParams.proportional_bps`; USD 0.75 + 1/8 tick), legs costed
+     individually, no impact.
+  5. **Result and close-out:** the paper's S effect replicates at its own
+     timing (21 commodities, 1992–2019: gross 3.55%/yr, Sharpe 2.03 vs the
+     paper's 1.77% / 1.41) and vanishes with a one-day lag (gross −0.18%/yr,
+     t = −0.6; `[t+1, t+2]` signed return t = −0.1). The non-NS ΔS benchmark
+     behaves the same, all λ rules have validation Sharpe between −0.29 and
+     +0.02 (`rolling_ssr` selected; test gross +0.15%/yr, t = 0.2), and the C
+     butterfly is also flat (gross −0.32%/yr). Turnover is ~230×/yr, so even
+     the paper's cheapest TC1 gives −0.8%/yr. **E is closed as not
+     tradable**; per D-021 item 1(d) the Kalman / dynamic-NS extensions are
+     not run.
+- **Consequences:** `notebooks/14_idea_e_nelson_siegel.ipynb` is the E record;
+  The E notebook uses USD 1m. Revisiting E requires intraday or
+  trade-at-settlement data to test whether the same-settle effect is
+  executable.
+
+---
+
+## D-023 · Idea E follow-ups: fit significance, paper-timing costs, Kalman A/B
+
+- **Status:** accepted
+- **Date:** 2026-10-20
+- **Context:** After D-022, three questions remained: does each NS component
+  describe the curve significantly better, does the paper's same-settle
+  strategy survive costs or smoothing, and does a Kalman dynamic NS improve on
+  the daily OLS snapshot.
+- **Decision:**
+  1. **Fit significance:** per-commodity 21-day moving-block bootstrap of
+     daily fit statistics; nested models compared with paired bootstraps on
+     adjusted R² (in-sample R² cannot fall when a regressor is added) and on
+     leave-one-contract-out R² (median; heavy tails). Result: slope helps on
+     22–24/24 commodities in every metric; curvature helps out of sample on
+     11/24 and hurts on 9/24 (seasonal curves: LC, LH, FC, LB, XB, SB, S, CT,
+     NG).
+  2. **Paper timing with costs:** `simulate.same_settle` re-dates targets so
+     the engine fills at the signal's own settle (diagnostic only). Paper
+     sample, paper λ, USD 1m: gross 3.11%/yr (Sharpe 1.95); paper TC1–TC3 net
+     1.2–2.5%/yr; v2 half-spread alone takes it to −0.04%/yr and fees to
+     −1.35%/yr. k-day smoothing lowers turnover but dilutes the one-day edge
+     faster; no k is positive net of spread and fees at either timing.
+  3. **Kalman A/B:** random-walk state-space NS (`src/ns_kalman.py`), noise
+     scaled by the previous mean price, (r, q) chosen per root by one-step
+     log likelihood on 1986–2005, A/B on 2006–2026 with paired block
+     bootstraps. Kalman is better on leave-one-out fit (24/24) but worse on
+     one-step-ahead curve forecasts (20/24), and its ΔβS signal is worse at
+     the tradable timing ([t+1, t+2] −0.57 bp, t = −1.7). Adoption rule
+     (significant improvement on most commodities) is not met: **not
+     adopted**.
+- **Consequences:** E stays closed as not tradable (D-022). For curve-shape
+  descriptors used elsewhere, slope is robust; curvature only for smooth
+  curves.
+
+---
+
+## D-024 · Merge idea E into the D-020 notebook layout
+
+- **Status:** accepted
+- **Date:** 2026-10-20
+- **Context:** The cloud branch merged the idea E work (PR #1 and follow-ups)
+  while local `main` had D-019/D-020 and notebooks 10–13. Decision IDs, log
+  IDs and notebook numbers collided.
+- **Decision:**
+  1. Keep local decisions D-001–D-020 and the D-020 notebook layout.
+  2. Import the idea E decisions as D-021 (protocol), D-022 (results) and
+     D-023 (follow-ups); the E log entries are renumbered to LOG-0051–LOG-0053.
+  3. Add idea E as `notebooks/14_idea_e_nelson_siegel.ipynb`; keep notebooks
+     02–08 retired (D-020) and do not restore `06_backtest_framework`.
+  4. Port the E method additions (`simulate.same_settle`,
+     `horizon.block_bootstrap_mean`, `report.execution_free_returns`,
+     `report.return_summary`, `ns_kalman`) onto local v2 without removing
+     the local position/Sharpe additions.
+- **Consequences:** Local `main` now contains the cloud E work and the D-020
+  layout. E remains closed as not tradable (D-022). A future idea notebook
+  slot is 15.

@@ -67,6 +67,7 @@ Baruch College, MFE Program · 2026
 **H 不是信号**,是架在 A–D 上的镜头。
 
 > 已排除 E(Nelson-Siegel):4 个点拟合 3 个参数只剩 1 个自由度,过拟合严重。
+> （2026-10-20 更新：E 已按 D-014 重新纳入；D-021–D-023 完成复现并 closed as not tradable。）
 
 ---
 
@@ -146,7 +147,7 @@ Project/
 **原则:** `raw/` 只读,`src/` 放逻辑,notebook 只做叙述和调用,`99_final_report.ipynb` 是唯一提交物。
 
 > **更新（D-020，2026-10-19）：** 上面的 notebook 编号是 proposal 时期的
-> 设想，实际布局已改为 `00/01` 数据层 + `10–13` 每个 idea 一个 notebook。
+> 设想，实际布局已改为 `00/01` 数据层 + `10–14` 每个 idea 一个 notebook。
 > 当前映射和旧 notebook 的恢复方式见 `docs/notebook_history.md`。
 
 ---

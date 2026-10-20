@@ -138,3 +138,6 @@ table; notebooks 10–13 are the narrative versions. No push is performed.
 - The v2 re-runs do not rescue any idea: A/B gross is negative; D/C/C-hedge
   gross is weak and the layered costs turn every net result negative.
 - The main value of v2 is diagnostic, not a new positive result.
+
+E (Nelson–Siegel) is not part of this v1/v2 comparison;
+see `notebooks/14_idea_e_nelson_siegel.ipynb` and D-021–D-023.

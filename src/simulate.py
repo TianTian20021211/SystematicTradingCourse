@@ -36,6 +36,7 @@ class SimConfig:
     resize: str = "on_change"  # "on_change" | "daily"
     max_invalid: int = 5
     rebalance_band: float = 0.25
+    round_lots: bool = False  # True: whole contracts per leg (small books may round to zero)
     cost: cost_model.CostParams = field(default_factory=cost_model.CostParams)
 
 
@@ -113,7 +114,7 @@ def _root_book(legs: pd.DataFrame) -> dict:
     return book
 
 
-def _desired(spec, price: dict, pv: float, capital: float) -> dict | None:
+def _desired(spec, price: dict, pv: float, capital: float, round_lots: bool = False) -> dict | None:
     """Contracts per leg for a target spec at fill prices; None if unpriceable."""
 
     _key, contracts, units, budget = spec
@@ -124,7 +125,12 @@ def _desired(spec, price: dict, pv: float, capital: float) -> dict | None:
     if not ok:
         return None
     scale = budget * capital / np.sum(np.abs(units) * px * pv)
-    return dict(zip(contracts, units * scale))
+    n = units * scale
+    if round_lots:
+        n = np.round(n)
+        if not np.all(n != 0):
+            n = np.zeros_like(n)  # a leg below half a lot: the spread cannot be built
+    return dict(zip(contracts, n))
 
 
 def _price_book(marks_r: pd.DataFrame) -> dict:
@@ -187,7 +193,7 @@ def _step(f, s, root, state, book, prices, last_date, pv, cfg) -> tuple[dict, li
         old = state.get("budget", 0.0)
         if old == spec[3] or (old > 0 and abs(spec[3] / old - 1.0) <= cfg.rebalance_band):
             return hold, rows, exit_status or "hold"
-    new = _desired(spec, px, pv, cfg.capital)
+    new = _desired(spec, px, pv, cfg.capital, cfg.round_lots)
     traded = [] if new is None else [c for c in set(hold) | set(new) if abs(new.get(c, 0.0) - hold.get(c, 0.0)) > 1e-12]
     if new is None or not all(px.get(c, (np.nan, False))[1] for c in traded):
         return hold, rows, exit_status or "blocked"
@@ -366,6 +372,7 @@ def simulate(legs: pd.DataFrame, marks: pd.DataFrame, config: SimConfig | None =
         trades["point_value"] = trades["root"].map(pv)
         trades["tick_size"] = trades["tick_size"].fillna(trades["root"].map(marks.groupby("root")["tick_size"].first()))
         trades = cost_model.trade_costs(trades, cfg.cost)
+    holdings["date"] = pd.to_datetime(holdings["date"])
     enriched = _holdings_pnl(holdings, marks, calendar)
     positions = enriched.loc[:, POSITION_COLUMNS].copy()
     by_root = _by_root(enriched, trades)
@@ -380,3 +387,19 @@ def simulate(legs: pd.DataFrame, marks: pd.DataFrame, config: SimConfig | None =
     daily = _daily(by_root.drop(columns="status"), cfg.capital, calendar)
     return SimResult(holdings, trades, by_root, daily, cfg, calendar,
                      positions=positions)
+
+
+def same_settle(legs: pd.DataFrame, marks: pd.DataFrame) -> pd.DataFrame:
+    """Re-date leg targets so they fill at the settle that produced the signal.
+
+    ``simulate`` fills a target dated d at the next trading day. Moving each
+    target to the previous trading day makes the fill happen at the signal's
+    own settle (P&L from t to t+1): the timing used by Bianchi et al. (2023).
+    This is a diagnostic: a settle cannot be traded after it is observed.
+    """
+
+    calendar = pd.DatetimeIndex(sorted(marks["date"].unique()))
+    pos = calendar.searchsorted(pd.DatetimeIndex(legs["date"]))
+    out = legs.loc[pos > 0].copy()
+    out["date"] = calendar[pos[pos > 0] - 1]
+    return out

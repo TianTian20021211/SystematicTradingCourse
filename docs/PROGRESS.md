@@ -1,19 +1,22 @@
 # Progress — A, B, C, D Baselines and Backtest v2
 
-**Last updated:** 2026-10-19  
-**Branch:** `main`; C/D merged and closed; backtest v2 merged.
+**Last updated:** 2026-10-20
+**Branch:** `main`; C/D/E merged and closed; backtest v2 merged.
 **A baseline:** `bd6691b`; **A diagnosis:** `f02f18b`.  
 **B pre-test:** `d257e0e`.  
 **C baseline + hedge-ratio + Kalman variants:** merged into `main`; C closed.  
 **D baseline:** D-013; merged into `main`; closed as negative/mixed.
+**E baseline:** D-021–D-023; notebook 14; closed as not tradable.
 **Backtest v2:** D-016; merged from `jiaheng/backtest-v2` in LOG-0039.
 **Plans:** A `~/.claude/plans/polished-crafting-clock.md`;
 C `~/.claude/plans/valiant-pondering-peacock.md`.
 
 > **Official results (D-019):** the v2 re-runs in notebooks 10–13 are the
-> final reported results. The v1 A/B/C/D sections below are historical
-> baselines and must be labeled `v1`. Old notebooks 02–08 are retired
-> (D-020); their replacement and recovery are in `docs/notebook_history.md`.
+> final reported results for A/B/C/D. E (Nelson–Siegel) is separate:
+> notebook 14, D-021–D-023, closed as not tradable. The v1 A/B/C/D sections
+> below are historical baselines and must be labeled `v1`. Old notebooks
+> 02–08 are retired (D-020); their replacement and recovery are in
+> `docs/notebook_history.md`.
 
 This is the live status file for another agent or the teammate. The stable
 end-of-phase snapshot remains `docs/HANDOFF.md`; decisions are in
@@ -35,7 +38,7 @@ Full sample 1986–2026; all-in net is after half-spread, fees and impact.
 | B adjacent carry | −1.13% | −4.47% | −1.23% |
 
 Source: `output/v2_rerun/comparison.csv`; narrative:
-notebooks 10–13; framework comparison:
+notebooks 10–14; framework comparison:
 `docs/v1_v2_comparison.md`.
 
 ---
@@ -63,9 +66,9 @@ notebooks 10–13; framework comparison:
 | Backtest v2 framework | done / merged | holdings-based, layered costs, horizon, capacity; D-016 |
 | v2 re-runs A/D/C/C-hedge/B | done / official | notebooks 10–13; D-018 conventions; D-019 final |
 | Official results | done | v2 is the final reported result; v1 is historical |
-| E (Nelson–Siegel) | pending | back in scope under D-014 |
-| Tests | done | 124 passed |
-| Notebooks | done | `00`, `01`, `10_idea_a_carry`, `11_idea_b_adjacent_carry`, `12_idea_c_mean_reversion`, `13_idea_d_curve_momentum` |
+| E (Nelson–Siegel) | done / closed | notebook 14; D-021–D-023; not tradable |
+| Tests | done | 136 passed |
+| Notebooks | done | `00`, `01`, `10_idea_a_carry`, `11_idea_b_adjacent_carry`, `12_idea_c_mean_reversion`, `13_idea_d_curve_momentum`, `14_idea_e_nelson_siegel` |
 
 ---
 
@@ -379,7 +382,7 @@ jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=900 notebooks/13_idea_d_curve_momentum.ipynb
 ```
 
-Notebooks 10–13 run their strategies and write `output/figures/idea_*`
+Notebooks 10–14 run their strategies and write `output/figures/idea_*`
 plus `output/v2_rerun/<strategy>_performance.csv`; optionally run
 `python scripts/run_v2_rerun.py --force` to refresh
 `output/v2_rerun/comparison.csv`. All outputs are gitignored. Old notebooks
@@ -397,7 +400,8 @@ plus `output/v2_rerun/<strategy>_performance.csv`; optionally run
    `D-x` (cross-sectional basis-momentum) is a separate backlog item.
 4. Backtest v2 re-runs of A/D/C/C-hedge/B are complete in notebooks 10–13;
    results remain negative/mixed. Do not tune on the v2 numbers.
-5. E (Nelson–Siegel curve dynamics) is back in scope under D-014.
+5. E (Nelson–Siegel curve dynamics) is complete and closed as not tradable
+   (D-021–D-023, notebook 14).
 6. H (holding-period scan) is next; monthly engine support is ready.
    Robustness (liquidity buckets, tick-based cost, dollar P&L, point-in-time
    D=10 proxy) only if needed for the final report; it is not an attempt to
@@ -444,5 +448,12 @@ plus `output/v2_rerun/<strategy>_performance.csv`; optionally run
   B −1.13% → −4.47%.
 - Test gross: D −0.21%, B −1.23%, C OLS −0.01%; C +0.16%, C Kalman +0.98%.
 - Results are v2-native and not directly comparable with v1; see
-  `docs/v1_v2_comparison.md` and notebooks 10–13.
-- 117 tests pass; no push.
+  `docs/v1_v2_comparison.md` and notebooks 10–14.
+- 136 tests pass; no push.
+
+## Idea E (Nelson–Siegel)
+
+- D-021–D-023; `src/nelson_siegel.py`, `src/ns_kalman.py`, notebook 14.
+- Paper timing: gross 3.55%/yr, Sharpe 2.03; t+1 fill: gross −0.18%/yr
+  (t = −0.6); E closed as not tradable.
+- Fit significance, paper-timing costs and Kalman A/B are in D-023.

@@ -149,7 +149,8 @@ per-contract mark state, `src/signals.py`, `src/continuous.py`,
 `src/kalman.py`, `src/backtest.py`, `src/metrics.py`,
 `src/a_diagnostics.py`, `src/b_pre_test.py`. The current narrative notebooks
 are `10_idea_a_carry`, `11_idea_b_adjacent_carry`,
-`12_idea_c_mean_reversion`, and `13_idea_d_curve_momentum` (D-020).
+`12_idea_c_mean_reversion`, `13_idea_d_curve_momentum`, and
+`14_idea_e_nelson_siegel` (D-020/D-024).
 A, B, the C 1:1 baseline, and the C rolling-OLS hedge-ratio variant are
 **negative results**. A and B are **closed**: no further parameter tuning or
 rescue variants. The C Kalman variant is **mixed/negative**, and C is
@@ -178,8 +179,9 @@ costs, calendar overrides). The v2 re-runs of A/D/C/C-hedge/B are complete in
 notebooks 10–13 and `docs/v1_v2_comparison.md`; they remain
 negative/mixed. **D-019 makes those v2 results the official/final results**;
 the v1 numbers in docs and git history are historical baselines. E
-(Nelson–Siegel curve dynamics) is back in scope under D-014. The next phase
-is E and H; do not tune on the 2016–2026 test sample.
+(Nelson–Siegel curve dynamics) is complete and closed as not tradable
+(D-021–D-023); notebook 14. The next phase is H; do not tune on the
+2016–2026 test sample.
 Do not build a daily C paper-replication branch; if revisited, it is a
 separate pre-registered project. Do not change the locked A/C conventions
 without a new `docs/decisions.md` entry. Keep the panels reproducible from

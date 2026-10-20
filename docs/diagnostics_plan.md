@@ -5,7 +5,7 @@ conversation.
 **Date:** 2026-10-19
 **Input:** v2 reruns on `main` — `output/v2_rerun/comparison.csv`,
 `output/v2_rerun/{a,b,d}_root.csv`, `docs/v1_v2_comparison.md`,
-notebooks 10–13.
+notebooks 10–14.
 **Scope:** A (carry), B (adjacent-carry pre-test), D (curve momentum) —
 Tian's ownership under D-014. C and E are cited from Jiaheng's work; this
 plan does not implement C/E diagnostics.
@@ -40,7 +40,7 @@ seeing these results must be a new pre-registered hypothesis.
 | D treatment | Full diagnostic card; exact mechanism tests to be confirmed in the next conversation |
 | Per-instrument | All 24 roots; Sharpe primary, annualised return in the table; block-bootstrap CI + 3-year window positive share; gross and net |
 | Multiple testing | No SPA / random-effects meta-analysis; per D-016, per-root time-series, no cross-sectional ranking |
-| Deliverables | Proposed `src/diagnostics.py` + diagnostics sections in notebooks 10/11/13, or a separate `notebooks/14_failure_diagnostics.ipynb` (cross-idea, not an idea notebook; not started) |
+| Deliverables | Proposed `src/diagnostics.py` + diagnostics sections in notebooks 10/11/13, or a separate `notebooks/15_failure_diagnostics.ipynb` (cross-idea, not an idea notebook; not started) |
 
 **Why v2:** D-016/D-018 pre-registered the v2 conventions and the reruns are
 already on `main`. v2 separates gross / half-spread / fees / impact, provides
@@ -249,7 +249,7 @@ D is basis momentum: 12-month formation, monthly target, N=2. The plan is:
    - `adf_half_life(...)` and `predictive_regression(...)` only if the
      report needs the C reference.
 2. Diagnostics: add sections to the relevant idea notebook (10/11/13), or a
-   separate `notebooks/14_failure_diagnostics.ipynb` (cross-idea; not an idea
+   separate `notebooks/15_failure_diagnostics.ipynb` (cross-idea; not an idea
    notebook). One card each for A, B (short), D; same tables/figures.
 3. Tests with synthetic data:
    - a known edge is detected;
@@ -268,4 +268,4 @@ D is basis momentum: 12-month formation, monthly target, N=2. The plan is:
 - Confirm the per-instrument figure layout (24 roots, CI + rolling share).
 - Confirm whether to add a v1-aligned robustness for A only (1:1 contracts,
   weekly, flat 5 bps) or keep v2 as the only main result.
-- Then implement `src/diagnostics.py` and notebook 09.
+- Then implement `src/diagnostics.py` and notebook 15.

@@ -179,7 +179,7 @@ documented negative/mixed baseline，不做 test-set tuning。`D-x`
 
 ## v2（holdings-based, layered costs）
 
-新框架见 D-016 和本页；当前展示在 notebooks 10–13。v1（本页）保留不动，
+新框架见 D-016 和本页；当前展示在 notebooks 10–14。v1（本页）保留不动，
 作为 A 的原始 benchmark 和历史结果。**D-019 起，v2 重跑是正式/最终结果**；
 v1 数字必须标注 `v1`，不进 headline 表。v2 的分层：
 `marks → sizing → simulate (+ costs) → report`，以及独立于执行的
@@ -212,7 +212,7 @@ report.performance_table(res)
   `root_table` / `capacity_curve` 都按完整 calendar 年化。
 - **Adapters**：`src/v2_signals.py` 提供 A/D/C(1:1/OLS/Kalman)/B；
   `src/v2_rerun.py` + `scripts/run_v2_rerun.py` 负责重跑和缓存。
-  notebooks 10–13 是结果展示；旧 notebook 的替代见
+  notebooks 10–14 是结果展示；旧 notebook 的替代见
   `docs/notebook_history.md`。
 - **B 的例外**：B 的 adjacent-carry 排序是同一 root 内 3 个 maturity
   spreads 的排序，不是跨商品截面；作为 D-017 的 narrow exception 运行，
@@ -220,6 +220,23 @@ report.performance_table(res)
   `d=5` universe。
 - **C hedge/Kalman**：h 在 weekly evaluation 日 snap，pair-change 日使用
   当天 h；`resize_key` 让 h 变化只在预期日期触发调仓。
+### E method additions（D-021–D-023）
+
+E 把这几个可复用诊断加进了 v2 stack：
+
+- `simulate.same_settle`：把 target 移到前一日，让成交发生在信号自己的
+  settle；只做 paper-timing diagnostic，不是可交易收益。
+- `simulate.SimConfig.round_lots`：小资金下每条腿取整到整数张。
+- `horizon.block_bootstrap_mean`：per-root moving-block bootstrap 的
+  mean/median。
+- `report.execution_free_returns`、`report.return_summary`、
+  `report.k_sweep(same_settle=...)`。
+- `costs.paper_scenarios`：Bianchi et al. 的 TC1–TC3 成本场景。
+- `src/ns_kalman.py`：random-walk dynamic Nelson–Siegel 的 Kalman A/B。
+
+E 的 notebook 是 `14_idea_e_nelson_siegel`；结论是 paper timing 可复现、
+t+1 fill 后消失，closed as not tradable。
+
 - **口径**：D-018 锁定 `d=5`、`k=5`、`min_adv=100`、USD 10m、
   equal-notional、三层成本；test 是 post-hoc slice；不要用 test 调参。
   `d=5` 目前仍依赖 `last_trade_proxy`，不是严格 point-in-time。

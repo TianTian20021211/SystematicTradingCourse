@@ -11,10 +11,11 @@ A（carry）、B、C（mean reversion）和 D（curve momentum / basis-momentum�
 的 baseline 都已跑通，但在最简 K=5 版本里都是负结果或 mixed-negative；
 C 的 rolling-OLS 和 Kalman hedge-ratio variant 也没有改善。A/B 已收尾
 （不再调参/不做 rescue），C/D 已 closed 并合入 main。v2 holdings-based
-回测框架（分层成本、horizon、容量）也已合入 main，notebook 07 是 demo；
+回测框架（分层成本、horizon、容量）也已合入 main，展示在 notebooks 10–14；
 v2 重跑 A/D/C/C-hedge/B 已完成，**v2 是正式结果（D-019）**，结论仍是
-negative/mixed；v1 notebook 和旧数字保留为历史 baseline。
-下一步是按 D-014 做 E，再做 H。D-x（cross-sectional basis-momentum）是
+negative/mixed；v1 notebook 和旧数字保留为历史 baseline。E（Nelson–Siegel）
+已完成并 closed as not tradable（D-021–D-023，notebook 14）。
+下一步是 H（holding-period scan）。D-x（cross-sectional basis-momentum）是
 backlog。
 
 ## 2. 先读什么
@@ -69,6 +70,7 @@ notebooks/10_idea_a_carry.ipynb        # A — carry
 notebooks/11_idea_b_adjacent_carry.ipynb # B — adjacent carry
 notebooks/12_idea_c_mean_reversion.ipynb # C — 1:1 / OLS / Kalman
 notebooks/13_idea_d_curve_momentum.ipynb # D — curve momentum
+notebooks/14_idea_e_nelson_siegel.ipynb  # E — Nelson–Siegel
 ```
 
 每个 idea notebook 都展示自己的 PnL、持仓（热力图 + 总敞口/换手）和
@@ -97,15 +99,16 @@ python -m pytest -q
 
 数据层（Phases R–4）已完成：rank/contract/return/spread/universe/episodes
 panel、liquidity diagnostics、adjacent-pair robustness。
-A/B/C/D baseline 都已完成，并整理为每个 idea 一个 notebook：
+A/B/C/D/E baseline 都已完成，并整理为每个 idea 一个 notebook：
 `10_idea_a_carry`、`11_idea_b_adjacent_carry`、`12_idea_c_mean_reversion`
-（1:1/OLS/Kalman）、`13_idea_d_curve_momentum`。A/B/C/D 都是负结果或
-mixed-negative；A/B 已收尾，C/D 已 closed 并合入 main。v2 回测框架
+（1:1/OLS/Kalman）、`13_idea_d_curve_momentum`、`14_idea_e_nelson_siegel`。
+A/B/C/D/E 都是负结果或 not-tradable；A/B 已收尾，C/D/E 已 closed 并合入
+main。v2 回测框架
 （`src/simulate.py` 等）也已合入 main；
 v2 重跑 A/D/C/C-hedge/B（`src/v2_signals.py`、`src/v2_rerun.py`、
-notebook 08、`docs/v1_v2_comparison.md`）已完成，**v2 是正式结果
+notebooks 10–14、`docs/v1_v2_comparison.md`）已完成，**v2 是正式结果
 （D-019）**；v1 notebook 和旧数字是历史 baseline。结论仍是 negative/mixed。
-下一步是按 D-014 做 E，再做 H；D-x 是 backlog。
+E 已完成并 closed as not tradable；下一步是 H；D-x 是 backlog。
 先读 `docs/PROGRESS.md` 和 `docs/backtest_framework.md`。
 不要用 test set 调参。
 如果发现数据问题，先更新 `docs/logs/AGENT_LOG.md` 和 `docs/decisions.md`。

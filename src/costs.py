@@ -35,6 +35,24 @@ class CostParams:
     impact_y: float = 0.5
     impact_free_contracts: float = 1.0
     adv_floor: float = 1.0
+    proportional_bps: float = 0.0
+
+
+def paper_scenarios() -> dict[str, CostParams]:
+    """Bianchi et al. (2023) cost scenarios TC1–TC3, per side.
+
+    The paper charges 0.5 x round-trip TC per unit of turnover, i.e. per side:
+    TC1 = USD 0.75 commission per contract; TC2 = 0.835 bp of notional
+    (Locke & Venkatesh 1997); TC3 = TC1 plus 1/8 tick of price impact.
+    Legs are costed individually and no market impact is charged.
+    """
+
+    base = dict(liquidity_elasticity=0.0, execution="legs", impact_y=0.0, half_spread_ticks=0.0, fee_per_contract=0.0)
+    return {
+        "TC1": CostParams(**{**base, "fee_per_contract": 0.75}),
+        "TC2": CostParams(**{**base, "proportional_bps": 0.835}),
+        "TC3": CostParams(**{**base, "fee_per_contract": 0.75, "half_spread_ticks": 0.125}),
+    }
 
 
 def half_spread_ticks(adv: pd.Series, p: CostParams) -> pd.Series:
@@ -86,7 +104,7 @@ def trade_costs(trades: pd.DataFrame, p: CostParams) -> pd.DataFrame:
     spread_px = half_spread_ticks(adv, p) * t["tick_size"] * t["point_value"]
     factor = _spread_execution_factor(t) if p.execution == "spread" else 1.0
     t["cost_half_spread"] = qty * spread_px * factor
-    t["cost_fee"] = qty * p.fee_per_contract
+    t["cost_fee"] = qty * p.fee_per_contract + t["notional"] * p.proportional_bps / 1e4
     t["participation"] = qty / adv.clip(lower=p.adv_floor).fillna(p.adv_floor)
     sigma = t["sigma"].fillna(t.groupby("root")["sigma"].transform("median"))
     excess = (qty - p.impact_free_contracts).clip(lower=0.0) / qty.where(qty > 0)

@@ -2225,3 +2225,113 @@ performance matches the v2 tables; old notebooks recoverable via
 **Commit:** `refactor(notebooks): retire superseded notebooks and document layout`
 
 **Next:** Robustness/diagnostics later; no push.
+## LOG-0051 · 2026-10-19 · Phase 8 · Claude Code
+
+**Goal:** Fix the replication protocol for idea E (Bianchi et al. 2023)
+before writing code.
+
+**Actions:**
+- Read §2, §3, §4.1, §5.5 and Tables 3, 9, 10 of `paper/predict_curve.pdf`.
+- Added D-021: order of work, four-contract eligibility (skip for snapshot
+  OLS, three allowed for Kalman), maturity to last trading day in months,
+  λ_t = 1.7933 / M̄_t, S/C signals and instruments, tradable vs paper timing,
+  time-series aggregation, samples, conditional extensions, costs.
+
+**Why:** The paper's λ rule makes the fit a 1-dof OLS, its non-NS
+benchmark already earns most of the Sharpe, and its trades fill at the
+signal's own settle; each needs an explicit test.
+
+**Commit:** `docs(decisions): add D-021 idea E replication protocol` (`6080881`)
+
+**Next:** `src/nelson_siegel.py` and tests.
+
+## LOG-0052 · 2026-10-19 · Phase 8b · Claude Code
+
+**Goal:** Implement and run idea E (D-021) with λ as a causal
+hyperparameter; resize the framework to a USD 1m book.
+
+**Actions:**
+- New `src/nelson_siegel.py`: last trading days (censored contracts by root
+  median offset), eligible curve, four-contract wide panel, NS loadings,
+  batched OLS with sub-model R², λ rules (`paper`, `fixed_m`,
+  `rolling_ssr`), ΔβS/ΔβC and ΔS signals without differencing across gaps,
+  S pair panel with explicit flats, C butterfly legs, coverage and Table 3
+  summaries, strategy builder.
+- `src/simulate.py`: `round_lots`; typed empty trade/status tables (a book
+  that rounds to zero lots no longer crashes). `src/costs.py`:
+  `proportional_bps`, `paper_scenarios()`. `src/report.py`:
+  `execution_free_returns`, `return_summary`. `src/figures.py`: `ns_betas`,
+  `lambda_validation`, `timing_comparison`; `[t, t+1]` tick label.
+- `notebooks/14_idea_e_nelson_siegel.ipynb` (Chinese narrative); the v2 framework moved to
+  USD 1m with a USD 100k–100m capacity grid; D-022; cost doc updated.
+
+**Commands:**
+- `python -m pytest -q` → 95 passed
+- notebooks 06 and 07 executed top to bottom, no errors
+
+**Validation:** NS R² 96.6% / 81.5% / 43.3% (paper 96.5 / 82.7 / 37.5).
+Paper timing on the paper sample: 3.55%/yr, Sharpe 2.03; tradable: −0.18%/yr
+(t = −0.6). Validation selects `rolling_ssr` (Sharpe 0.017); test gross
++0.15%/yr (t = 0.2). Whole lots at USD 100k: 2,957 root-days held vs
+137,288 fractional.
+
+**Commit:** `feat(nelson-siegel): replicate idea E; lambda selection; $1m book` (`56ecff6`)
+
+**Next:** D (curve momentum) on v2.
+
+## LOG-0053 · 2026-10-20 · Phase 8c · Claude Code
+
+**Goal:** Idea E follow-ups requested after D-022 (D-023).
+
+**Actions:**
+- `nelson_siegel.fit_quality` (in-sample, adjusted and leave-one-out R² of
+  nested models); `horizon.block_bootstrap_mean` (mean or median);
+  `figures.bootstrap_distribution` (generic, signed colours) with the IC
+  figure as a wrapper; `figures.k_sweep_timing`; sub-period NAV.
+- `simulate.same_settle` and `report.k_sweep(same_settle=..., start, end)`
+  for paper-timing diagnostics through the cost pipeline.
+- New `src/ns_kalman.py`: random-walk DNS filter with causal (r, q)
+  selection, LOO and one-step metrics, Kalman signal strategy, A/B table.
+- Notebook 07: sections 2b, 5b, 5c and a full section 11 A/B; conclusions.
+- Tests: fit quality, block bootstrap, same-settle timing, Kalman filter.
+
+**Commands:**
+- `python -m pytest -q` → 99 passed
+- notebook 14 executed top to bottom (18 figures, no errors)
+
+**Validation:** see D-023 numbers.
+
+**Commit:** `feat(nelson-siegel): fit significance, paper-timing costs, Kalman A/B` (`aa28cd6`)
+
+**Next:** merge into main; D (curve momentum).
+
+## LOG-0054 · 2026-10-20 · Phase 11 · Claude Code
+
+**Goal:** Merge the cloud E work into local `main` while keeping the D-020
+per-idea notebook layout.
+
+**Actions:**
+- Merged `origin/main` (PR #1 + E follow-ups) into local `main`.
+- Kept local D-001–D-020; imported E decisions as D-021–D-023 and added
+  D-024 for the layout reconciliation.
+- Renumbered E log entries to LOG-0051–LOG-0053; added this entry.
+- Added `notebooks/14_idea_e_nelson_siegel.ipynb`; kept notebooks 02–08
+  retired.
+- Ported E method additions: `simulate.same_settle`, `simulate.round_lots`,
+  `horizon.block_bootstrap_mean`, `report.execution_free_returns`,
+  `report.return_summary`, `ns_kalman`, generic bootstrap/timing figures.
+- Updated `scripts/run_all.sh`, docs and tests references.
+
+**Why:** The cloud PR merged the E work while local main had the newer
+D-020 layout; the two histories collided on decision, log and notebook IDs.
+
+**Commands:**
+- `python3 -m pytest -q`
+- `git merge --no-ff origin/main`
+
+**Validation:** tests pass; notebooks are not re-executed in this merge.
+
+**Commit:** `merge: integrate cloud E work into the D-020 notebook layout`
+
+**Next:** Align A's information tests with `horizon.horizon_profile`,
+`ts_ic`/`block_bootstrap_ic`, and `block_bootstrap_mean`.

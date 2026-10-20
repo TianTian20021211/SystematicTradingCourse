@@ -81,8 +81,12 @@ def root_table(res: simulate.SimResult) -> pd.DataFrame:
     return out.sort_values("net_pct_yr").round(4)
 
 
-def k_sweep(signal, pairs, marks, ks, config: simulate.SimConfig | None = None, **sizing_kw) -> pd.DataFrame:
+def k_sweep(signal, pairs, marks, ks, config: simulate.SimConfig | None = None, same_settle: bool = False,
+            start: str | None = None, end: str | None = None, **sizing_kw) -> pd.DataFrame:
     """Rerun the strategy with k overlapping sleeves (trade 1/k per day).
+
+    ``same_settle=True`` fills at the signal's own settle (paper timing, not
+    tradable; see ``simulate.same_settle``).
 
     Returns:
         One row per k: annualised return, Sharpe and Newey-West t-stat per
@@ -91,8 +95,11 @@ def k_sweep(signal, pairs, marks, ks, config: simulate.SimConfig | None = None, 
 
     rows = []
     for k in ks:
-        res = simulate.simulate(sizing.legs_from_signal(signal, pairs, k=k, **sizing_kw), marks, config)
-        perf = performance_table(res).set_index("layer")
+        legs = sizing.legs_from_signal(signal, pairs, k=k, **sizing_kw)
+        if same_settle:
+            legs = simulate.same_settle(legs, marks)
+        res = simulate.simulate(legs, marks, config)
+        perf = performance_table(res, start, end).set_index("layer")
         row = {"k": k, "turnover_x": perf["turnover_x"].iat[0]}
         for layer in perf.index:
             row[f"ret_{layer}"] = perf.loc[layer, "ann_ret_pct"]
@@ -126,3 +133,26 @@ def capacity_curve(res: simulate.SimResult, capitals) -> pd.DataFrame:
                          fee_bps_yr=layer["cost_fee"], impact_bps_yr=layer["cost_impact"],
                          ann_ret_pct=net.mean() * 252 * 100, sharpe=net.mean() / net.std() * np.sqrt(252)))
     return pd.DataFrame(rows)
+
+
+def execution_free_returns(fwd: pd.DataFrame, signal: pd.DataFrame, col: str = "fwd_0_1") -> pd.Series:
+    """Daily gross portfolio return of a spread signal without an execution lag.
+
+    Each active root gets gross weight 1/N_t with equal-notional legs, so its
+    return is 0.5 x target x (r_near - r_far) over the window ``col``. With
+    ``col="fwd_0_1"`` this is the paper's timing (signal and fill at the same
+    settle): a diagnostic, not a tradable return.
+    """
+
+    f = fwd[["date", "root", col]].merge(signal[["date", "root", "target"]], on=["date", "root"])
+    f = f.loc[f["target"].ne(0) & f[col].notna()]
+    contrib = 0.5 * f["target"] * f[col]
+    return contrib.groupby(f["date"]).mean().rename("ret")
+
+
+def return_summary(r: pd.Series, start: str | None = None, end: str | None = None) -> dict:
+    """Annualised mean, vol, Sharpe and Newey-West t (lag 5) of a daily series."""
+
+    r = r.loc[start:end]
+    return dict(ann_ret_pct=r.mean() * 252 * 100, ann_vol_pct=r.std() * np.sqrt(252) * 100,
+                sharpe=r.mean() / r.std() * np.sqrt(252), t_nw=horizon.newey_west_t(r, 5), days=len(r))

@@ -1,16 +1,18 @@
 # Handoff — 当前状态
 
-**最后更新：** 2026-10-19  
+**最后更新：** 2026-10-20
 **A baseline：** `bd6691b`；**A diagnosis：** `f02f18b`。  
 **B pre-test：** `d257e0e`。  
 **C baseline + hedge-ratio + Kalman variant：** 已合入 main；C 已作为
 mixed/negative 收尾。  
+**E（Nelson–Siegel）：** 已复现并 closed as not tradable；notebook 14；
+D-021–D-023。
 **D curve-momentum / basis-momentum：** 已实现并收尾为
 documented negative/mixed；monthly engine support 已加入。
 **Backtest v2（jiaheng/backtest-v2）：** 已合入 main（LOG-0039）；
 D-014–D-016。
 **v2 重跑 A/D/C/C-hedge/B：** 已完成（LOG-0044）；每个 idea 一个
-notebook（10–13，D-020）；结论仍是 negative/mixed；详见
+notebook（10–14，D-020/D-024）；结论仍是 negative/mixed；详见
 `docs/v1_v2_comparison.md`。
 
 **正式结果：** v2 重跑（D-019）；v1 数字仅作历史 baseline。旧 notebook
@@ -28,7 +30,7 @@ simulator：`src/specs.py`、`src/marks.py`、`src/sizing.py`、
 `src/figures.py`、`src/plotstyle.py`；另有
 `data/metadata/contract_specs.csv`、`docs/transaction_costs.md`、
 `presentations/mid/`。框架说明见 `docs/backtest_framework.md`，当前
-展示在 notebooks 10–13。
+展示在 notebooks 10–14。
 
 v2 重跑 A/D/C/C-rolling-OLS/C-Kalman/B 已完成（D-018）。Full-sample
 gross → all-in net：
@@ -43,7 +45,7 @@ gross → all-in net：
 | B adjacent carry | −1.13% | −4.47% |
 
 **v2 是正式结果（D-019）**；v1 仅作历史对照。结论仍是 negative/mixed；
-v1/v2 不可直接比较。详见 notebooks 10–13、
+v1/v2 不可直接比较。详见 notebooks 10–14、
 `docs/v1_v2_comparison.md` 和 `docs/notebook_history.md`。
 
 ---
@@ -59,8 +61,9 @@ v1/v2 不可直接比较。详见 notebooks 10–13、
 7. `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` — 数据层。
 8. `notebooks/10_idea_a_carry.ipynb` — A；`11_idea_b_adjacent_carry.ipynb`
    — B；`12_idea_c_mean_reversion.ipynb` — C（1:1/OLS/Kalman）；
-   `13_idea_d_curve_momentum.ipynb` — D。旧 notebook 02–08 的替代和恢复
-   见 `docs/notebook_history.md`；`docs/PROGRESS.md` — 实时进度。
+   `13_idea_d_curve_momentum.ipynb` — D；`14_idea_e_nelson_siegel.ipynb`
+   — E。旧 notebook 02–08 的替代和恢复见 `docs/notebook_history.md`；
+   `docs/PROGRESS.md` — 实时进度。
 
 ---
 
@@ -227,6 +230,11 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 | D-017 | v2 扩展：optional hedge-ratio legs、`legs_from_rows` 多腿、`resize_key`；B 的 within-root adjacent-carry 排序是 narrow exception，用 `execution="legs"` |
 | D-018 | v2 重跑口径：`d=5`、`k=5`、`min_adv=100`、USD 10m、equal-notional、三层成本；C/D/B 大 band；test 是 post-hoc slice，不用 test 调参 |
 | D-019 | **v2 重跑是正式/最终结果**；v1 notebook 和旧数字保留为历史 baseline，标注 v1，不重写、不进 headline 表 |
+| D-020 | 每个 idea 一个 notebook；00/01 数据层，10–14 分别是 A/B/C/D/E；旧 notebook 02–08 retired |
+| D-021 | Idea E 协议：NS 拟合、S/C 信号、tradable vs paper timing、样本、成本 |
+| D-022 | E 结果：paper timing Sharpe 2.03，t+1 后消失；closed as not tradable |
+| D-023 | E follow-ups：fit significance、paper-timing costs、Kalman A/B not adopted |
+| D-024 | 云端 E 并入 D-020 布局；E 决策/日志重编号 |
 
 完整内容见 `docs/decisions.md`。
 
@@ -273,11 +281,14 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 - **Backtest v2 framework**：holdings-based simulator、分层成本、
   horizon / k sweep / capacity；`docs/backtest_framework.md`、
   `src/specs.py`–`plotstyle.py`。
+- **E（Nelson–Siegel）**：`src/nelson_siegel.py`、`src/ns_kalman.py`、
+  `notebooks/14_idea_e_nelson_siegel.ipynb`；paper timing 可复现，
+  t+1 fill 后消失；closed as not tradable（D-021–D-023）。
 - **v2 重跑（正式结果，D-019）**：A/D/C/C-rolling-OLS/C-Kalman/B；
   `src/v2_signals.py`、`src/v2_rerun.py`、`scripts/run_v2_rerun.py`、
-  notebooks 10–13；D-017/D-018；full-sample 结果全部 negative/mixed。
+  notebooks 10–14；D-017/D-018/D-021–D-023；full-sample 结果全部 negative/mixed。
   v1 数字保留在 docs 和 git history，仅作历史 baseline。
-- **124 tests**；`docs/backtest_framework.md`；`docs/v1_v2_comparison.md`；
+- **136 tests**；`docs/backtest_framework.md`；`docs/v1_v2_comparison.md`；
   `docs/notebook_history.md`；`docs/PROGRESS.md`。
 
 ---
@@ -296,7 +307,8 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 - 最终 liquidity threshold（baseline 不硬筛）。
 - Contract multiplier / tick size 静态表（做美元 P&L 和容量需要）。
 - Proposal 的 holding horizon `h`（baseline 用 weekly/monthly；H 扫描 deferred）。
-- Paper replication。
+- C daily paper replication not planned; E paper replication is complete
+  (notebook 14).
 - 队友 GitHub collaborator 权限已解决。
 
 ---
@@ -330,10 +342,12 @@ jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=1800 notebooks/12_idea_c_mean_reversion.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=900 notebooks/13_idea_d_curve_momentum.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=3600 notebooks/14_idea_e_nelson_siegel.ipynb
 ```
 
-第二个 notebook 会重建 `data/processed/*.parquet`；10–13 分别跑 A、B、
-C（1:1/OLS/Kalman）和 D；结果写到 `output/`（gitignored）。旧 notebook
+第二个 notebook 会重建 `data/processed/*.parquet`；10–14 分别跑 A、B、
+C（1:1/OLS/Kalman）、D 和 E；结果写到 `output/`（gitignored）。旧 notebook
 02–08 不再运行，替代关系见 `docs/notebook_history.md`。
 
 ---
@@ -347,8 +361,8 @@ C（1:1/OLS/Kalman）和 D；结果写到 `output/`（gitignored）。旧 notebo
 2. **A/B 已收尾**：不再做变体或调参；报告只简短说明 A/B 不行。
    residual B 不计划，除非以后作为独立预注册 idea。
 3. **Liquidity threshold**：baseline 不硬筛；robustness 用 1k/5k/10k/20k 中的哪个？
-4. **Signal 优先级**：C/D 已 closed；先把已验证的 A/B/C/D 用 v2 重跑并
-   比较 v1/v2；再做 H（holding-period scan）和 E（Nelson–Siegel）。
+4. **Signal 优先级**：A/B/C/D/E 已 closed；v2 重跑完成。下一步是
+   H（holding-period scan）；E 已完成并作为 not tradable 收尾。
 5. **Proposal 的 h**：A/C baseline 用 weekly，D 用 monthly；H 扫描 1/5/21 天。
    v2 的 horizon 诊断只做信号层，不替代 H 的正式回测。
 6. **Contract multiplier / tick size**：美元 P&L、容量、tick-based cost 需要时再建。
@@ -358,7 +372,7 @@ C（1:1/OLS/Kalman）和 D；结果写到 `output/`（gitignored）。旧 notebo
 
 ## 8. 下一步
 
-A、B、C、D 都已作为负结果或 mixed-negative 收尾：A 的 contango short 方向错；
+A、B、C、D、E 都已作为负结果或 not-tradable 收尾：A 的 contango short 方向错；
 B 的 adjacent-carry rank 在成本前就为负；C 的 1:1、rolling-OLS 和 Kalman
 都没有稳健、可交易的 edge；D 的 gross 很弱，5 bps 后为负，test gross 已经
 为负。C/D 已合入 main 并 closed。下一步：
@@ -367,7 +381,8 @@ B 的 adjacent-carry rank 在成本前就为负；C 的 1:1、rolling-OLS 和 Ka
    只用于新的日频策略（C/E），不改变 C 的收尾结论；
 2. v2 重跑 A/D/C/C-hedge/B 已完成；结论仍是 negative/mixed，不再用 v2
    数字调参或做 rescue 变体；
-3. 做 E（Nelson–Siegel curve dynamics），按 D-014 纳入 scope；
+3. E（Nelson–Siegel curve dynamics）已完成并 closed as not tradable
+   （D-021–D-023，notebook 14）；
 4. 做 H（holding-period scan）；monthly engine support 已就绪；
 5. D-x（cross-sectional basis-momentum）作为独立 backlog，等 H 之后决定；
 6. 不要用 test 调参；A/B 已收尾，C/D 不再做 rescue 变体。
@@ -381,4 +396,4 @@ Sharpe bootstrap CI + 3 年窗口正收益比例，A 的 days-to-expiry / beta-n
 seasonality，B 的一段话，D 的机制检验待下一次对话确认。**尚未实现。**
 
 下一步：新对话先确认 D 的机制检验和是否需要 A 的 v1 对齐 robustness，再写
-`src/diagnostics.py` + `notebooks/14_failure_diagnostics.ipynb`。
+`src/diagnostics.py` + `notebooks/15_failure_diagnostics.ipynb`。

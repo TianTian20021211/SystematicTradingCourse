@@ -12,6 +12,7 @@
 | `11_idea_b_adjacent_carry.ipynb` | B — adjacent carry | PnL、持仓、overall Sharpe；pre-registered skip |
 | `12_idea_c_mean_reversion.ipynb` | C — mean reversion | 1:1、rolling OLS、Kalman 三个变体；closed mixed/negative |
 | `13_idea_d_curve_momentum.ipynb` | D — curve momentum | PnL、持仓、overall Sharpe；documented negative/mixed |
+| `14_idea_e_nelson_siegel.ipynb` | E — Nelson–Siegel | paper replication、same-settle vs t+1、capacity；closed as not tradable |
 
 每个 idea notebook 只运行自己的策略，统一展示：
 
@@ -30,8 +31,8 @@
 | `04_a_diagnose.ipynb` | `4c7dee8` | A v1 诊断（side × sector × era、K、成本） | `10_idea_a_carry.ipynb`；`docs/a_negative_result.md` |
 | `05_b_pretest.ipynb` | `4c7dee8` | B v1 pre-test | `11_idea_b_adjacent_carry.ipynb`；`docs/b_pretest.md` |
 | `06_curve_momentum.ipynb` | `cf94b1f` | D v1 baseline | `13_idea_d_curve_momentum.ipynb` |
-| `07_backtest_framework.ipynb` | `3d5019b` | v2 framework demo（只演示 A） | `docs/backtest_framework.md`、`src/` 模块、10–13 |
-| `08_v2_rerun.ipynb` | `3d5019b` | 六个策略的 v2 汇总 | 10–13；`output/v2_rerun/comparison.csv`；`docs/v1_v2_comparison.md` |
+| `07_backtest_framework.ipynb` | `3d5019b` | v2 framework demo（只演示 A） | `docs/backtest_framework.md`、`src/` 模块、10–14 |
+| `08_v2_rerun.ipynb` | `3d5019b` | 六个策略的 v2 汇总 | 10–14；`output/v2_rerun/comparison.csv`；`docs/v1_v2_comparison.md` |
 
 ## 历史恢复
 
@@ -50,5 +51,5 @@ git show <commit>:notebooks/02_carry.ipynb > /tmp/02_carry.ipynb
 注意：
 
 - 旧 notebook 里的 v1 数字和 v2 不可直接比较；v1 只作历史 baseline。
-- 正式结果仍是 v2（D-019）；当前展示以 10–13 为准。
+- 正式结果仍是 v2（D-019）；当前展示以 10–14 为准。
 - 不要为了补历史而重新创建旧 notebook；在对应 idea notebook 或 `docs/logs/` 里追加。

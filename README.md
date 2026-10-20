@@ -10,7 +10,8 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 > 不作为最终结果；对照见 `docs/v1_v2_comparison.md`。
 >
 > A/B 已收尾：不再调参数、不做 rescue 变体。C/D 已 closed；
-> 下一步是 E（Nelson–Siegel）和 H（holding-period scan）。
+> E（Nelson–Siegel）已完成并 closed as not tradable（notebook 14，
+> D-021–D-023）；下一步是 H（holding-period scan）。
 > D-x（cross-sectional basis-momentum）是单独的 backlog，不混入 D。
 
 ---
@@ -31,6 +32,9 @@ test 是 2016–2026 的 post-hoc slice。
 
 详细分层表见 `notebooks/10_idea_a_carry.ipynb`、`11_idea_b_adjacent_carry.ipynb`、
 `12_idea_c_mean_reversion.ipynb` 和 `13_idea_d_curve_momentum.ipynb`；
+E（Nelson–Siegel）不在这个 v2 表中：它是 paper replication，paper timing
+可复现（Sharpe 2.03），t+1 fill 后消失；见
+`notebooks/14_idea_e_nelson_siegel.ipynb` 和 D-021–D-023。
 原始 CSV 在 `output/v2_rerun/comparison.csv`（本地，gitignored）。v1 历史口径
 （5 bps/leg、`d=None`、1:1 contracts）见 `docs/v1_v2_comparison.md`；
 旧 notebook 已 retired，恢复方式见 `docs/notebook_history.md`。
@@ -57,13 +61,14 @@ test 是 2016–2026 的 post-hoc slice。
       horizon 诊断、k sweep、容量曲线；见 `docs/backtest_framework.md`
 - [x] 用 v2 重跑 A/D/C/C-rolling-OLS/C-Kalman/B；每个 idea 一个 notebook；
       **v2 为正式结果（D-019）**；v1/v2 对比见 `docs/v1_v2_comparison.md`
-- [ ] E（Nelson–Siegel）；H（holding-period scan）；D-x 是 backlog
+- [x] E（Nelson–Siegel）：paper timing 复现，t+1 后消失；closed as not tradable
+- [ ] H（holding-period scan）；D-x 是 backlog
 
-`notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` 和四个 idea notebook
+`notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` 和五个 idea notebook
 （`10_idea_a_carry`、`11_idea_b_adjacent_carry`、`12_idea_c_mean_reversion`、
-`13_idea_d_curve_momentum`）可从头运行；01 生成 `data/processed/*.parquet`，
-10–13 分别生成对应策略的 `output/figures/idea_*` 和
-`output/v2_rerun/*_performance.csv`（都不提交）。旧 notebook 02–08 已 retired；
+`13_idea_d_curve_momentum`、`14_idea_e_nelson_siegel`）可从头运行；01 生成
+`data/processed/*.parquet`，10–14 分别生成对应策略的 `output/figures/idea_*`
+和 `output/v2_rerun/*_performance.csv`（都不提交）。旧 notebook 02–08 已 retired；
 见 `docs/notebook_history.md`。
 
 **新对话 / 队友先读：** `docs/HANDOFF.md` → `AGENTS.md` → `docs/decisions.md` → `docs/logs/INDEX.md`。
@@ -104,7 +109,7 @@ test 是 2016–2026 的 post-hoc slice。
    ```
 
    第二个 notebook 会生成 `data/processed/*.parquet`（不提交到 repo）；
-   10–13 分别跑 A、B、C（1:1/OLS/Kalman）和 D，每个 notebook 只展示自己的
+   10–14 分别跑 A、B、C（1:1/OLS/Kalman）、D 和 E，每个 notebook 只展示自己的
    PnL、持仓和 overall Sharpe；结果写到 `output/`（不提交）。如果想刷新
    跨策略汇总表，再跑 `python scripts/run_v2_rerun.py --force`。
 
@@ -150,9 +155,9 @@ src/                      # 所有数据处理逻辑（notebook 只调用）
   plotstyle.py            # v2 matplotlib style and export
   v2_signals.py           # A/D/C/C-hedge/B adapters to LEG_COLUMNS
   v2_rerun.py             # v2 rerun orchestration and CSV output
-notebooks/                # 00, 01 数据层；10–13 每个 idea 一个 notebook
+notebooks/                # 00, 01 数据层；10–14 每个 idea 一个 notebook
 tests/                    # synthetic fixtures + parser/roll/spread/backtest/simulate tests
-scripts/run_all.sh        # 一键复现：依赖 + tests + 数据层 + 四个 idea notebooks
+scripts/run_all.sh        # 一键复现：依赖 + tests + 数据层 + 五个 idea notebooks
 scripts/run_v2_rerun.py   # 跨策略 v2 汇总表（手动刷新 comparison.csv）
 
 data/raw/                  # 原始数据（本地；public repo 不提交）
@@ -201,10 +206,14 @@ output/                    # 生成的图/报告（gitignored）
   post-hoc slice，不用 test 调参。
 - **正式结果（D-019）：** v2 重跑是最终报告口径；v1 数字保留为历史
   baseline，不进 headline 表。
-- **每个 idea 一个 notebook（D-020）：** 00/01 数据层，10–13 分别是
-  A/B/C/D；旧 notebook 02–08 已 retired，历史内容在 docs 和 git history。
+- **每个 idea 一个 notebook（D-020）：** 00/01 数据层，10–14 分别是
+  A/B/C/D/E；旧 notebook 02–08 已 retired，历史内容在 docs 和 git history。
   每个 idea notebook 固定展示 PnL、持仓（热力图 + 总敞口/换手）和
   一个 full-sample all-in net Sharpe。
+- **E（D-021–D-023）：** Nelson–Siegel 曲线动态；paper timing 的 Sharpe
+  2.03 在 t+1 fill 后消失，E closed as not tradable；notebook 14。
+- **云端合并（D-024）：** E 并入 D-020 布局；E 决策重编号为 D-021–D-023，
+  notebook 改为 14。
 
 详见 `docs/decisions.md`。
 
