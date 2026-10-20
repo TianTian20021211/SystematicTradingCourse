@@ -344,3 +344,17 @@ diagnosis tables; 05 writes `output/b_pretest_summary.csv`; 06 writes
    rescue A/B/C/D.
 5. No report has been written yet; A/B/C/D are documented as negative or
    mixed-negative baselines.
+
+---
+
+## Local merge handoff (D)
+
+- Branch: `feat/idea-d-curve-momentum`, based on `main` at `cb755d0`.
+- Commits: `4db6849`, `cf94b1f`, `8a92198`, `c3e9fce`; all local, not pushed.
+- Working tree clean; `pytest -q` → 80 passed; notebook 06 executed.
+- `main` is checked out in
+  `/Users/tian/Library/Mobile Documents/com~apple~CloudDocs/Baruch/第三学期/Systematic Trading/Project-ab-merge`;
+  merge there with `git merge --no-ff feat/idea-d-curve-momentum`.
+- Done/not done and D results are in `docs/HANDOFF.md` §0b and
+  `docs/decisions.md` D-013. D is closed as documented negative/mixed;
+  H is next; D-x is a separate backlog; do not push unless asked.

@@ -1432,3 +1432,40 @@ mixed into D.
 **Commit:** `docs(curve-momentum): record idea D baseline`
 
 **Next:** H (holding-period scan); D-x remains a separate backlog item.
+
+---
+
+## LOG-0031 · 2026-10-19 20:40 · Phase 8d · Claude Code
+
+**Goal:** Record the local D merge handoff and done/not-done state for a
+new conversation.
+
+**Actions:**
+- Added HANDOFF §0b: branch, base, commits, worktree/merge instructions,
+  D results, done/not-done/backlog.
+- Added a local merge handoff block to PROGRESS.
+- Recorded that nothing is pushed and `main` is checked out in the
+  `Project-ab-merge` worktree.
+
+**Files changed:**
+- `docs/HANDOFF.md`, `docs/PROGRESS.md`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `git status -sb` → clean
+- `git log --oneline --decorate -6` → 4 D commits ahead of main
+- `git worktree list` → main in `Project-ab-merge`
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 80 passed
+
+**Why:** The user will switch to another conversation to merge locally;
+the next agent needs branch/commit/worktree instructions and the exact
+done/not-done state.
+
+**Validation:**
+- HANDOFF §0b matches the actual branch, commits, worktree, and test count.
+- D results match the executed notebook and earlier logs.
+- No push was performed.
+
+**Commit:** `docs(handoff): record idea D local merge handoff`
+
+**Next:** Merge locally; H; D-x backlog.

@@ -28,6 +28,61 @@ documented negative/mixed；monthly engine support 已加入。
 
 ---
 
+## 0b. 本地 merge handoff（idea D，2026-10-19）
+
+**Branch：** `feat/idea-d-curve-momentum`（本地，**未 push**）。
+
+**Base：** `main` at `cb755d0`（C merge）。
+
+**Commits：**
+
+- `4db6849` `feat(curve-momentum): add monthly engine and basis-momentum signal`
+- `cf94b1f` `feat(curve-momentum): add idea D baseline notebook`
+- `8a92198` `docs(curve-momentum): record idea D baseline`
+- `c3e9fce` `docs(logs): record idea D baseline commit hash`
+
+**Working tree：** clean；`pytest -q` → 80 passed；notebook 06 已执行。
+
+**未 push：** 所有 commits 只在本地；不要 push，除非用户明确要求。
+
+**Merge 注意：** `main` 当前 checkout 在
+`/Users/tian/Library/Mobile Documents/com~apple~CloudDocs/Baruch/第三学期/Systematic Trading/Project-ab-merge`。
+当前 worktree 不能直接 `git switch main`；在那个 worktree 里 merge：
+
+```bash
+cd "/Users/tian/Library/Mobile Documents/com~apple~CloudDocs/Baruch/第三学期/Systematic Trading/Project-ab-merge"
+git merge --no-ff feat/idea-d-curve-momentum
+python -m pytest -q
+```
+
+或者新建一个 worktree。merge 后保持本地，不要 push。
+
+**D 已完成：**
+
+- monthly rebalance support：`curve.monthly_rebalance_dates`、
+  `BacktestConfig.rebalance="last_trading_day_of_month"`；weekly 默认不变。
+- `CurveMomentumParams` / `curve_momentum_signal` + synthetic tests。
+- `notebooks/06_curve_momentum.ipynb`，输出 `output/curve_momentum_*`
+  （gitignored）。
+- `D-013` 和 README / AGENTS / HANDOFF / PROGRESS / onboarding /
+  backtest_framework / data_dictionary 更新。
+- **结果：** full gross +0.55%、net −0.99%；train gross +0.85%、net
+  −0.65%；test gross −0.28%、net −1.89%；static +1 net −0.84%；
+  monthly net Sharpe full −0.90 / test −1.66；bootstrap t full −5.87 /
+  test −5.41。**D 作为 documented negative/mixed 收尾，不用 test 调参。**
+
+**D 未做（backlog）：**
+
+- H（holding-period scan）。
+- D-x（cross-sectional basis-momentum）：按 BM 排序商品、long top /
+  short bottom；是独立 idea，不混入 D。
+- D robustness：N=4、weekly、6-month formation、liquidity thresholds、
+  inverse-vol、exponential decay、D-vs-A correlation、carry-regime
+  conditioning。
+- Push / PR / merge 到 `origin`：故意只留本地。
+
+---
+
 ## 1. 一句话
 
 **数据层 + A/B/C/D baseline 已完成：K=5 ex-ante panel → carry /
