@@ -1526,6 +1526,6 @@ bootstrap-IC figures to notebook 06.
 (t_NW −4.6, −3.5, −2.6); bootstrap p < 0.05 for 14 of 24 commodities
 (13 at p < 0.01); k = 1 → 60 cuts turnover 26× → 14.5×.
 
-**Commit:** `feat(figures): add horizon decay, k profile and bootstrap IC`
+**Commit:** `feat(figures): add horizon decay, k profile and bootstrap IC` (`95db2ee`)
 
 **Next:** D/E signals on v2.
