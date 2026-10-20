@@ -401,11 +401,11 @@ def curve_momentum_signal(
 
 @dataclass(frozen=True)
 class MeanReversionParams:
-    """Parameters for the weekly mean-reversion signal.
+    """Parameters for the mean-reversion signal.
 
-    The baseline evaluates the state machine only on the last trading day of
-    each week. ``evaluation="daily"`` is deliberately not implemented yet: the
-    current engine only supports weekly rebalancing.
+    ``evaluation="weekly"`` updates the state machine only on the last trading
+    day of each week; ``evaluation="daily"`` updates it on every trading day.
+    The baseline research result uses weekly; the daily audit uses daily.
     """
 
     window: int = 20
@@ -424,9 +424,7 @@ def _validate_mean_reversion_params(params: MeanReversionParams) -> None:
         raise ValueError("exit_z must satisfy 0 <= exit_z < entry_z")
     if not (0.0 < params.min_obs_frac <= 1.0):
         raise ValueError("min_obs_frac must satisfy 0 < min_obs_frac <= 1")
-    if params.evaluation == "daily":
-        raise NotImplementedError("daily evaluation is not supported yet")
-    if params.evaluation != "weekly":
+    if params.evaluation not in {"weekly", "daily"}:
         raise ValueError(f"Unknown evaluation: {params.evaluation!r}")
 
 
@@ -476,14 +474,15 @@ def mean_reversion_signal(
     trading_days: pd.DatetimeIndex | None = None,
     pair_grid: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
-    """Build a weekly mean-reversion target path from a continuous spread index.
+    """Build a mean-reversion target path from a continuous spread index.
 
     ``spread_index`` must contain ``date, root, spread_index`` (and optionally
     ``commodity, sector``). ``trading_days`` should be the engine's union
     calendar; weekly evaluation dates are the last trading day of each week on
-    that calendar. ``pair_grid`` marks dates on which a tradable pair exists;
-    targets are forced to zero elsewhere so downstream conditional-mean tests
-    cannot count untradable rows.
+    that calendar, while daily evaluation uses every trading day. ``pair_grid``
+    marks dates on which a tradable pair exists; targets are forced to zero
+    elsewhere so downstream conditional-mean tests cannot count untradable
+    rows.
 
     The output is a complete daily target path per root: ``target`` is held
     between evaluation dates, and ``state`` is the internal state before the
@@ -523,11 +522,14 @@ def mean_reversion_signal(
         pair_grid = pair_grid[["date", "root"]].drop_duplicates()
         pair_grid["date"] = pd.to_datetime(pair_grid["date"])
 
-    weekly_dates = curve.weekly_rebalance_dates(trading_days)
     min_periods = max(2, math.ceil(params.min_obs_frac * params.window))
-    evaluation_mask = pd.Series(
-        trading_days.isin(weekly_dates), index=trading_days
-    )
+    if params.evaluation == "daily":
+        evaluation_mask = pd.Series(True, index=trading_days)
+    else:
+        weekly_dates = curve.weekly_rebalance_dates(trading_days)
+        evaluation_mask = pd.Series(
+            trading_days.isin(weekly_dates), index=trading_days
+        )
 
     frames: list[pd.DataFrame] = []
     for root, group in sorted_panel.groupby("root", sort=False):
