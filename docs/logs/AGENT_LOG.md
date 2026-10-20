@@ -3753,3 +3753,17 @@ the caption says so. All-in net at USD 1m: A −0.30, B −0.72, C −1.03, D �
 E −9.77, combined +0.23.
 
 **Commit:** `feat(slides): one-engine USD 1m summary table` (`82c7d77`).
+
+---
+
+## LOG-0088 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** State in the IC-horizon caption that the combined forecast is one fixed model.
+
+**What changed:** `presentations/final/main.tex`: the Figure 21 caption says
+the combined forecast is fitted once on 1986–2005 for [t+1, t+6] and is not
+refitted per horizon, so the curve is the decay of one signal.
+
+**Validation / results:** deck builds with `latexmk -xelatex -outdir=build`, the slide fits.
+
+**Commit:** `docs(slides): IC-horizon caption names the fixed model` (this commit).
