@@ -1,8 +1,10 @@
 # Handoff — 当前状态
 
 **最后更新：** 2026-10-19  
-**Foundation commit：** `f2c4771`（K=5 panel + mark state + carry signal）  
-**Engine/benchmark commit：** 见 `git log`（本次提交）  
+**A baseline：** `bd6691b`；**A diagnosis：** `f02f18b`。  
+**B pre-test：** `d257e0e`。  
+**C baseline + hedge-ratio + Kalman variant：** 已合入 main；C 已作为
+mixed/negative 收尾。  
 **Repo：** https://github.com/TianTian20021211/SystematicTradingCourse
 
 ---
@@ -16,15 +18,19 @@
 5. `docs/data_dictionary.md` — 字段和 panel schema。
 6. `docs/logs/INDEX.md` + `AGENT_LOG.md` 最近几条 — 谁做了什么。
 7. `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` — 数据层。
-8. `notebooks/02_carry.ipynb` — A baseline；`docs/PROGRESS.md` — 实时进度。
+8. `notebooks/02_carry.ipynb` — A baseline；`03_mean_reversion.ipynb` — C
+   baseline + hedge-ratio；`04_a_diagnose.ipynb` — A 诊断；
+   `05_b_pretest.ipynb` — B 预测试；`docs/PROGRESS.md` — 实时进度。
 
 ---
 
 ## 1. 一句话
 
-**数据层 + A baseline 已完成：K=5 ex-ante panel → carry signal → return-based
-event-loop backtest → full/train/test benchmark。**  
-**A 在这个最简版本里是负结果；C/D/B 还没开始。**
+**数据层 + A/B/C baseline 已完成：K=5 ex-ante panel → carry /
+mean-reversion signal → return-based event-loop backtest →
+full/train/test benchmark。**  
+**A、B、C 1:1、C rolling-OLS、C Kalman 都是负结果或 mixed-negative；
+A/B 已收尾（不再调参/不做 rescue），C 已 closed 并合入 main；D/H 还没开始。**
 
 ---
 
@@ -53,8 +59,8 @@ event-loop backtest → full/train/test benchmark。**
 - 0 partial rolls
 - 0 full-day queue violations
 - CL 2020-04-20 = **−37.63** 仍在
-- **32 个 pytest 全过**
-- 三个 notebook 都能 top-to-bottom 跑完
+- **36 个 pytest 全过**
+- notebooks 00/01/02/04/05 都能 top-to-bottom 跑完
 
 A baseline（K=5；1986–2026）：
 
@@ -67,6 +73,39 @@ A baseline（K=5；1986–2026）：
 Conditional raw spread return：`target_positive` ≈ 0（t −0.27）；
 `target_negative` 为 **+0.000127（t +2.41）**，即 contango spread 平均会变强，
 short spread 是错的方向。**A 在这个 baseline 没有 edge。**
+
+A diagnosis（`04_a_diagnose.ipynb`）：short raw mean +0.000024（t +2.46），
+long −0.000008（t −0.65）；K=10 不翻正；0/5/10/20 bps 下 gross 已经负。
+
+B pre-test（`05_b_pretest.ipynb`）：adjacent-carry rank，full gross −1.14%、
+net −2.84%（gross Sharpe −0.08）；预注册规则 **skip B = True**。
+
+**Zero-cost check：** A full gross ann. −0.53%（Sharpe −0.02）；B full gross
+ann. −1.14%（Sharpe −0.08）。两者在扣交易成本之前已经是负的。
+
+C baseline（C2 additive index、dollar z L=20、weekly、1:1）：full gross
++0.53%、net −1.67%、net Sharpe −0.03；train gross +0.87%、net −1.32%；
+test gross −0.39%、net −2.64%；energy 1992–2013 gross −1.05%、net −3.12%。
+Conditional mean full sample 不显著；train 的 `target_negative` raw mean
+−0.000203（t −2.12），test 不显著（+0.000148，t +1.05）。**C 没有稳健、
+可交易的 edge；成本把 gross 的小正收益拖负。**
+
+C hedge-ratio variant（60-day rolling OLS levels、strict weekly h 调仓、
+0 bps）：`h` median 1.008，5–95% 0.796–1.312，99.3% valid。Full gross
++0.197% / Sharpe 0.006，低于 1:1 的 +0.535% / 0.010；train +0.290% / 0.012
+vs +0.868% / 0.030；test −0.055% / 0.001 vs −0.391% / −0.002。Energy
+1992–2013（0 bps）：1:1 −1.05% / −0.013；hedge −0.10% / 0.0002。
+Hedge 版本 vol 更低，但 return 也更低、trade 数约翻倍；full/train/test
+没有改善，energy 只是从负接近零；不跑 5 bps。
+
+C Kalman variant（paper-style DLM；252-day likelihood、每 60 天重估 V/W、
+9 点 q grid、strict weekly h、0 bps）：aggregate full gross +0.98%，
+vol 8.9%，max DD −28.9%，turnover 28.3×；test gross +0.52%，vol 16.7%。
+按 turnover 估算 5 bps 后约 −1.8%/yr full、−2.5%/yr test。Per-root paper
+sample：CL −0.79% / Sharpe −0.257，CO −0.57% / −0.236，HO −0.50% /
+−0.458，NG **+1.34% / +0.309**，XB +0.21% / +0.268。CL 最坏单日
+2020-04-20（−48.4% of avg gross），但 2020 全年贡献 +10.0%；没有剔除或
+cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收尾。**
 
 ---
 
@@ -83,6 +122,9 @@ short spread 是错的方向。**A 在这个 baseline 没有 edge。**
 | D-007 | 每个 material change 写 `docs/logs/AGENT_LOG.md`，并更新 `INDEX.md` |
 | D-008 | 主实验统一一个可交易 spread；adjacent pairs 作为 robustness |
 | D-009 | A baseline 回测口径：K=5 ex-ante、per-contract mark state、gross-notional return、周五 rebalance、t+1 fill、roll 在 t+1 平旧、第 6 个 invalid session forced exit、5 bps/leg |
+| D-010 | C baseline：additive roll-chained continuous index（signal-only）、dollar z L=20、weekly ±2/0、1:1 dollar、5 bps/leg；daily/log/adjacent 后置 |
+| D-011 | C hedge-ratio variant：60-day rolling OLS levels、h>0、strict weekly h 调仓、0 bps gross 对照；returns/20/120/cap 后置 |
+| D-012 | C Kalman variant：paper-style DLM、252-day likelihood、q grid、0 bps gross；结果 mixed/negative，C closed；不做 daily replication |
 
 完整内容见 `docs/decisions.md`。
 
@@ -106,14 +148,28 @@ short spread 是错的方向。**A 在这个 baseline 没有 edge。**
   `src/metrics.py`；K=5 panel、per-contract mark state、event-loop engine、
   summary/conditional mean/sector/plot。
 - **A benchmark**：`notebooks/02_carry.ipynb`；full/train/test；负结果。
-- **32 tests**；`docs/backtest_framework.md`；`docs/PROGRESS.md`。
+- **A diagnosis**：`src/a_diagnostics.py`、`notebooks/04_a_diagnose.ipynb`；
+  side × sector × era、K=5 vs K=10、成本敏感性。
+- **B pre-test**：`src/b_pre_test.py`、`notebooks/05_b_pretest.ipynb`；
+  adjacent-carry rank；负结果，skip B。
+- **C baseline**：`src/continuous.py`、`signals.mean_reversion_signal`、
+  `notebooks/03_mean_reversion.ipynb`；1:1 weekly；负结果。
+- **C hedge-ratio variant**：60-day rolling OLS h、strict weekly 调仓、
+  0 bps gross 对照；负结果。
+- **C Kalman variant**：`src/kalman.py`、`tests/test_kalman.py`；
+  rolling-likelihood DLM；aggregate mixed/negative，per-root NG 为正、
+  CL 为负；C 收尾。
+- **66 tests**；`docs/backtest_framework.md`；`docs/PROGRESS.md`。
 
 ---
 
 ## 5. 还没做的
 
-- Signals C/D/B/H 的正式实现（engine 可复用；C 只加 signal function）。
-- A 的变体/threshold/cross-section/inverse-vol。
+- C 已合入 main 并 closed；不做 daily paper replication。若以后重开，
+  daily CL/NG 是独立的 pre-registered 项目。
+- D/H 的正式实现（engine 可复用）。
+- A/B 已收尾，不再做变体或调参；residual B 不计划，除非以后作为独立
+  预注册 idea。
 - Robustness：D=5/20、liquidity buckets、tick-based cost、
   point-in-time D=10 proxy。
 - 最终 liquidity threshold（baseline 不硬筛）。
@@ -147,28 +203,45 @@ jupyter nbconvert --execute --to notebook --inplace notebooks/00_data_audit.ipyn
 jupyter nbconvert --execute --to notebook --inplace notebooks/01_panel_build.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=600 notebooks/02_carry.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=900 notebooks/03_mean_reversion.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=600 notebooks/04_a_diagnose.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
 ```
 
-第二个 notebook 会重建 `data/processed/*.parquet`；第三个跑 A baseline，
-结果写到 `output/`（gitignored）。
+第二个 notebook 会重建 `data/processed/*.parquet`；02 跑 A baseline，
+03 跑 C baseline + hedge-ratio，04 跑 A 诊断（依赖 02 的
+`output/carry_full_*`），05 跑 B 预测试；结果写到 `output/`（gitignored）。
 
 ---
 
 ## 7. Open questions（下一次决定）
 
-1. **A 的负结果怎么处理**：保留为 baseline / 继续做 A 的 threshold、cross-section、
-   inverse-vol，还是先转到 C？本轮结果显示 contango short 是错的方向。
-2. **Liquidity threshold**：baseline 不硬筛；robustness 用 1k/5k/10k/20k 中的哪个？
-3. **Signal 优先级**：C（mean reversion）是 engine 的自然复用；D/B/H 之后。
-4. **Proposal 的 h**：baseline 用 weekly；H 扫描 1/5/21 天 deferred。
-5. **Contract multiplier / tick size**：美元 P&L、容量、tick-based cost 需要时再建。
-6. **Adjacent pairs**：A 主结果只用 main pair；B/D 的多腿以后再决定。
+1. **C 已合入 main**：C 已有 1:1 baseline、rolling-OLS 和 Kalman variant；
+   notebook 03、LOG-0013–0018（baseline）、LOG-0022–0024（rolling OLS）和
+   LOG-0026（Kalman）已合并。C 已作为 mixed/negative 收尾，不再做 daily
+   replication。
+2. **A/B 已收尾**：不再做变体或调参；报告只简短说明 A/B 不行。
+   residual B 不计划，除非以后作为独立预注册 idea。
+3. **Liquidity threshold**：baseline 不硬筛；robustness 用 1k/5k/10k/20k 中的哪个？
+4. **Signal 优先级**：C 已 closed；下一步是 D（curve momentum）/ H
+   （holding-period scan），还没实现。
+5. **Proposal 的 h**：baseline 用 weekly；H 扫描 1/5/21 天。
+6. **Contract multiplier / tick size**：美元 P&L、容量、tick-based cost 需要时再建。
+7. **Adjacent pairs**：A 主结果只用 main pair；B/D 的多腿以后再决定。
 
 ---
 
 ## 8. 下一步
 
-A baseline 已完成，结果是负的：full/train/test 的 net Sharpe 都为负；
-contango short 的 raw spread return 显著为正（错方向）。
-下一步先在 `docs/PROGRESS.md` / notebook 里 review 这个结果，再决定：
-做 C，还是先做 A 的变体/robustness。不要用 test 调参。
+A、B、C 都已作为负结果或 mixed-negative 收尾：A 的 contango short 方向错；
+B 的 adjacent-carry rank 在成本前就为负；C 的 1:1、rolling-OLS 和 Kalman
+都没有稳健、可交易的 edge。C 已合入 main 并 closed。下一步：
+
+1. C 已合入 main；保留 notebook 03、LOG-0013–0018（baseline）、
+   LOG-0022–0024（rolling OLS）和 LOG-0026（Kalman）；
+2. C 已 closed；不做 daily paper replication；若重开，daily CL/NG 是独立项目；
+3. 做 D/H（engine 可复用）；
+4. 不要用 test 调参；A/B 已收尾，不再做变体。

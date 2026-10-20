@@ -4,8 +4,16 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 
 用 1986–2026 的 Bloomberg 商品期货数据，研究同一商品不同到期月之间的 **calendar spread**：曲线形状、roll、carry、价差的可预测性与可交易性。
 
-> 这个 repo 是**数据层 + 研究脚手架**。数据层和 A baseline 已完成；
-> A 的第一版是负结果（见 `notebooks/02_carry.ipynb`），B/C/D/H 和 robustness 是下一阶段。
+> 这个 repo 是**数据层 + 研究脚手架**。数据层、A baseline、A 负结果诊断、
+> B 预测试、C baseline、C rolling-OLS hedge-ratio 和 C Kalman variant
+> 已完成；A/B/C 都是负结果或 mixed-negative。C 已 closed 并合入 main；
+> D/H 是下一阶段。
+>
+> A/B 的负结果在 **0 bps（不考虑 transaction cost）** 下已经成立；
+> C 的 1:1、rolling OLS 和 Kalman variant 也都不是稳健正的。5 bps/leg
+> 只是放大亏损，不改变符号。
+>
+> A/B 已收尾：不再调参数、不做 rescue 变体；报告里只简短说明 A/B 不行。
 
 ---
 
@@ -16,11 +24,19 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 - [x] Rank / contract / return / spread panels + QA
 - [x] Liquidity diagnostics（threshold 由你看完图后决定）
 - [x] A baseline：K=5 panel + carry signal + return-based event-loop backtest
-- [ ] Signals B/C/D/H + robustness（A 的第一版是负结果）
+- [x] A 负结果诊断：side × sector × era、K=5 vs K=10、成本敏感性
+- [x] B 预测试：adjacent-carry rank；负结果，skip B
+- [x] A/B 负结果确认并收尾（不再调参/不做 rescue）
+- [x] C baseline：continuous index + weekly mean-reversion；负结果
+- [x] C hedge-ratio variant：60-day rolling OLS；负结果
+- [x] C Kalman variant：rolling-likelihood DLM；mixed/negative，C closed
+- [ ] D/H（C 已合入 main）
 
-`notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` 和 `02_carry.ipynb`
-已可从头运行；01 生成 `data/processed/*.parquet`，02 生成 `output/carry_*`
-（都不提交）。
+`notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb`、`02_carry.ipynb`、
+`03_mean_reversion.ipynb`、`04_a_diagnose.ipynb` 和
+`05_b_pretest.ipynb` 已可从头运行；01 生成 `data/processed/*.parquet`，
+02 生成 `output/carry_*`，03 生成 `output/mean_reversion_*`，04/05 生成
+诊断和 B 预测试输出（都不提交）。
 
 **新对话 / 队友先读：** `docs/HANDOFF.md` → `AGENTS.md` → `docs/decisions.md` → `docs/logs/INDEX.md`。
 
@@ -54,10 +70,14 @@ MTH 9897 · Project 7 · Baruch MFE 2026
    notebooks/00_data_audit.ipynb
    notebooks/01_panel_build.ipynb
    notebooks/02_carry.ipynb
+   notebooks/03_mean_reversion.ipynb
+   notebooks/04_a_diagnose.ipynb   # 依赖 02 的 output/carry_full_*
+   notebooks/05_b_pretest.ipynb
    ```
 
    第二个 notebook 会生成 `data/processed/*.parquet`（不提交到 repo）；
-   第三个跑 A baseline，结果写到 `output/`（不提交）。
+   第三个跑 A baseline，03 跑 C baseline + hedge-ratio，04 跑 A 诊断，
+   05 跑 B 预测试；结果写到 `output/`（不提交）。
 
 ---
 
@@ -80,12 +100,16 @@ docs/
   logs/                   # agent 操作日志（谁、做了什么、为什么、怎么验证）
 
 src/                      # 所有数据处理逻辑（notebook 只调用）
-  signals.py              # signal functions（A carry；C 以后加）
+  continuous.py           # roll-chained leg indices + rolling OLS hedge ratio
+  kalman.py               # Kalman-filter hedge ratio (rolling-likelihood DLM)
+  signals.py              # signal functions（A carry; C mean reversion）
   backtest.py             # target legs + event-loop engine
   metrics.py              # summary / conditional mean / sector / plot
-notebooks/                # 00_data_audit, 01_panel_build, 02_carry
+  a_diagnostics.py        # A 负结果诊断
+  b_pre_test.py           # cheap adjacent-carry B 预测试
+notebooks/                # 00, 01, 02, 03, 04, 05
 tests/                    # synthetic fixtures + parser/roll/spread/backtest tests
-scripts/run_all.sh        # 一键复现：依赖 + tests + 三个 notebook
+scripts/run_all.sh        # 一键复现：依赖 + tests + A/B/C notebook
 
 data/raw/                  # 原始数据（本地；public repo 不提交）
 data/metadata/             # 24 商品元数据 + checksum（提交）
@@ -107,6 +131,12 @@ output/                    # 生成的图/报告（gitignored）
 - **A baseline 回测口径（D-009）：** K=5 ex-ante、gross-notional return
   （lagged denominator）、周五 rebalance、t+1 成交、roll 在 t+1 平旧、
   第 6 个 invalid session forced exit、5 bps/leg。
+- **C baseline（D-010）：** additive roll-chained continuous index
+  （signal-only）、dollar z L=20、weekly ±2/0、1:1 dollar、5 bps/leg。
+- **C hedge-ratio variant（D-011）：** 60-day rolling OLS levels、h>0、
+  strict weekly h 调仓、0 bps gross 对照；负结果。
+- **C Kalman variant（D-012）：** paper-style DLM、252-day likelihood、
+  q grid、0 bps gross；mixed/negative，C closed。
 
 详见 `docs/decisions.md`。
 

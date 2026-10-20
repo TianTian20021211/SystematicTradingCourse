@@ -14,6 +14,18 @@ def trading_calendar(panel: pd.DataFrame, date_col: str = "date") -> pd.Datetime
     return pd.DatetimeIndex(sorted(pd.to_datetime(panel[date_col]).unique()))
 
 
+def weekly_rebalance_dates(trading_days: pd.DatetimeIndex) -> set[pd.Timestamp]:
+    """Last trading day of each ISO week (Friday period, holiday fallback).
+
+    Shared by the backtest engine and the signal layer so that a weekly signal
+    is evaluated on exactly the dates the engine uses for rebalancing.
+    """
+
+    series = pd.Series(pd.to_datetime(trading_days))
+    periods = series.dt.to_period("W-FRI")
+    return set(pd.to_datetime(series.groupby(periods).max()).tolist())
+
+
 def add_contract_calendar(
     contract_panel: pd.DataFrame,
     trading_days: pd.DatetimeIndex | None = None,

@@ -20,7 +20,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from . import panel
+from . import curve, panel
 
 
 @dataclass(frozen=True)
@@ -54,11 +54,15 @@ def build_target_legs(
 ) -> pd.DataFrame:
     """Expand a signal panel into leg-level targets.
 
-    ``signal_panel`` must contain ``date``, ``root``, and ``target``.
-    ``pair_panel`` supplies ``contract_near`` / ``contract_far`` and the
-    commodity/sector labels. The output has one row per leg:
+    ``signal_panel`` must contain ``date``, ``root``, and ``target``. An
+    optional ``hedge_ratio`` column scales the far leg: far units are
+    ``-target * hedge_ratio`` instead of ``-target``. Rows with a missing,
+    non-finite, or non-positive hedge ratio are dropped. ``pair_panel``
+    supplies ``contract_near`` / ``contract_far`` and the commodity/sector
+    labels. The output has one row per leg:
 
-    ``date, root, commodity, sector, group_id, contract, units, leg, target``.
+    ``date, root, commodity, sector, group_id, contract, units, leg, target``
+    and, when supplied, ``hedge_ratio``.
 
     A target of +1 means long the near leg and short the far leg; -1 is the
     reverse. ``group_id`` is stable for a fixed contract pair and changes when
@@ -69,11 +73,18 @@ def build_target_legs(
     missing = required.difference(signal_panel.columns)
     if missing:
         raise ValueError(f"signal_panel missing columns: {sorted(missing)}")
+    if signal_panel.duplicated(["date", "root"]).any():
+        raise ValueError("signal_panel contains duplicate (date, root) rows")
+
+    has_hedge_ratio = "hedge_ratio" in signal_panel.columns
+    signal_columns = ["date", "root", "target"]
+    if has_hedge_ratio:
+        signal_columns.append("hedge_ratio")
 
     pairs = pair_panel[
         ["date", "root", "commodity", "sector", "contract_near", "contract_far"]
     ].copy()
-    merged = signal_panel[["date", "root", "target"]].merge(
+    merged = signal_panel[signal_columns].merge(
         pairs, on=["date", "root"], how="inner"
     )
     merged = merged.loc[
@@ -82,13 +93,19 @@ def build_target_legs(
         & merged["contract_near"].notna()
         & merged["contract_far"].notna()
     ].copy()
+    if has_hedge_ratio:
+        merged = merged.loc[
+            np.isfinite(merged["hedge_ratio"])
+            & merged["hedge_ratio"].gt(0)
+        ].copy()
     if merged.empty:
-        return pd.DataFrame(
-            columns=[
-                "date", "root", "commodity", "sector", "group_id",
-                "contract", "units", "leg", "target",
-            ]
-        )
+        columns = [
+            "date", "root", "commodity", "sector", "group_id",
+            "contract", "units", "leg", "target",
+        ]
+        if has_hedge_ratio:
+            columns.append("hedge_ratio")
+        return pd.DataFrame(columns=columns)
 
     merged["group_id"] = (
         merged["root"].astype(str)
@@ -103,24 +120,24 @@ def build_target_legs(
         units=merged["target"].astype(float),
         leg="near",
     )
+    far_units = -merged["target"].astype(float)
+    if has_hedge_ratio:
+        far_units = far_units * merged["hedge_ratio"].astype(float)
     far = merged.assign(
         contract=merged["contract_far"],
-        units=-merged["target"].astype(float),
+        units=far_units,
         leg="far",
     )
     out = pd.concat([near, far], ignore_index=True)
-    return out[
-        ["date", "root", "commodity", "sector", "group_id",
-         "contract", "units", "leg", "target"]
-    ].sort_values(["date", "root", "group_id", "leg"]).reset_index(drop=True)
-
-
-def _weekly_rebalance_dates(trading_days: pd.DatetimeIndex) -> set[pd.Timestamp]:
-    """Last trading day of each ISO week (Friday period, holiday fallback)."""
-
-    series = pd.Series(pd.to_datetime(trading_days))
-    periods = series.dt.to_period("W-FRI")
-    return set(pd.to_datetime(series.groupby(periods).max()).tolist())
+    output_columns = [
+        "date", "root", "commodity", "sector", "group_id",
+        "contract", "units", "leg", "target",
+    ]
+    if has_hedge_ratio:
+        output_columns.append("hedge_ratio")
+    return out[output_columns].sort_values(
+        ["date", "root", "group_id", "leg"]
+    ).reset_index(drop=True)
 
 
 REBALANCE_RULES = ("last_trading_day_of_week", "daily")
@@ -138,7 +155,7 @@ def _rebalance_dates(
     if rule == "daily":
         return set(pd.to_datetime(trading_days).tolist())
     if rule == "last_trading_day_of_week":
-        return _weekly_rebalance_dates(trading_days)
+        return curve.weekly_rebalance_dates(trading_days)
     raise ValueError(f"rebalance must be one of {REBALANCE_RULES}, got {rule!r}")
 
 
