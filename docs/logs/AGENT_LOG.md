@@ -2982,3 +2982,29 @@ worst but is strongest. `python -m pytest -q` passes.
 
 **Next:** fill the E rows in the roadmap and conclusion tables; portfolio
 slide; notebook 14 should record the interior-LOO and λ-dependence findings.
+
+---
+
+## LOG-0067 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Final deck: starred idea-E slide on the Kalman dynamic Nelson–Siegel
+attempt.
+
+**What changed:** `presentations/final/main.tex` adds "E* · Can a Kalman filter
+stabilize the betas?" after the per-commodity slide: motivation (four prices,
+three betas and λ), state and observation equations (3)–(4), how (r, q) were
+chosen (one-step likelihood on 1986–2005) and the A/B design (2006–2026,
+paired 21-day block bootstrap), Table 15 with the D-023 numbers, and the
+reason it is not adopted (the signal lives one day, so shrinking toward
+yesterday's betas removes it).
+
+**Why:** user request.
+
+**Validation / results:** numbers copied from notebook 14 §11 (D-023): LOO R²
+0.72 → 0.95 (24/24 better), one-step forecast R² 0.53 → 0.45 (20/24 worse),
+[t+1, t+2] −0.04 → −0.57 bp, tradable gross +0.18 → −0.31 %/yr. Deck compiles,
+no `;`, `—` or `|` in rendered text.
+
+**Commit:** `feat(slides): starred idea-E slide on the Kalman dynamic NS` (`this commit`).
+
+**Next:** E rows in the roadmap and conclusion tables, portfolio slide.

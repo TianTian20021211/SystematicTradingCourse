@@ -956,6 +956,58 @@ LOO $R^2$ (bottom), paper $\lambda$, 1986--2026.}
 \end{figure}
 \end{frame}
 
+\begin{frame}{E$^{*}$ \textperiodcentered\ Can a Kalman filter stabilize the betas?}
+\footnotesize
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.47\textwidth}
+\begin{itemize}
+  \item Four prices pin down three betas, and $\lambda$ is chosen too, so the
+        daily OLS estimate is \key{noisy}
+  \item Dynamic Nelson--Siegel: let the betas follow a random walk and filter
+        them \parencite{diebold2006forecasting}
+\end{itemize}
+\vspace{-1.2ex}
+{\scriptsize
+\begin{align}
+\beta_t &= \beta_{t-1}+\eta_t, & \eta_t &\sim N\bigl(0,\,q\,s_{t-1}^2 I\bigr) \label{eq:kfstate}\\
+F_t &= X_t(\lambda_t)\,\beta_t+\varepsilon_t, & \varepsilon_t &\sim N\bigl(0,\,r\,s_{t-1}^2 I\bigr) \label{eq:kfobs}
+\end{align}}
+\vspace{-2ex}
+\begin{itemize}
+  \item $s_{t-1}$ is yesterday's mean price, and $(r,q)$ maximize the one-step
+        likelihood per commodity on 1986--2005
+  \item A/B against daily OLS on 2006--2026, paired 21-day block bootstrap
+\end{itemize}
+\end{column}
+\begin{column}{0.51\textwidth}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}l r r r@{}}
+\toprule
+Metric & OLS & Kalman & Better / worse \\
+\midrule
+Leave-one-out $R^2$ & $0.72$ & $0.95$ & 24 / 0 \\
+One-step forecast $R^2$ & $0.53$ & $0.45$ & 1 / 20 \\
+\addlinespace[2pt]
+$[t,\,t+1]$ return (bp) & $+2.66$ & $+2.44$ & \\
+$[t+1,\,t+2]$ return (bp) & $-0.04$ & $-0.57$ & \\
+Tradable gross (\%/yr) & $+0.18$ & $-0.31$ & \\
+\bottomrule
+\end{tabular}
+\caption{Kalman versus daily OLS, 24 commodities. Fit rows are medians on
+2006--2026, with the number of commodities where Kalman is significantly better
+or worse ($p<0.05$). Signal rows are 1986--2026, \$1m.}
+\end{table}
+\end{column}
+\end{columns}
+\takeaway{The signal lives for one day. Shrinking toward yesterday's betas
+lowers the variance but removes the daily change that carries the signal, so
+Eqs.~(\ref{eq:kfstate}) and (\ref{eq:kfobs}) fit today's curve better yet
+forecast and trade worse. We keep the daily OLS fit.}
+\end{frame}
+
 % =====================================================================
 \section{Portfolio}
 
