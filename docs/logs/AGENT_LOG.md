@@ -2743,7 +2743,7 @@ linear models ≥ trees; headline `[t+1,t+6]` linear validation net Sharpe
 1.34; test gross −0.21 / net −0.61 although test IC stays positive (0.028
 at 5 days, 0.141 at 21 days); LB alone −42 bp/yr gross in test.
 
-**Commit:** `feat(alpha): combine A–E into alpha factors, screen, model zoo and monetisation (D-030)` (`this commit`).
+**Commit:** `feat(alpha): combine A–E into alpha factors, screen, model zoo and monetisation (D-030)` (`08119e3`).
 
 **Next:** liquidity- or risk-budgeted sizing and longer horizons as a new
 pre-registered decision; evaluate with walk-forward since the test slice has
