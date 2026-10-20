@@ -3005,6 +3005,6 @@ yesterday's betas removes it).
 [t+1, t+2] −0.04 → −0.57 bp, tradable gross +0.18 → −0.31 %/yr. Deck compiles,
 no `;`, `—` or `|` in rendered text.
 
-**Commit:** `feat(slides): starred idea-E slide on the Kalman dynamic NS` (`this commit`).
+**Commit:** `feat(slides): starred idea-E slide on the Kalman dynamic NS` (`3e611fb`).
 
 **Next:** E rows in the roadmap and conclusion tables, portfolio slide.
