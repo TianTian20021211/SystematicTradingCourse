@@ -182,6 +182,133 @@ def c_legs(inputs: V2Inputs, method: str = "1:1") -> pd.DataFrame:
     return _append_flats(legs, _flats_for_signal(sig, inputs.pairs))
 
 
+def load_b_adjacent(
+    inputs: V2Inputs,
+    rank: pd.DataFrame,
+    d: int | None = 10,
+    min_adv: float | None = 100.0,
+) -> tuple[dict[str, pd.DataFrame], pd.DataFrame]:
+    """Build the eligible adjacent-pair carry panel for B variants.
+
+    Returns the ``d=None`` main-pair panel (event dates and pair validation)
+    and the D=``d`` eligible adjacent carries, filtered on the thinner leg's
+    lagged ADV when ``min_adv`` is not None.
+    """
+
+    bt_b = panel.build_backtest_panel(rank, d=None, k=5)
+    enriched = panel.enrich_rank_panel(rank, bt_b["contract"])
+    adj_pairs = panel.build_adjacent_pairs(enriched, d=d, k=5)
+    if min_adv is not None:
+        if inputs.marks.empty:
+            raise ValueError("min_adv filtering needs a non-empty marks panel")
+        adj_pairs = sizing.attach_leg_liquidity(adj_pairs, inputs.marks)
+        adj_pairs = adj_pairs.loc[
+            adj_pairs[["adv_near", "adv_far"]].min(axis=1).ge(min_adv)
+        ]
+    adjacent = b_pre_test.build_adjacent_carries_from_pairs(adj_pairs)
+    return bt_b, adjacent
+
+
+def _b_variant_legs(
+    inputs: V2Inputs,
+    rank: pd.DataFrame,
+    *,
+    d: int | None,
+    min_adv: float | None,
+    long_rule: str,
+    short_rule: str,
+) -> pd.DataFrame:
+    """Shared eligible-universe B variant adapter (flip / static control)."""
+
+    bt_b, adjacent = load_b_adjacent(inputs, rank, d=d, min_adv=min_adv)
+    targets = b_pre_test.build_b_targets(
+        rank,
+        bt_b["spread"],
+        adjacent=adjacent,
+        long_rule=long_rule,
+        short_rule=short_rule,
+    )
+    if targets.empty:
+        return pd.DataFrame(columns=sizing.LEG_COLUMNS)
+
+    trading_days = curve.trading_calendar(inputs.bt["contract"])
+    event_dates = curve.weekly_rebalance_dates(trading_days) | _pair_change_dates(
+        bt_b["spread"]
+    )
+    universe_dates = set(pd.DatetimeIndex(bt_b["spread"]["date"]).unique())
+    event_dates = {
+        pd.Timestamp(d) for d in event_dates if pd.Timestamp(d) in universe_dates
+    }
+    b = targets.loc[
+        targets["units"].ne(0) & targets["date"].isin(event_dates)
+    ].copy()
+    if b.empty:
+        return pd.DataFrame(columns=sizing.LEG_COLUMNS)
+
+    active = b.groupby("date")["root"].nunique()
+    stable = active.rolling(5, min_periods=1).max()
+    b["budget"] = 1.0 / b["date"].map(stable)
+    budget = b[["date", "root", "budget"]].drop_duplicates()
+    legs = sizing.legs_from_rows(
+        b[["date", "root", "contract", "units", "target"]], budget=budget
+    )
+
+    roots = sorted(pd.unique(bt_b["spread"]["root"]))
+    grid = pd.MultiIndex.from_product(
+        [sorted(event_dates), roots], names=["date", "root"]
+    ).to_frame(index=False)
+    existing = set(zip(legs["date"], legs["root"]))
+    grid = grid.loc[
+        np.array([(d, r) not in existing for d, r in zip(grid["date"], grid["root"])])
+    ]
+    return _append_flats(legs, grid)
+
+
+def b_flip_legs(
+    inputs: V2Inputs,
+    rank: pd.DataFrame,
+    d: int | None = 10,
+    min_adv: float | None = 100.0,
+) -> pd.DataFrame:
+    """B-flip: long the lowest-carry adjacent spread, short the highest."""
+
+    return _b_variant_legs(
+        inputs,
+        rank,
+        d=d,
+        min_adv=min_adv,
+        long_rule="carry_low",
+        short_rule="carry_high",
+    )
+
+
+def b_static_legs(
+    inputs: V2Inputs,
+    rank: pd.DataFrame,
+    d: int | None = 10,
+    min_adv: float | None = 100.0,
+) -> pd.DataFrame:
+    """Static maturity control: long the front adjacent spread, short the back."""
+
+    return _b_variant_legs(
+        inputs,
+        rank,
+        d=d,
+        min_adv=min_adv,
+        long_rule="front",
+        short_rule="back",
+    )
+
+
+def flip_legs(legs: pd.DataFrame) -> pd.DataFrame:
+    """Negate active units while keeping explicit flat rows."""
+
+    out = legs.copy()
+    active = out["group_id"].ne("flat")
+    out.loc[active, "units"] = -out.loc[active, "units"]
+    return out
+
+
 def b_legs(inputs: V2Inputs, rank: pd.DataFrame) -> pd.DataFrame:
     """Idea B adjacent-carry pre-test, explicit multi-leg rows.
 

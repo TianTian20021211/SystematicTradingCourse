@@ -48,6 +48,23 @@ gross → all-in net：
 v1/v2 不可直接比较。详见 notebooks 10–14、
 `docs/v1_v2_comparison.md` 和 `docs/notebook_history.md`。
 
+### B-flip signal research（2026-10-20，D-025）
+
+Notebook 11 新增 post-hoc、gross-only 的 B-flip：long carry 最低的
+adjacent spread，short carry 最高的；D=10 eligible、`min_adv=100`、
+USD 10m、weekly、k=1。Full-sample gross **+0.499%/年**、vol 0.469%、
+gross Sharpe **1.064**、t_NW 7.14、turnover 31.4×；raw exact flip
++1.131%/年、Sharpe 1.263。D=10 static front/back 只有 +0.108%/年、
+Sharpe 0.208，说明信息主要来自 carry ranking。
+
+Signal level：1:6 +3.98 bps（t 9.6），1:21 +12.4 bps（t 8.6）；37/41 年
+为正；22/24 roots mean 为正；random-ranking placebo p<0.001。Half-spread
+一层 84 bps/年，gross 只有 50 bps/年，standalone net 为负；它是组合
+candidate，不是 standalone 策略。**Post-hoc sign flip；2016–2026 不是
+OOS。** B-flip 不进 official comparison；原 B 仍是 negative/closed。
+候选调参（本次未跑）：k-smoothing、D=5/20、ADV=1000、rebalance
+frequency、liquidity weighting。
+
 ---
 
 ## 0. 新对话 / 新队友先读什么

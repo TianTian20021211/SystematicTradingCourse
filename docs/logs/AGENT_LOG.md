@@ -2335,3 +2335,63 @@ D-020 layout; the two histories collided on decision, log and notebook IDs.
 
 **Next:** Align A's information tests with `horizon.horizon_profile`,
 `ts_ic`/`block_bootstrap_ic`, and `block_bootstrap_mean`.
+
+## LOG-0055 · 2026-10-20 · Phase 12 · Claude Code
+
+**Goal:** Add B-flip as a post-hoc, gross-only signal-research headline in
+notebook 11, with the original B negative result retained as history.
+
+**Actions:**
+- Defined D-025: long the lowest-carry adjacent spread, short the highest;
+  D=10 eligible, `min_adv=100`, USD 10m, weekly, k=1; gross headline, v2
+  cost layers as a diagnostic; raw exact flip as a reference; static
+  front/back as the maturity control.
+- Added `b_pre_test.build_adjacent_carries_from_pairs`,
+  `select_adjacent`, and refactored `build_b_targets` to accept an eligible
+  `adjacent` panel plus `long_rule`/`short_rule`; original defaults unchanged.
+- Added `v2_signals.load_b_adjacent`, `b_flip_legs`, `b_static_legs`,
+  `flip_legs`.
+- Added `src/b_flip.py`: run helpers, horizon/timing profiles, per-root
+  bootstrap, random-ranking placebo, root jackknife, raw exact-flip helper.
+- Added `figures.nav_compare` and `figures.placebo_distribution`.
+- Rewrote notebook 11: B-flip headline (gross-only), timing/horizon,
+  static control, placebo, per-root bootstrap, annual/rolling, jackknife,
+  default cost/capacity/$1m whole-lot profile, original B historical section,
+  and a candidate-tuning list. No k/D/ADV grid in this pass.
+- Added synthetic tests; updated README, AGENTS, HANDOFF, PROGRESS,
+  `docs/b_pretest.md`, `docs/v1_v2_comparison.md`, `scripts/run_all.sh`.
+
+**Files changed:**
+- `src/b_pre_test.py`, `src/v2_signals.py`, `src/b_flip.py`,
+  `src/figures.py`
+- `tests/test_b_pre_test.py`, `tests/test_v2_signals.py`,
+  `tests/test_b_flip.py`
+- `notebooks/11_idea_b_adjacent_carry.ipynb`
+- `docs/decisions.md`, `docs/logs/*`, `docs/HANDOFF.md`,
+  `docs/PROGRESS.md`, `docs/b_pretest.md`, `docs/v1_v2_comparison.md`
+- `README.md`, `AGENTS.md`, `scripts/run_all.sh`
+
+**Commands:**
+- `python -m pytest -q` → 147 passed
+- `jupyter nbconvert --execute --to notebook --inplace --ExecutePreprocessor.timeout=1800 notebooks/11_idea_b_adjacent_carry.ipynb`
+
+**Why:** B-flip is a new hypothesis prompted by the original B's precisely
+estimated negative gross sign. The user wants a gross signal study for later
+combination, not a standalone strategy and not a rescue of B.
+
+**Validation:**
+- B-flip D=10 + min_adv=100: gross +0.499%/yr, vol 0.469%, Sharpe 1.064,
+  t_NW 7.14, turnover 31.4×; raw exact flip +1.131%/yr, Sharpe 1.263;
+  static front/back +0.108%/yr, Sharpe 0.208.
+- Signal level: 1:6 +3.98 bps (t 9.6), 1:21 +12.4 bps (t 8.6); same-settle
+  0:1 +2.59 bps (not tradable); 37/41 positive years; 22/24 roots positive
+  mean; random-ranking placebo p<0.001.
+- Standalone net is negative: half-spread 84 bps/yr vs gross 50 bps/yr.
+- Original B is unchanged: gross −1.131%/yr, all-in −4.469%/yr.
+
+**Commit:** `feat(b-flip): add gross-only within-curve carry-reversal signal research`
+
+**Next:** Review the default B-flip results; decide whether to run any of the
+deferred tuning directions (k-smoothing, D=5/20, ADV=1000, rebalance
+frequency, liquidity weighting). Then test B-flip correlation/incremental
+value against A/C/D for combination.

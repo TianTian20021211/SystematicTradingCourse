@@ -180,8 +180,10 @@ notebooks 10–13 and `docs/v1_v2_comparison.md`; they remain
 negative/mixed. **D-019 makes those v2 results the official/final results**;
 the v1 numbers in docs and git history are historical baselines. E
 (Nelson–Siegel curve dynamics) is complete and closed as not tradable
-(D-021–D-023); notebook 14. The next phase is H; do not tune on the
-2016–2026 test sample.
+(D-021–D-023); notebook 14. B-flip (notebook 11) is a post-hoc,
+gross-only signal-research thread (D-025); the original B remains a closed
+negative strategy result and B-flip is not in the official comparison. The
+next phase is H; do not tune on the 2016–2026 test sample.
 Do not build a daily C paper-replication branch; if revisited, it is a
 separate pre-registered project. Do not change the locked A/C conventions
 without a new `docs/decisions.md` entry. Keep the panels reproducible from

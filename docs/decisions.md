@@ -750,3 +750,54 @@ Status values: `proposed`, `accepted`, `superseded`.
 - **Consequences:** Local `main` now contains the cloud E work and the D-020
   layout. E remains closed as not tradable (D-022). A future idea notebook
   slot is 15.
+
+---
+
+## D-025 · B-flip as a post-hoc gross-only signal-research hypothesis
+
+- **Status:** accepted
+- **Date:** 2026-10-20
+- **Context:** Original B (long highest adjacent carry, short lowest) is a
+  pre-registered negative and is closed. Its gross sign is estimated
+  precisely (v2 gross −1.13%/yr, t ≈ −9.5), so the reverse is a separate
+  hypothesis, not noise. The user wants a pure gross signal study for later
+  combination with other signals, without transaction costs in the signal
+  layer. B-flip is not a rescue of B and is not an official strategy result.
+- **Decision:**
+  1. **Definition.** Within each root/date, compute annualized carry for
+     M1–M2, M2–M3, M3–M4. B-flip is long the **lowest-carry** adjacent
+     spread (+1 near, −1 far) and short the **highest-carry** one (−1 near,
+     +1 far); shared legs net; weekly rebalance; equal budget across active
+     roots. This is the exact sign reversal of the original B rule.
+  2. **Main universe and accounting.** D=10 eligible adjacent pairs (both
+     legs eligible), `min_adv=100` (lagged ADV, thinner leg), v2 holdings
+     simulator at USD 10m, equal-notional, weekly, k=1. **Gross** is the
+     headline. The v2 three-layer cost table is a secondary diagnostic; a
+     single USD 1m + `round_lots=True` diagnostic is reported, not a capital
+     grid.
+  3. **Reference and control.** The raw-rank exact flip is a reference only.
+     A static long-front / short-back portfolio on the same universe is the
+     maturity control. Original B remains the raw-rank, pre-registered
+     negative result.
+  4. **First-pass diagnostics (no tuning).** Timing (same-settle vs t+1),
+     marginal/cumulative horizon, static control and overlay,
+     random-ranking placebo (2,000 draws), per-root 21-day block bootstrap,
+     annual/rolling stability, root jackknife, turnover, capacity, and the
+     single USD 1m whole-lot diagnostic.
+  5. **No parameter grid in the first pass.** Do not run k-smoothing,
+     D=5/20, ADV=1000, alternative rebalance frequencies or liquidity
+     weighting yet. These are listed as candidate tuning directions after
+     the default results are reviewed.
+  6. **No test tuning.** D=10 and min_adv=100 are fixed project conventions.
+     The sign flip is post-hoc; 2016–2026 is a stability slice, not OOS
+     validation.
+  7. **Notebook narrative.** Notebook 11 presents B-flip as the B headline,
+     explicitly labelled post-hoc / gross-only / signal research; the
+     original B negative result is a short historical section. B-flip is
+     **not** added to the cross-idea official comparison; D-019 official
+     results are unchanged.
+- **Consequences:** New `src/b_flip.py` research helpers, `b_pre_test`
+  selection/target extensions, `v2_signals.b_flip_legs` / `b_static_legs` /
+  `flip_legs`, two figure helpers, and synthetic tests. Notebook 11 is the
+  B-flip record. Original B remains negative/closed. Reopening B as a
+  strategy requires a new decision.

@@ -6,6 +6,12 @@
 retired; recovery in `docs/notebook_history.md`).
 **Branch:** merged from `b-pre-test` into `main`.
 
+**Update 2026-10-20:** `B-flip` (long the lowest-carry adjacent spread,
+short the highest) is a separate post-hoc, gross-only signal-research
+hypothesis in notebook 11 (D-025). It is not a rescue of B, does not reopen
+B as a strategy, and is not in the cross-idea official comparison. B remains
+closed as a negative strategy result.
+
 ---
 
 ## 1. Definition
