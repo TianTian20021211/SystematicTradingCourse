@@ -70,3 +70,4 @@
 | LOG-0066 | 2026-10-20 | Phase 15 | Claude Code | Final deck: trading-environment slide (TAS, cost sources, size), idea-E evaluation and per-commodity slides, λ dependence | presentations/final/*, scripts/make_slide_figures.py, docs/logs/* | `540b009` |
 | LOG-0067 | 2026-10-20 | Phase 15 | Claude Code | Final deck: starred idea-E slide on the Kalman dynamic NS (D-023 numbers) | presentations/final/main.tex, docs/logs/* | `3e611fb` |
 | LOG-0068 | 2026-10-20 | Phase 15 | Claude Code | Final deck combination section: alpha formulas, bootstrap screen, model comparison, ridge schemes, lumber diagnosis (D-032) | presentations/final/*, scripts/make_slide_*.py, scripts/run_alpha.py, src/alpha_portfolio.py, docs/decisions.md, docs/logs/* | `dbf8958` |
+| LOG-0069 | 2026-10-20 | Phase 15 | Claude Code | Final deck roadmap and conclusion: E and combined-alpha rows (branch jiaheng/final-deck, merge with Tian later) | presentations/final/main.tex, docs/logs/* | this commit |

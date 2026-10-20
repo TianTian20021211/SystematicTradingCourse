@@ -3037,3 +3037,26 @@ rendered text. `python -m pytest -q` passes.
 **Commit:** `feat(slides): alpha-combination section with ridge schemes and lumber diagnosis (D-032)` (`dbf8958`).
 
 **Next:** E and combination rows in the roadmap and conclusion tables.
+
+---
+
+## LOG-0069 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Fill the E and combination results in the roadmap and conclusion
+slides. Kept on branch `jiaheng/final-deck` (not main) at the user's request,
+because Tian may be editing the deck; the two versions are merged later.
+
+**What changed:** `presentations/final/main.tex`: roadmap verdict for E is
+"replicated, not tradable"; conclusion table E row uses the D-022 official
+full-sample tradable result (gross −0.07%/yr, all-in −9.77%/yr, Sharpe
+−3.36) and a new row for the combined alphas (ridge, every 22 days: gross
++0.57%, all-in +0.23%, Sharpe 0.23); the outdated "Next" bullet is replaced
+by the combination finding, and E's verdict is added to the C/D bullet.
+
+**Why:** user request.
+
+**Validation / results:** deck compiles, no overflow on the edited slides.
+
+**Commit:** `feat(slides): E and combination results in roadmap and conclusion` (`this commit`).
+
+**Next:** merge with Tian's slide edits; then merge the branch into main.

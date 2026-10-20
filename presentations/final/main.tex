@@ -372,7 +372,7 @@ the leg's lagged 60-day volatility and 20-day volume.}
 \textbf{D} & Curve momentum
           & \textcite{paschke2020curve} & weak / negative \\
 \textbf{E} & Nelson--Siegel dynamics
-          & \textcite{bianchi2023exploiting} & teammate \\
+          & \textcite{bianchi2023exploiting} & replicated, not tradable \\
 \bottomrule
 \end{tabular}
 \caption{The five ideas, their references and our verdicts.}
@@ -1203,6 +1203,7 @@ keeps rising through the test period after all costs.}
 \begin{table}
 \centering
 \scriptsize
+\renewcommand{\arraystretch}{0.9}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}l r r r l@{}}
 \toprule
@@ -1214,10 +1215,12 @@ B original & $-1.13$ & $-4.47$ & $-4.53$ & negative before costs \\
 B flip     & $+0.50$ & n.a.    & $1.06$  & candidate \\
 C mean reversion & $+0.61$ & $-3.70$ & $-2.06$ & costs dominate \\
 D curve momentum & $+0.22$ & $-1.42$ & $-1.52$ & weak and unstable \\
-E Nelson--Siegel & n.a. & n.a. & n.a. & teammate \\
+E Nelson--Siegel & $-0.07$ & $-9.77$ & $-3.36$ & paper timing only \\
+\midrule
+Combined alphas, ridge, 22 days & $+0.57$ & $+0.23$ & $0.23$ & net positive in all periods \\
 \bottomrule
 \end{tabular}
-\caption{Summary by idea, full sample 1986--2026. Sharpe is all-in net, gross for the flips. n.a.: not computed.}
+\caption{Full sample 1986--2026, $t+1$ fill. Sharpe all-in net, gross for the flips. n.a.: not computed.}
 \end{table}
 \begin{columns}[T, onlytextwidth]
 \begin{column}{0.48\textwidth}
@@ -1225,7 +1228,8 @@ E Nelson--Siegel & n.a. & n.a. & n.a. & teammate \\
 \begin{itemize}
   \item The assignment directions (A/B) fail \key{before costs}, while the
         flipped versions carry gross information
-  \item C/D contain some gross signal, but turnover and impact consume it
+  \item C/D carry gross signal that costs consume. E works only at the
+        paper's untradable timing
   \item Contract-level alignment is the foundation, since generic slot returns
         would be wrong
 \end{itemize}
@@ -1235,7 +1239,8 @@ E Nelson--Siegel & n.a. & n.a. & n.a. & teammate \\
 \begin{itemize}
   \item A flip and B flip are \key{portfolio candidates}, not standalone
         strategies, and the test evidence is suggestive
-  \item Next: E, portfolio combination, H holding-period scan
+  \item \key{Combining the alphas} pays only when traded slowly: the 22-day
+        ridge book is net positive in every period, test descriptive
   \item No single idea is tradable, but the pipeline is reusable
 \end{itemize}
 \end{column}
