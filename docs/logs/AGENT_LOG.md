@@ -3766,4 +3766,4 @@ refitted per horizon, so the curve is the decay of one signal.
 
 **Validation / results:** deck builds with `latexmk -xelatex -outdir=build`, the slide fits.
 
-**Commit:** `docs(slides): IC-horizon caption names the fixed model` (this commit).
+**Commit:** `docs(slides): IC-horizon caption names the fixed model` (`0ee5270`).
