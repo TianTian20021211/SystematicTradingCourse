@@ -5,9 +5,10 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 用 1986–2026 的 Bloomberg 商品期货数据，研究同一商品不同到期月之间的 **calendar spread**：曲线形状、roll、carry、价差的可预测性与可交易性。
 
 > 这个 repo 是**数据层 + 研究脚手架**。数据层、A baseline、A 负结果诊断、
-> B 预测试、C baseline、C rolling-OLS hedge-ratio、C Kalman variant 和
-> D curve-momentum baseline 已完成；A/B/C/D 都是负结果或 mixed-negative。
-> C 和 D 已 closed；下一步是 H。
+> B 预测试、C baseline、C rolling-OLS hedge-ratio、C Kalman variant、
+> D curve-momentum baseline 和 v2 holdings-based 回测框架已完成；
+> A/B/C/D 都是负结果或 mixed-negative。C 和 D 已 closed；下一步是 H，
+> 并把已验证的 A/B/C/D 用 v2 框架重跑一遍。
 >
 > A/B 的负结果在 **0 bps（不考虑 transaction cost）** 下已经成立；
 > C 的 1:1、rolling OLS 和 Kalman variant 也都不是稳健正的；D 的 gross
@@ -36,13 +37,17 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 - [x] D curve-momentum / basis-momentum baseline：N=2、12m、monthly；
       gross 弱、net 负，D documented negative/mixed
 - [x] Monthly rebalance engine support
+- [x] v2 holdings-based framework：分层成本（half-spread / fee / impact）、
+      horizon 诊断、k sweep、容量曲线；notebook 07
+- [ ] 用 v2 重跑 A/B/C/D 并比较 v1/v2；E（Nelson–Siegel）
 - [ ] H（holding-period scan）；D-x 是 backlog
 
 `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb`、`02_carry.ipynb`、
-`03_mean_reversion.ipynb`、`04_a_diagnose.ipynb`、`05_b_pretest.ipynb` 和
-`06_curve_momentum.ipynb` 已可从头运行；01 生成 `data/processed/*.parquet`，
-02 生成 `output/carry_*`，03 生成 `output/mean_reversion_*`，04/05 生成
-诊断和 B 预测试输出，06 生成 `output/curve_momentum_*`（都不提交）。
+`03_mean_reversion.ipynb`、`04_a_diagnose.ipynb`、`05_b_pretest.ipynb`、
+`06_curve_momentum.ipynb` 和 `07_backtest_framework.ipynb` 已可从头运行；
+01 生成 `data/processed/*.parquet`，02 生成 `output/carry_*`，03 生成
+`output/mean_reversion_*`，04/05 生成诊断和 B 预测试输出，06 生成
+`output/curve_momentum_*`，07 生成 `output/figures/`（都不提交）。
 
 **新对话 / 队友先读：** `docs/HANDOFF.md` → `AGENTS.md` → `docs/decisions.md` → `docs/logs/INDEX.md`。
 
@@ -79,12 +84,14 @@ MTH 9897 · Project 7 · Baruch MFE 2026
    notebooks/03_mean_reversion.ipynb
    notebooks/04_a_diagnose.ipynb   # 依赖 02 的 output/carry_full_*
    notebooks/05_b_pretest.ipynb
+   notebooks/06_curve_momentum.ipynb
+   notebooks/07_backtest_framework.ipynb
    ```
 
    第二个 notebook 会生成 `data/processed/*.parquet`（不提交到 repo）；
    第三个跑 A baseline，03 跑 C baseline + hedge-ratio，04 跑 A 诊断，
-   05 跑 B 预测试，06 跑 D curve-momentum baseline；结果写到 `output/`
-   （不提交）。
+   05 跑 B 预测试，06 跑 D curve-momentum baseline，07 用 v2 框架演示
+   A 的分层成本和 horizon 诊断；结果写到 `output/`（不提交）。
 
 ---
 
@@ -99,7 +106,8 @@ docs/
   project_brief.md        # 详细项目背景、五个 idea、数据说明
   HANDOFF.md              # 当前状态、关键数字、open questions、下一步
   PROGRESS.md             # 实时进度（给另一个 agent / 队友）
-  backtest_framework.md   # 回测框架一页：五层、接口、扩展方式
+  backtest_framework.md   # 回测框架一页：v1、v2 五层、接口、扩展方式
+  transaction_costs.md    # v2 成本模型：half-spread / fee / impact 与文献
   research_notes.md       # roll / spread 的论文与业界惯例、为什么这样选
   data_dictionary.md      # raw + derived fields + panel schemas
   decisions.md            # 已锁定的研究/数据决定
@@ -110,18 +118,28 @@ src/                      # 所有数据处理逻辑（notebook 只调用）
   continuous.py           # roll-chained leg indices + rolling OLS hedge ratio
   kalman.py               # Kalman-filter hedge ratio (rolling-likelihood DLM)
   signals.py              # signal functions（A carry; C mean reversion; D curve momentum）
-  backtest.py             # target legs + event-loop engine（weekly/monthly）
-  metrics.py              # summary / conditional mean / sector / plot
+  backtest.py             # v1：target legs + event-loop engine（weekly/monthly/daily）
+  metrics.py              # v1 summary / conditional mean / sector / plot
   a_diagnostics.py        # A 负结果诊断
   b_pre_test.py           # cheap adjacent-carry B 预测试
-notebooks/                # 00, 01, 02, 03, 04, 05, 06
-tests/                    # synthetic fixtures + parser/roll/spread/backtest tests
-scripts/run_all.sh        # 一键复现：依赖 + tests + A/B/C/D notebook
+  specs.py                # v2 contract specs（point value, tick）
+  marks.py                # v2 contract marks / tradability / lagged ADV
+  sizing.py               # v2 signal → leg targets（equal / inverse-vol / liquidity）
+  costs.py                # v2 half-spread / fee / square-root impact
+  simulate.py             # v2 holdings-based simulator
+  horizon.py              # v2 forward returns, time-series IC, bootstrap
+  report.py               # v2 performance / root / capacity tables
+  figures.py              # v2 journal-grade figures
+  plotstyle.py            # v2 matplotlib style and export
+notebooks/                # 00, 01, 02, 03, 04, 05, 06, 07
+tests/                    # synthetic fixtures + parser/roll/spread/backtest/simulate tests
+scripts/run_all.sh        # 一键复现：依赖 + tests + A/B/C/D + v2 notebook
 
 data/raw/                  # 原始数据（本地；public repo 不提交）
-data/metadata/             # 24 商品元数据 + checksum（提交）
+data/metadata/             # 24 商品元数据 + checksum + contract_specs.csv（提交）
 data/processed/            # 生成的 parquet（本地；gitignored）
 
+presentations/mid/         # mid-term slides source（LaTeX；build 不提交）
 paper/README.md            # 论文引用；PDF 本地，不提交
 output/                    # 生成的图/报告（gitignored）
 ```
@@ -144,6 +162,15 @@ output/                    # 生成的图/报告（gitignored）
   strict weekly h 调仓、0 bps gross 对照；负结果。
 - **C Kalman variant（D-012）：** paper-style DLM、252-day likelihood、
   q grid、0 bps gross；mixed/negative，C closed。
+- **D curve-momentum baseline（D-013）：** N=2 main pair、12m formation、
+  monthly rebalance、±1、5 bps/leg；gross 弱、net 负，documented
+  negative/mixed。
+- **Ownership（D-014）：** Tian 负责 A/D；Jiaheng 负责 C/E；E
+  （Nelson–Siegel curve dynamics）重新纳入 scope。
+- **Daily rebalance（D-015）：** `BacktestConfig.rebalance="daily"`；
+  weekly 仍是默认。
+- **Backtest v2（D-016）：** holdings-based simulator、分层成本、
+  horizon / capacity 诊断；v1 保留为 A 的原始 benchmark，两套数字不直接可比。
 
 详见 `docs/decisions.md`。
 

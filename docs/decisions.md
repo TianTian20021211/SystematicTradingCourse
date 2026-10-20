@@ -333,3 +333,99 @@ Status values: `proposed`, `accepted`, `superseded`.
   `rebalance="last_trading_day_of_month"` without changing weekly behavior.
   The D notebook is `06_curve_momentum.ipynb`. Do not use the 2016–2026 test
   sample for tuning; A/B/C remain closed.
+
+---
+
+## D-014 · Idea ownership and Nelson–Siegel back in scope
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Merge note:** written on branch `jiaheng/backtest-v2` as D-010 and
+  renumbered to D-014 on merge (D-013 was already used for D on main). In the
+  meantime C was implemented and closed on main by Tian (D-010–D-012). C's
+  ownership below is therefore historical; the daily-rebalance engine (D-015)
+  is what D-012 names as the prerequisite for any daily CL/NG replication.
+- **Context:** Two team members implement signal families in parallel on the
+  shared data layer and backtest engine. `docs/project_brief.md` §4 had
+  excluded E (Nelson–Siegel) because fitting 3 parameters to 4 contracts leaves
+  one degree of freedom.
+- **Decision:**
+  1. **Tian Tian:** A (carry) and D (curve momentum, Paschke et al. 2020).
+  2. **Jiaheng Han:** C (mean reversion, Lubnau & Todorova 2015) and E
+     (curve dynamics, Bianchi, Fan, Miffre & Zhang 2023). Both are
+     fitted-parameter signals: C fits a time-varying hedge ratio between legs;
+     E fits the Nelson–Siegel level/slope/curvature of the curve.
+  3. E is back in scope. It trades daily changes in fitted factors (as in
+     Bianchi et al., who also fit the nearest 4 contracts), not fit residuals;
+     the one-degree-of-freedom concern must be addressed explicitly in the E
+     notebook.
+- **Consequences:** C and E reuse the D-008 common pair and D-009 backtest
+  conventions unless a separate robustness experiment is documented. Each
+  owner adds signals in `src/signals.py` and a dedicated notebook; shared
+  modules (`src/panel.py`, `src/backtest.py`) change only with a new decision
+  entry.
+
+---
+
+## D-015 · Daily rebalance option in the engine
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** D-009 fixed weekly rebalancing. C (Lubnau & Todorova 2015) is an
+  event-driven daily band strategy with 2–21 day holds, and E (Bianchi et al.
+  2023) holds for one day. A weekly schedule would change both strategies
+  rather than reproduce them.
+- **Decision:** `BacktestConfig.rebalance` accepts `"daily"` in addition to the
+  default `"last_trading_day_of_week"`. Under `"daily"` every trading day is a
+  rebalance date; all other D-009 rules (t-close signal, t+1 fill, roll on
+  pair change, costs on net traded legs, missing/stale handling) are unchanged.
+- **Consequences:** The default stays weekly, so A results are unaffected. C
+  and E report daily rebalancing as the main result and weekly as a
+  comparability check against A/D. Covered by
+  `test_daily_entry_is_next_trading_day` and
+  `test_daily_flip_fills_next_day_weekly_waits`.
+
+---
+
+## D-016 · Backtest v2: holdings-based simulator with layered costs
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** The v1 engine (`src/backtest.py`, D-009) reports one net return
+  with a flat 5 bps per leg and no notion of capital, so it cannot show how
+  costs split into spread, fees and impact, how they scale with strategy size,
+  or how a signal decays across horizons. C, D and E also need daily trading
+  and non-1:1 legs.
+- **Decision:** Add a parallel v2 stack (`src/specs.py`, `marks.py`,
+  `sizing.py`, `costs.py`, `simulate.py`, `horizon.py`, `report.py`); v1 is
+  kept unchanged for A's original benchmark.
+  1. **Timing:** signal at the t settle, fill at the t+1 settle, first P&L
+     t+1 -> t+2. Holdings are (fractional) contracts; P&L = contracts x point
+     value x settle change; returns = P&L / capital (non-compounding).
+  2. **Pairs:** `build_backtest_panel(rank, d=5, k=5)`. The last trading day is
+     on the exchange calendar, hence ex ante; with `d=None` CL/CO/NG legs
+     expire inside the holding window.
+  3. **Sizing:** gross budget 1/N per active root (N = 5-day max of active
+     roots, so ICE trading on US holidays does not concentrate the book),
+     inverse spread volatility, or liquidity weight dollar_ADV ** alpha
+     (thinner leg, lagged; alpha = 0.5 default); equal weight is the default
+     scheme; equal-notional legs by default; k overlapping
+     sleeves; ex-ante liquidity flag (lagged 20-day ADV of the thinner leg),
+     an illiquid date is an explicit exit.
+  4. **Holding rules:** no signal row = keep holdings; explicit flat = exit;
+     resize only on target/pair change or > 25% budget drift; blocked fills
+     keep holdings; expired contracts close at the final settle; > 5 invalid
+     sessions force an exit at the last mark.
+  5. **Costs (per side, every leg):** half-spread 0.5 tick widened by
+     (10,000 / ADV)^0.18, one half-spread per matched listed-spread order;
+     USD 1.5 fee per contract; square-root impact Y = 0.5 on quantity above
+     the first lot. Sources in `docs/transaction_costs.md`.
+  6. **Time series only:** every strategy and diagnostic is per commodity on
+     its own history (per-root time-series IC, own-history expanding bins).
+     No cross-sectional ranking: settlement times differ across exchanges and
+     ~20 markets is too thin a cross-section.
+- **Consequences:** Results are reported as gross / − half-spread / − fees /
+  − impact, plus turnover, per-root costs, horizon decay, k sweep and a
+  capacity curve. Contract specs live in `data/metadata/contract_specs.csv`.
+  v1 and v2 numbers for A differ (weekly vs on-change rebalancing, cost model,
+  pair rule) and are not directly comparable.

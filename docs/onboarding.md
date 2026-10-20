@@ -10,7 +10,9 @@
 A（carry）、B、C（mean reversion）和 D（curve momentum / basis-momentum）
 的 baseline 都已跑通，但在最简 K=5 版本里都是负结果或 mixed-negative；
 C 的 rolling-OLS 和 Kalman hedge-ratio variant 也没有改善。A/B 已收尾
-（不再调参/不做 rescue），C/D 已 closed 并合入 main；H 是下一阶段，
+（不再调参/不做 rescue），C/D 已 closed 并合入 main。v2 holdings-based
+回测框架（分层成本、horizon、容量）也已合入 main，notebook 07 是 demo；
+下一步是用 v2 重跑 A/B/C/D、做 H，以及按 D-014 做 E。
 D-x（cross-sectional basis-momentum）是 backlog。
 
 ## 2. 先读什么
@@ -66,6 +68,7 @@ notebooks/03_mean_reversion.ipynb    # C baseline + hedge-ratio
 notebooks/04_a_diagnose.ipynb        # A 负结果诊断（依赖 02 的输出）
 notebooks/05_b_pretest.ipynb         # B adjacent-carry 预测试
 notebooks/06_curve_momentum.ipynb    # D curve-momentum / basis-momentum baseline
+notebooks/07_backtest_framework.ipynb # v2 holdings-based framework demo (A)
 ```
 
 测试（不需要 raw data）：
@@ -95,7 +98,9 @@ A baseline 和 A 诊断已完成（`02_carry`、`04_a_diagnose`），B 预测试
 （`03_mean_reversion`、`src/kalman.py`），D curve-momentum baseline 也已完成
 （`06_curve_momentum`、`src/signals.py` 的 `curve_momentum_signal`）；
 A/B/C/D 都是负结果或 mixed-negative。A/B 已收尾，C/D 已 closed 并合入
-main；下一步是 H；D-x 是 backlog。
+main。v2 回测框架（`src/simulate.py` 等、notebook 07）也已合入 main；
+下一步是用 v2 重跑 A/B/C/D 并比较 v1/v2、做 H，以及按 D-014 做 E；
+D-x 是 backlog。
 先读 `docs/PROGRESS.md` 和 `docs/backtest_framework.md`。
 不要用 test set 调参。
 如果发现数据问题，先更新 `docs/logs/AGENT_LOG.md` 和 `docs/decisions.md`。

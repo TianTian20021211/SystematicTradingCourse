@@ -61,12 +61,13 @@ def _run(
     targets: pd.DataFrame,
     start: str = "2020-01-01",
     end: str = "2020-01-20",
+    rebalance: str = "last_trading_day_of_week",
 ) -> backtest.BacktestResult:
     return backtest.run_backtest(
         pair,
         contract,
         targets,
-        backtest.BacktestConfig(start_date=start, end_date=end),
+        backtest.BacktestConfig(start_date=start, end_date=end, rebalance=rebalance),
     )
 
 
@@ -414,5 +415,31 @@ def test_config_guards() -> None:
     with pytest.raises(ValueError):
         backtest.run_backtest(
             pair, contract, targets,
-            backtest.BacktestConfig(rebalance="daily"),
+            backtest.BacktestConfig(rebalance="monthly"),
         )
+
+
+def test_daily_entry_is_next_trading_day() -> None:
+    pair, contract, _signal, targets = _case()
+    res = _run(pair, contract, targets, rebalance="daily")
+    entries = res.trades.loc[res.trades["reason"] == "entry"]
+    # Signal on Wed 2020-01-01 fills on Thu 2020-01-02, not the next Monday.
+    assert entries["date"].min() == pd.Timestamp("2020-01-02")
+    # A constant target trades only once under daily rebalancing.
+    assert (res.trades["reason"] == "entry").sum() == 2
+    assert (res.trades["reason"] == "rebalance").sum() == 0
+
+
+def test_daily_flip_fills_next_day_weekly_waits() -> None:
+    pair, contract, signal, _targets = _case(n=15)
+    # +1 through Fri 2020-01-03, -1 from Mon 2020-01-06.
+    signal["target"] = np.where(signal["date"] < "2020-01-06", 1.0, -1.0)
+    targets = backtest.build_target_legs(signal, pair)
+
+    def first_flip(rebalance: str) -> pd.Timestamp:
+        res = _run(pair, contract, targets, end="2020-01-31", rebalance=rebalance)
+        return res.trades.loc[res.trades["reason"] == "rebalance", "date"].min()
+
+    assert first_flip("daily") == pd.Timestamp("2020-01-07")
+    # Weekly: next signal date is Fri 2020-01-10, filled Mon 2020-01-13.
+    assert first_flip("last_trading_day_of_week") == pd.Timestamp("2020-01-13")

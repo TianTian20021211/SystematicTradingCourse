@@ -1,10 +1,12 @@
-# Progress — A, B, and C Baselines
+# Progress — A, B, C, D Baselines and Backtest v2
 
 **Last updated:** 2026-10-19  
-**Branch:** `main`; C merged and closed.  
+**Branch:** `main`; C/D merged and closed; backtest v2 merged.
 **A baseline:** `bd6691b`; **A diagnosis:** `f02f18b`.  
 **B pre-test:** `d257e0e`.  
 **C baseline + hedge-ratio + Kalman variants:** merged into `main`; C closed.  
+**D baseline:** D-013; merged into `main`; closed as negative/mixed.
+**Backtest v2:** D-016; merged from `jiaheng/backtest-v2` in LOG-0039.
 **Plans:** A `~/.claude/plans/polished-crafting-clock.md`;
 C `~/.claude/plans/valiant-pondering-peacock.md`.
 
@@ -33,8 +35,11 @@ end-of-phase snapshot remains `docs/HANDOFF.md`; decisions are in
 | D curve-momentum signal | done | N=2 main pair; 12-month formation; monthly |
 | D baseline | done | full gross +0.55%, net −0.99%; test gross −0.28%; negative/mixed |
 | Monthly rebalance engine | done | `last_trading_day_of_month`; weekly default unchanged |
-| Tests | done | 80 passed |
-| Notebooks | done | `02_carry`, `03_mean_reversion`, `04_a_diagnose`, `05_b_pretest`, `06_curve_momentum` |
+| Daily rebalance engine | done | D-015; `rebalance="daily"`; weekly default unchanged |
+| Backtest v2 framework | done / merged | holdings-based, layered costs, horizon, capacity; D-016 |
+| E (Nelson–Siegel) | pending | back in scope under D-014 |
+| Tests | done | 101 passed after the v2 merge |
+| Notebooks | done | `02_carry`, `03_mean_reversion`, `04_a_diagnose`, `05_b_pretest`, `06_curve_momentum`, `07_backtest_framework` |
 
 ---
 
@@ -277,6 +282,10 @@ part of D and has not been implemented.
   month-end signal; rank return index; ≥80% valid; negative-price window
   invalid; daily forward-filled target; monthly rebalance; ±1; 5 bps/leg;
   documented negative/mixed; D-x backlog).
+- Ownership and E: D-014 (Tian: A/D; Jiaheng: C/E; E back in scope).
+- Daily rebalance: D-015 (`rebalance="daily"`; weekly default).
+- Backtest v2: D-016 (holdings-based simulator; layered costs; horizon and
+  capacity diagnostics; v1 kept as A's original benchmark).
 
 ---
 
@@ -295,14 +304,19 @@ part of D and has not been implemented.
   `plot_result`
 - `src/a_diagnostics.py` — A negative-result diagnostics
 - `src/b_pre_test.py` — cheap adjacent-carry B pre-test
+- v2: `src/specs.py`, `src/marks.py`, `src/sizing.py`, `src/costs.py`,
+  `src/simulate.py`, `src/horizon.py`, `src/report.py`, `src/figures.py`,
+  `src/plotstyle.py`
 - `tests/test_eligibility.py`, `tests/test_signals.py`,
   `tests/test_curve_momentum.py`, `tests/test_backtest.py`,
   `tests/test_continuous.py`, `tests/test_kalman.py`,
-  `tests/test_a_diagnostics.py`, `tests/test_b_pre_test.py`
+  `tests/test_a_diagnostics.py`, `tests/test_b_pre_test.py`,
+  `tests/test_simulate.py`
 - `notebooks/02_carry.ipynb`, `notebooks/03_mean_reversion.ipynb`,
   `notebooks/04_a_diagnose.ipynb`, `notebooks/05_b_pretest.ipynb`,
-  `notebooks/06_curve_momentum.ipynb`
-- `docs/a_negative_result.md`, `docs/b_pretest.md`
+  `notebooks/06_curve_momentum.ipynb`, `notebooks/07_backtest_framework.ipynb`
+- `docs/a_negative_result.md`, `docs/b_pretest.md`,
+  `docs/transaction_costs.md`
 - `docs/backtest_framework.md`, `docs/data_dictionary.md` §10
 
 ---
@@ -321,12 +335,15 @@ jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=1800 notebooks/06_curve_momentum.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=1800 notebooks/07_backtest_framework.ipynb
 ```
 
 Notebook 02 produces the `output/carry_*` tables; 03 produces
 `output/mean_reversion_*`; 04 loads `output/carry_full_*` and writes the
 diagnosis tables; 05 writes `output/b_pretest_summary.csv`; 06 writes
-`output/curve_momentum_*`. All outputs are gitignored.
+`output/curve_momentum_*`; 07 writes `output/figures/`. All outputs are
+gitignored.
 
 ---
 
@@ -338,11 +355,15 @@ diagnosis tables; 05 writes `output/b_pretest_summary.csv`; 06 writes
    pre-registered project.
 3. D is closed as documented negative/mixed; do not tune it on the test set.
    `D-x` (cross-sectional basis-momentum) is a separate backlog item.
-4. H (holding-period scan) is next; monthly engine support is ready.
+4. Backtest v2 is merged; re-run the validated A/B/C/D ideas through v2 and
+   compare v1/v2 by construction (rebalance, pair rule, costs, denominator),
+   not in a single mixed table.
+5. H (holding-period scan) is next; monthly engine support is ready.
+   E (Nelson–Siegel curve dynamics) is back in scope under D-014.
    Robustness (liquidity buckets, tick-based cost, dollar P&L, point-in-time
    D=10 proxy) only if needed for the final report; it is not an attempt to
    rescue A/B/C/D.
-5. No report has been written yet; A/B/C/D are documented as negative or
+6. No report has been written yet; A/B/C/D are documented as negative or
    mixed-negative baselines.
 
 ---
@@ -358,3 +379,17 @@ diagnosis tables; 05 writes `output/b_pretest_summary.csv`; 06 writes
 - Done/not done and D results are in `docs/HANDOFF.md` §0b and
   `docs/decisions.md` D-013. D is closed as documented negative/mixed;
   H is next; D-x is a separate backlog; do not push unless asked.
+
+---
+
+## Backtest v2 merge
+
+- `origin/jiaheng/backtest-v2` was merged into `main` (LOG-0039).
+- Added the holdings-based v2 simulator with layered costs, horizon
+  diagnostics, figures and capacity analysis; notebook 07.
+- Incoming decisions renumbered to D-014 (ownership/E), D-015 (daily
+  rebalance) and D-016 (v2); D-013 remains the D baseline.
+- `src/backtest.py` now supports weekly, monthly and daily rebalance through
+  one dispatcher; v1 behavior is otherwise unchanged.
+- 101 tests pass after the merge.
+- Next: re-run A/B/C/D through v2; then H and E.

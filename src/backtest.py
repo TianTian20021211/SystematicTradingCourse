@@ -140,6 +140,32 @@ def build_target_legs(
     ).reset_index(drop=True)
 
 
+REBALANCE_RULES = (
+    "last_trading_day_of_week",
+    "last_trading_day_of_month",
+    "daily",
+)
+
+
+def _rebalance_dates(
+    trading_days: pd.DatetimeIndex, rule: str
+) -> set[pd.Timestamp]:
+    """Dates on which the signal is allowed to change the position.
+
+    ``daily`` uses every trading day; ``last_trading_day_of_week`` and
+    ``last_trading_day_of_month`` use the weekly and monthly schedules. Pair
+    changes trigger a roll on any day under any rule.
+    """
+
+    if rule == "daily":
+        return set(pd.to_datetime(trading_days).tolist())
+    if rule == "last_trading_day_of_week":
+        return curve.weekly_rebalance_dates(trading_days)
+    if rule == "last_trading_day_of_month":
+        return curve.monthly_rebalance_dates(trading_days)
+    raise ValueError(f"rebalance must be one of {REBALANCE_RULES}, got {rule!r}")
+
+
 def _pair_lookup(pair_panel: pd.DataFrame) -> dict[tuple[Any, Any], tuple[Any, Any]]:
     """Map (date, root) to (contract_near, contract_far)."""
 
@@ -235,12 +261,7 @@ class _Engine:
             self.trading_days = self.trading_days[
                 self.trading_days <= pd.Timestamp(config.end_date)
             ]
-        if config.rebalance == "last_trading_day_of_week":
-            self.rebalance_dates = curve.weekly_rebalance_dates(self.trading_days)
-        elif config.rebalance == "last_trading_day_of_month":
-            self.rebalance_dates = curve.monthly_rebalance_dates(self.trading_days)
-        else:
-            raise ValueError(f"Unknown rebalance: {config.rebalance!r}")
+        self.rebalance_dates = _rebalance_dates(self.trading_days, config.rebalance)
 
         self._targets = self._index_targets(target_legs)
         contracts = set()
@@ -731,13 +752,9 @@ def run_backtest(
     cfg = config or BacktestConfig()
     if cfg.execution_lag != 1:
         raise ValueError("Only execution_lag=1 is supported for now")
-    if cfg.rebalance not in {
-        "last_trading_day_of_week",
-        "last_trading_day_of_month",
-    }:
+    if cfg.rebalance not in REBALANCE_RULES:
         raise ValueError(
-            "rebalance must be 'last_trading_day_of_week' or "
-            "'last_trading_day_of_month'"
+            f"rebalance must be one of {REBALANCE_RULES}, got {cfg.rebalance!r}"
         )
     if cfg.return_denominator != "gross_notional":
         raise ValueError(

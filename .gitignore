@@ -26,3 +26,6 @@ __pycache__/
 .env
 .venv/
 venv/
+
+# LaTeX build artifacts (slides compile locally)
+presentations/**/build/

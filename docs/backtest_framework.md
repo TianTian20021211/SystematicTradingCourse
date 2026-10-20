@@ -117,8 +117,10 @@ BacktestConfig(
 )
 ```
 
-当前只支持 `execution_lag=1`、weekly/monthly rebalance、gross-notional
-return；其他值会显式报错，不会静默忽略。Signal 和 engine 必须使用同一个
+`rebalance` 支持 `"last_trading_day_of_week"`（默认）、
+`"last_trading_day_of_month"`（D-013）和 `"daily"`（D-015）。
+当前只支持 `execution_lag=1`、gross-notional return；其他值会显式报错，
+不会静默忽略。Signal 和 engine 必须使用同一个
 `curve.weekly_rebalance_dates` / `curve.monthly_rebalance_dates`，避免
 signal 日期和调仓日期漂移。`metrics.conditional_mean` 仍按 weekly
 evaluation 写；monthly 结果用 `notebooks/06_curve_momentum.ipynb` 里的
@@ -173,3 +175,19 @@ D（curve momentum / basis-momentum）baseline 已实现：N=2 main pair、
 Full-sample gross 为正但很弱，net 为负；test gross 已经为负。D 作为
 documented negative/mixed baseline，不做 test-set tuning。`D-x`
 （cross-sectional basis-momentum）是单独的 backlog，不混入 D。
+
+## v2（holdings-based, layered costs）
+
+新框架见 `notebooks/07_backtest_framework.ipynb` 和 D-016。v1（本页）保留不动，作为 A
+的原始 benchmark。v2 的分层：`marks → sizing → simulate (+ costs) → report`，以及独立于执行的
+`horizon` 诊断。成本假设和文献见 `docs/transaction_costs.md`。
+
+```python
+mk = marks.build_marks(bt["contract"], specs.load_contract_specs())
+pairs = sizing.filter_liquid(sizing.attach_leg_liquidity(bt["spread"], mk), min_adv=100)
+legs = sizing.legs_from_signal(signals.carry_signal(pairs), pairs, k=1)
+res = simulate.simulate(legs, mk, simulate.SimConfig(capital=1e7))
+report.performance_table(res)
+```
+
+加一个新 idea：只写 signal function（输出 `date, root, target`，可选 `score`）。

@@ -7,8 +7,21 @@
 mixed/negative 收尾。  
 **D curve-momentum / basis-momentum：** 已实现并收尾为
 documented negative/mixed；monthly engine support 已加入。
+**Backtest v2（jiaheng/backtest-v2）：** 已合入 main（LOG-0039）；
+notebook 07；D-014–D-016。
 
 **Repo：** https://github.com/TianTian20021211/SystematicTradingCourse
+
+---
+
+## 0a. Backtest v2 merge（2026-10-19）
+
+`origin/jiaheng/backtest-v2` 已合入 `main`。新增 v2 holdings-based
+simulator：`src/specs.py`、`src/marks.py`、`src/sizing.py`、
+`src/costs.py`、`src/simulate.py`、`src/horizon.py`、`src/report.py`、
+`src/figures.py`、`src/plotstyle.py`；另有
+`data/metadata/contract_specs.csv`、`docs/transaction_costs.md`、
+`presentations/mid/` 和 `notebooks/07_backtest_framework.ipynb`。
 
 ---
 
@@ -24,7 +37,8 @@ documented negative/mixed；monthly engine support 已加入。
 8. `notebooks/02_carry.ipynb` — A baseline；`03_mean_reversion.ipynb` — C
    baseline + hedge-ratio；`04_a_diagnose.ipynb` — A 诊断；
    `05_b_pretest.ipynb` — B 预测试；`06_curve_momentum.ipynb` — D
-   baseline；`docs/PROGRESS.md` — 实时进度。
+   baseline；`07_backtest_framework.ipynb` — v2 框架（A 的分层成本、
+   horizon、容量）；`docs/PROGRESS.md` — 实时进度。
 
 ---
 
@@ -182,6 +196,9 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 | D-011 | C hedge-ratio variant：60-day rolling OLS levels、h>0、strict weekly h 调仓、0 bps gross 对照；returns/20/120/cap 后置 |
 | D-012 | C Kalman variant：paper-style DLM、252-day likelihood、q grid、0 bps gross；结果 mixed/negative，C closed；不做 daily replication |
 | D-013 | D curve-momentum / basis-momentum baseline：N=2 main pair、12m formation、month-end lookback、rank return index、≥80% valid、负价格 window invalid、纯 sign、target 日度 forward-fill、monthly rebalance、±1、5 bps/leg；结果 gross 弱、net 负，documented negative/mixed；D-x cross-sectional BM 是 backlog |
+| D-014 | Ownership：Tian 负责 A/D；Jiaheng 负责 C/E；E（Nelson–Siegel curve dynamics）重新纳入 scope，必须显式处理 3 参数 / 4 合约的自由度问题 |
+| D-015 | `BacktestConfig.rebalance` 增加 `"daily"`；weekly 仍是默认；A 结果不变 |
+| D-016 | Backtest v2：holdings-based simulator、分层成本（half-spread / fee / impact）、horizon / capacity 诊断；v1 保留为 A 的原始 benchmark，v1/v2 数字不直接可比 |
 
 完整内容见 `docs/decisions.md`。
 
@@ -223,7 +240,11 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
   static +1 gross +0.35% / net −0.84%，D 的 gross 略高但 turnover 更高、
   net 更差；monthly net Sharpe full −0.90 / test −1.66，bootstrap t
   full −5.87 / test −5.41。documented negative/mixed。
-- **80 tests**；`docs/backtest_framework.md`；`docs/PROGRESS.md`。
+- **Backtest v2 framework**：holdings-based simulator、分层成本、
+  horizon / k sweep / capacity；notebook 07；`src/specs.py`–`plotstyle.py`；
+  已在 merge 后跑通 **101 tests**。
+- **80 tests**（D 完成时）；merge v2 后 **101 tests**；
+  `docs/backtest_framework.md`；`docs/PROGRESS.md`。
 
 ---
 
@@ -295,8 +316,10 @@ jupyter nbconvert --execute --to notebook --inplace \
 2. **A/B 已收尾**：不再做变体或调参；报告只简短说明 A/B 不行。
    residual B 不计划，除非以后作为独立预注册 idea。
 3. **Liquidity threshold**：baseline 不硬筛；robustness 用 1k/5k/10k/20k 中的哪个？
-4. **Signal 优先级**：C/D 已 closed；下一步是 H（holding-period scan）。
+4. **Signal 优先级**：C/D 已 closed；先把已验证的 A/B/C/D 用 v2 重跑并
+   比较 v1/v2；再做 H（holding-period scan）和 E（Nelson–Siegel）。
 5. **Proposal 的 h**：A/C baseline 用 weekly，D 用 monthly；H 扫描 1/5/21 天。
+   v2 的 horizon 诊断只做信号层，不替代 H 的正式回测。
 6. **Contract multiplier / tick size**：美元 P&L、容量、tick-based cost 需要时再建。
 7. **Adjacent pairs**：A/D 主结果只用 main pair；D-x 的横截面组合以后再决定。
 
@@ -309,7 +332,11 @@ B 的 adjacent-carry rank 在成本前就为负；C 的 1:1、rolling-OLS 和 Ka
 都没有稳健、可交易的 edge；D 的 gross 很弱，5 bps 后为负，test gross 已经
 为负。C/D 已合入 main 并 closed。下一步：
 
-1. C/D 已 closed；不做 daily paper replication；若重开，daily CL/NG 是独立项目；
-2. 做 H（holding-period scan）；monthly engine support 已就绪；
-3. D-x（cross-sectional basis-momentum）作为独立 backlog，等 H 之后决定；
-4. 不要用 test 调参；A/B 已收尾，C/D 不再做 rescue 变体。
+1. C/D 已 closed；不做 daily paper replication；v2 的 `rebalance="daily"`
+   只用于新的日频策略（C/E），不改变 C 的收尾结论；
+2. 用 v2 重跑已验证的 A/B/C/D，比较 v1/v2 的差异来源（rebalance、pair
+   rule、成本、denominator），不要把它们混在同一张表里；
+3. 做 H（holding-period scan）；monthly engine support 已就绪；
+4. E（Nelson–Siegel curve dynamics）按 D-014 重新纳入 scope；
+5. D-x（cross-sectional basis-momentum）作为独立 backlog，等 H 之后决定；
+6. 不要用 test 调参；A/B 已收尾，C/D 不再做 rescue 变体。

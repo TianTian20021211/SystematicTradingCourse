@@ -119,8 +119,14 @@ do not log every `ls`.
   leg of actual net traded notional.
 - Do not use `is_censored`, episode `exit_date`/`holding_days`, or other
   ex-post fields as signals.
-- The engine is `src/backtest.py`; add new ideas as signal functions in
+- The v1 engine is `src/backtest.py`; add new ideas as signal functions in
   `src/signals.py` rather than editing the engine.
+- The v2 stack is parallel, not a replacement: `marks → sizing → simulate
+  (+ costs) → report`, with execution-independent `src/horizon.py`
+  diagnostics. V2 signals output `date, root, target` (optionally `score`);
+  add a new idea there without changing the simulator.
+- Do not mix v1 and v2 numbers in one table; state which engine produced
+  each result.
 
 ## Current phase
 
@@ -138,11 +144,22 @@ the C slots. D (curve momentum / basis-momentum) is **closed as a
 documented negative/mixed baseline**: the gross result is weak and the net
 result is negative; the monthly rebalance support is shared with the engine
 and reusable for H. Do not tune D on the 2016–2026 test sample. `D-x`
-(cross-sectional basis-momentum) is a separate backlog item. The next phase
-is H. Do not build a daily C paper-replication branch; if revisited, it is a
-separate pre-registered project. Do not change the locked A/C conventions without a
-new `docs/decisions.md` entry. Keep the panels reproducible from the raw CSV
-and the notebooks.
+(cross-sectional basis-momentum) is a separate backlog item.
+
+`jiaheng/backtest-v2` is merged into `main` (LOG-0039). It adds a parallel
+holdings-based simulator with layered costs, horizon diagnostics and capacity
+analysis: `src/specs.py`, `src/marks.py`, `src/sizing.py`, `src/costs.py`,
+`src/simulate.py`, `src/horizon.py`, `src/report.py`, `src/figures.py`,
+`src/plotstyle.py`, `data/metadata/contract_specs.csv`, and
+`notebooks/07_backtest_framework.ipynb`. D-015 adds `rebalance="daily"`;
+D-016 defines the v2 stack. v1 (`src/backtest.py`) is kept unchanged as A's
+original benchmark, and v1/v2 numbers are not directly comparable. E
+(Nelson–Siegel curve dynamics) is back in scope under D-014. The next phase
+is H plus re-running the validated A/B/C/D ideas through v2; do not tune on
+the 2016–2026 test sample. Do not build a daily C paper-replication branch;
+if revisited, it is a separate pre-registered project. Do not change the
+locked A/C conventions without a new `docs/decisions.md` entry. Keep the
+panels reproducible from the raw CSV and the notebooks.
 
 ## Questions / ownership
 
