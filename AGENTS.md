@@ -60,6 +60,10 @@ without mixing two contracts on a roll date.
 
 - All reusable logic lives in `src/*.py`. Notebooks are narrative and call
   functions; they must not contain long transformations or loops.
+- Notebook layout (D-020): `00`/`01` are the data layer; `10`–`13` are one
+  notebook per idea (A/B/C/D). Each idea notebook shows PnL, positions and
+  one full-sample all-in net Sharpe. Do not create a second notebook for an
+  idea; add diagnostics to that notebook or to docs/logs.
 - Notebooks are bilingual: Chinese narrative and explanation, English technical
   terms and code identifiers. `README.md`, `docs/HANDOFF.md`,
   `docs/research_notes.md`, `docs/onboarding.md`, and `docs/project_brief.md`
@@ -132,24 +136,26 @@ do not log every `ls`.
   composition); never put price-derived notional ratios in it.
 - Do not mix v1 and v2 numbers in one table; state which engine produced
   each result.
-- **Official results are v2 (D-019).** Headline tables use
-  `notebooks/08_v2_rerun.ipynb` / `output/v2_rerun/comparison.csv`. The v1
-  notebooks and v1 result sections are historical baselines and must be
-  labeled `v1`; do not rewrite them.
+- **Official results are v2 (D-019).** Headline tables use the per-idea
+  notebooks 10–13 and `output/v2_rerun/comparison.csv`. The v1 numbers in
+  docs and git history are historical baselines and must be labeled `v1`; do
+  not mix them with v2 results. Old notebooks 02–08 were retired by D-020;
+  see `docs/notebook_history.md` for recovery.
 
 ## Current phase
 
 The data layer and the A/B/C/D baselines are complete: K=5 backtest panel,
 per-contract mark state, `src/signals.py`, `src/continuous.py`,
 `src/kalman.py`, `src/backtest.py`, `src/metrics.py`,
-`src/a_diagnostics.py`, `src/b_pre_test.py`, and notebooks `02_carry`,
-`03_mean_reversion`, `04_a_diagnose`, `05_b_pretest`, `06_curve_momentum`.
+`src/a_diagnostics.py`, `src/b_pre_test.py`. The current narrative notebooks
+are `10_idea_a_carry`, `11_idea_b_adjacent_carry`,
+`12_idea_c_mean_reversion`, and `13_idea_d_curve_momentum` (D-020).
 A, B, the C 1:1 baseline, and the C rolling-OLS hedge-ratio variant are
 **negative results**. A and B are **closed**: no further parameter tuning or
 rescue variants. The C Kalman variant is **mixed/negative**, and C is
-**closed** and **merged into `main`**; notebook `03`, LOG-0013–0018
-(baseline), LOG-0022–0024 (rolling OLS), and LOG-0026 (Kalman/close-out) are
-the C slots. D (curve momentum / basis-momentum) is **closed as a
+**closed** and **merged into `main`**; the C slots are LOG-0013–0018
+(baseline), LOG-0022–0024 (rolling OLS), and LOG-0026 (Kalman/close-out),
+now presented in notebook `12`. D (curve momentum / basis-momentum) is **closed as a
 documented negative/mixed baseline**: the gross result is weak and the net
 result is negative; the monthly rebalance support is shared with the engine
 and reusable for H. Do not tune D on the 2016–2026 test sample. `D-x`
@@ -159,19 +165,19 @@ and reusable for H. Do not tune D on the 2016–2026 test sample. `D-x`
 holdings-based simulator with layered costs, horizon diagnostics and capacity
 analysis: `src/specs.py`, `src/marks.py`, `src/sizing.py`, `src/costs.py`,
 `src/simulate.py`, `src/horizon.py`, `src/report.py`, `src/figures.py`,
-`src/plotstyle.py`, `data/metadata/contract_specs.csv`, and
-`notebooks/07_backtest_framework.ipynb`. D-015 adds `rebalance="daily"`;
-D-016 defines the v2 stack. v1 (`src/backtest.py`) is kept unchanged as A's
-original benchmark, and v1/v2 numbers are not directly comparable.
+`src/plotstyle.py`, `data/metadata/contract_specs.csv`. D-015 adds
+`rebalance="daily"`; D-016 defines the v2 stack. v1 (`src/backtest.py`) is
+kept unchanged as A's original benchmark, and v1/v2 numbers are not directly
+comparable.
 
 D-017 adds optional hedge-ratio legs, `legs_from_rows` multi-leg targets and
 an optional `resize_key`, and makes B's within-root adjacent-carry ranking a
 narrow exception to D-016's time-series-only rule. D-018 fixes the v2 re-run
 conventions (`d=5`, `k=5`, `min_adv=100`, USD 10m, equal-notional, three-layer
 costs, calendar overrides). The v2 re-runs of A/D/C/C-hedge/B are complete in
-`notebooks/08_v2_rerun.ipynb` and `docs/v1_v2_comparison.md`; they remain
+notebooks 10–13 and `docs/v1_v2_comparison.md`; they remain
 negative/mixed. **D-019 makes those v2 results the official/final results**;
-the v1 notebooks and v1 result sections are historical baselines. E
+the v1 numbers in docs and git history are historical baselines. E
 (Nelson–Siegel curve dynamics) is back in scope under D-014. The next phase
 is E and H; do not tune on the 2016–2026 test sample.
 Do not build a daily C paper-replication branch; if revisited, it is a

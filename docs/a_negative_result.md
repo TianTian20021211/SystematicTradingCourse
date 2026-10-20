@@ -3,7 +3,8 @@
 **Scope:** time-series carry sign on the K=5 ex-ante universe.
 **Status:** **closed** (2026-10-19); documented negative baseline.
 **Not a rescue attempt:** no long-only, threshold, cross-section, or h variants.
-**Full detail:** `notebooks/04_a_diagnose.ipynb`.
+**Full detail:** `notebooks/10_idea_a_carry.ipynb` (old `04_a_diagnose`
+retired; recovery in `docs/notebook_history.md`).
 
 ---
 
@@ -68,7 +69,7 @@ Gross 已经是负的；5 bps 的 net 只是更差，成本不是负号的原因
   但 Grains/Industrials/Livestock/Metals 多数为负；没有 broad-based 的正 edge。
 - 所以不是“某个板块特别差”；short side 的方向问题是系统性的。
 
-完整 42 个格子见 `04_a_diagnose.ipynb`。
+完整 42 个格子见 `10_idea_a_carry.ipynb`（旧 `04_a_diagnose` 已 retired）。
 
 ---
 

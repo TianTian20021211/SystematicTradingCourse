@@ -29,10 +29,11 @@ test 是 2016–2026 的 post-hoc slice。
 | C Kalman hedge | +0.61% | −6.10% | +0.98% |
 | B adjacent carry | −1.13% | −4.47% | −1.23% |
 
-详细分层表见 `notebooks/08_v2_rerun.ipynb`；原始 CSV 在
-`output/v2_rerun/comparison.csv`（本地，gitignored）。v1 历史口径
-（5 bps/leg、`d=None`、1:1 contracts）见 `docs/v1_v2_comparison.md`
-和 notebooks 02/03/05/06。
+详细分层表见 `notebooks/10_idea_a_carry.ipynb`、`11_idea_b_adjacent_carry.ipynb`、
+`12_idea_c_mean_reversion.ipynb` 和 `13_idea_d_curve_momentum.ipynb`；
+原始 CSV 在 `output/v2_rerun/comparison.csv`（本地，gitignored）。v1 历史口径
+（5 bps/leg、`d=None`、1:1 contracts）见 `docs/v1_v2_comparison.md`；
+旧 notebook 已 retired，恢复方式见 `docs/notebook_history.md`。
 
 ---
 
@@ -53,18 +54,17 @@ test 是 2016–2026 的 post-hoc slice。
       gross 弱、net 负，D documented negative/mixed
 - [x] Monthly rebalance engine support
 - [x] v2 holdings-based framework：分层成本（half-spread / fee / impact）、
-      horizon 诊断、k sweep、容量曲线；notebook 07
-- [x] 用 v2 重跑 A/D/C/C-rolling-OLS/C-Kalman/B；notebook 08；
+      horizon 诊断、k sweep、容量曲线；见 `docs/backtest_framework.md`
+- [x] 用 v2 重跑 A/D/C/C-rolling-OLS/C-Kalman/B；每个 idea 一个 notebook；
       **v2 为正式结果（D-019）**；v1/v2 对比见 `docs/v1_v2_comparison.md`
 - [ ] E（Nelson–Siegel）；H（holding-period scan）；D-x 是 backlog
 
-`notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb`、`02_carry.ipynb`、
-`03_mean_reversion.ipynb`、`04_a_diagnose.ipynb`、`05_b_pretest.ipynb`、
-`06_curve_momentum.ipynb`、`07_backtest_framework.ipynb` 和
-`08_v2_rerun.ipynb` 已可从头运行；01 生成 `data/processed/*.parquet`，
-02 生成 `output/carry_*`，03 生成 `output/mean_reversion_*`，04/05 生成
-诊断和 B 预测试输出，06 生成 `output/curve_momentum_*`，07 生成
-`output/figures/`，08 读取 `output/v2_rerun/`（都不提交）。
+`notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` 和四个 idea notebook
+（`10_idea_a_carry`、`11_idea_b_adjacent_carry`、`12_idea_c_mean_reversion`、
+`13_idea_d_curve_momentum`）可从头运行；01 生成 `data/processed/*.parquet`，
+10–13 分别生成对应策略的 `output/figures/idea_*` 和
+`output/v2_rerun/*_performance.csv`（都不提交）。旧 notebook 02–08 已 retired；
+见 `docs/notebook_history.md`。
 
 **新对话 / 队友先读：** `docs/HANDOFF.md` → `AGENTS.md` → `docs/decisions.md` → `docs/logs/INDEX.md`。
 
@@ -97,21 +97,16 @@ test 是 2016–2026 的 post-hoc slice。
    ```text
    notebooks/00_data_audit.ipynb
    notebooks/01_panel_build.ipynb
-   notebooks/02_carry.ipynb
-   notebooks/03_mean_reversion.ipynb
-   notebooks/04_a_diagnose.ipynb   # 依赖 02 的 output/carry_full_*
-   notebooks/05_b_pretest.ipynb
-   notebooks/06_curve_momentum.ipynb
-   notebooks/07_backtest_framework.ipynb
-   notebooks/08_v2_rerun.ipynb
+   notebooks/10_idea_a_carry.ipynb
+   notebooks/11_idea_b_adjacent_carry.ipynb
+   notebooks/12_idea_c_mean_reversion.ipynb
+   notebooks/13_idea_d_curve_momentum.ipynb
    ```
 
    第二个 notebook 会生成 `data/processed/*.parquet`（不提交到 repo）；
-   第三个跑 A baseline，03 跑 C baseline + hedge-ratio，04 跑 A 诊断，
-   05 跑 B 预测试，06 跑 D curve-momentum baseline，07 用 v2 框架演示
-   A 的分层成本和 horizon 诊断，08 展示 v2 重跑 A/D/C/C-hedge/B 和
-   v1/v2 对照；结果写到 `output/`（不提交）。08 之前先跑
-   `python scripts/run_v2_rerun.py --force`。
+   10–13 分别跑 A、B、C（1:1/OLS/Kalman）和 D，每个 notebook 只展示自己的
+   PnL、持仓和 overall Sharpe；结果写到 `output/`（不提交）。如果想刷新
+   跨策略汇总表，再跑 `python scripts/run_v2_rerun.py --force`。
 
 ---
 
@@ -132,6 +127,7 @@ docs/
   research_notes.md       # roll / spread 的论文与业界惯例、为什么这样选
   data_dictionary.md      # raw + derived fields + panel schemas
   decisions.md            # 已锁定的研究/数据决定
+  notebook_history.md     # 当前 notebook 布局 + 旧 notebook 的替代和恢复
   onboarding.md           # 队友 1 页上手
   logs/                   # agent 操作日志（谁、做了什么、为什么、怎么验证）
 
@@ -154,10 +150,10 @@ src/                      # 所有数据处理逻辑（notebook 只调用）
   plotstyle.py            # v2 matplotlib style and export
   v2_signals.py           # A/D/C/C-hedge/B adapters to LEG_COLUMNS
   v2_rerun.py             # v2 rerun orchestration and CSV output
-notebooks/                # 00, 01, 02, 03, 04, 05, 06, 07, 08
+notebooks/                # 00, 01 数据层；10–13 每个 idea 一个 notebook
 tests/                    # synthetic fixtures + parser/roll/spread/backtest/simulate tests
-scripts/run_all.sh        # 一键复现：依赖 + tests + A/B/C/D + v2 reruns
-scripts/run_v2_rerun.py   # v2 A/D/C/C-hedge/B rerun driver
+scripts/run_all.sh        # 一键复现：依赖 + tests + 数据层 + 四个 idea notebooks
+scripts/run_v2_rerun.py   # 跨策略 v2 汇总表（手动刷新 comparison.csv）
 
 data/raw/                  # 原始数据（本地；public repo 不提交）
 data/metadata/             # 24 商品元数据 + checksum + contract_specs.csv（提交）
@@ -203,8 +199,12 @@ output/                    # 生成的图/报告（gitignored）
 - **v2 重跑口径（D-018）：** `d=5`、`k=5`、`min_adv=100`、USD 10m、
   equal-notional、三层成本；C/D/B 用大 `rebalance_band`；test 是
   post-hoc slice，不用 test 调参。
-- **正式结果（D-019）：** v2 重跑是最终报告口径；v1 notebook 和旧数字
-  保留为历史 baseline，不删除、不重写、不进 headline 表。
+- **正式结果（D-019）：** v2 重跑是最终报告口径；v1 数字保留为历史
+  baseline，不进 headline 表。
+- **每个 idea 一个 notebook（D-020）：** 00/01 数据层，10–13 分别是
+  A/B/C/D；旧 notebook 02–08 已 retired，历史内容在 docs 和 git history。
+  每个 idea notebook 固定展示 PnL、持仓（热力图 + 总敞口/换手）和
+  一个 full-sample all-in net Sharpe。
 
 详见 `docs/decisions.md`。
 

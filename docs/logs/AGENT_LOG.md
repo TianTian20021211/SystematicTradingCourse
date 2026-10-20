@@ -2179,3 +2179,49 @@ are in `output/figures/idea_*`.
 **Commit:** `feat(notebooks): add one notebook per trading idea`
 
 **Next:** Retire notebooks 02–08 and update docs/logs (D-020).
+
+---
+
+## LOG-0050 · 2026-10-19 23:55 · Phase 10c · Claude Code
+
+**Goal:** Retire the superseded notebooks and record the one-notebook-per-idea
+layout (D-020).
+
+**Actions:**
+- Deleted `02_carry`, `03_mean_reversion`, `04_a_diagnose`, `05_b_pretest`,
+  `06_curve_momentum`, `07_backtest_framework`, `08_v2_rerun` from the working
+  tree. They remain in git history with their original outputs.
+- Added D-020: 00/01 are the data layer; 10–13 are one notebook per idea;
+  each shows PnL, positions and one full-sample all-in net Sharpe. D-019
+  clause 2 (keep v1 notebooks) is superseded for layout; v2 remains official.
+- Added `docs/notebook_history.md` with the old-to-new mapping, last commits
+  and `git show` recovery commands.
+- Updated current-state docs and scripts: README, AGENTS, HANDOFF, PROGRESS,
+  onboarding, backtest_framework, v1_v2_comparison, diagnostics_plan,
+  a_negative_result, b_pretest, data_dictionary and project_brief.
+- No push.
+
+**Files changed:**
+- Deleted: `notebooks/02_carry.ipynb` … `notebooks/08_v2_rerun.ipynb`
+- Added: `docs/notebook_history.md`
+- Updated: `README.md`, `AGENTS.md`, `docs/HANDOFF.md`, `docs/PROGRESS.md`,
+  `docs/onboarding.md`, `docs/backtest_framework.md`,
+  `docs/v1_v2_comparison.md`, `docs/diagnostics_plan.md`,
+  `docs/a_negative_result.md`, `docs/b_pretest.md`,
+  `docs/data_dictionary.md`, `docs/project_brief.md`, `docs/decisions.md`
+
+**Commands:**
+- `python -m pytest -q` → 124 passed
+- `grep -rnE "02_carry|...|08_v2_rerun"` → only historical/retired notes
+- `ls notebooks/*.ipynb` → 00, 01, 10, 11, 12, 13 only
+
+**Why:** The user wants each idea in exactly one notebook and no historical
+result tables in notebooks; history belongs in docs/logs and git.
+
+**Validation:** all four idea notebooks execute with zero errors; A/B/C/D
+performance matches the v2 tables; old notebooks recoverable via
+`docs/notebook_history.md`.
+
+**Commit:** `refactor(notebooks): retire superseded notebooks and document layout`
+
+**Next:** Robustness/diagnostics later; no push.

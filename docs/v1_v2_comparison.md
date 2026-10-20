@@ -121,12 +121,12 @@ and `scripts/run_v2_rerun.py`.
 python -m pytest -q
 python scripts/run_v2_rerun.py --strategies a,d,c,c_ols,c_kalman,b --force
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/08_v2_rerun.ipynb
+  --ExecutePreprocessor.timeout=900 notebooks/10_idea_a_carry.ipynb
+# 11/12/13 同理；或者直接跑 bash scripts/run_all.sh
 ```
 
 `output/v2_rerun/comparison.csv` contains the tidy full/train/test × cost-layer
-table; `notebooks/08_v2_rerun.ipynb` is the narrative version. No push is
-performed.
+table; notebooks 10–13 are the narrative versions. No push is performed.
 
 ## 7. Conclusion
 

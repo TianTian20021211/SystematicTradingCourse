@@ -10,9 +10,10 @@
 **Plans:** A `~/.claude/plans/polished-crafting-clock.md`;
 C `~/.claude/plans/valiant-pondering-peacock.md`.
 
-> **Official results (D-019):** the v2 re-runs in
-> `notebooks/08_v2_rerun.ipynb` are the final reported results. The v1
-> A/B/C/D sections below are historical baselines and must be labeled `v1`.
+> **Official results (D-019):** the v2 re-runs in notebooks 10–13 are the
+> final reported results. The v1 A/B/C/D sections below are historical
+> baselines and must be labeled `v1`. Old notebooks 02–08 are retired
+> (D-020); their replacement and recovery are in `docs/notebook_history.md`.
 
 This is the live status file for another agent or the teammate. The stable
 end-of-phase snapshot remains `docs/HANDOFF.md`; decisions are in
@@ -34,7 +35,7 @@ Full sample 1986–2026; all-in net is after half-spread, fees and impact.
 | B adjacent carry | −1.13% | −4.47% | −1.23% |
 
 Source: `output/v2_rerun/comparison.csv`; narrative:
-`notebooks/08_v2_rerun.ipynb`; framework comparison:
+notebooks 10–13; framework comparison:
 `docs/v1_v2_comparison.md`.
 
 ---
@@ -49,22 +50,22 @@ Source: `output/v2_rerun/comparison.csv`; narrative:
 | Carry signal | done | target: −1 161,058 / +1 73,661 / 0 1,666 |
 | Backtest engine | done | daily event loop, pair-specific pending orders |
 | Metrics | done | summary, conditional mean, sector, plot |
-| A benchmark (v1 historical) | closed | 5 bps/1:1 result; v2 official in notebook 08 |
-| A diagnosis | closed | side × sector × era, K=5 vs K=10, costs |
-| B pre-test (v1 historical) | closed | adjacent-carry rank; v2 official in notebook 08 |
-| C baseline (v1 historical) | done / merged | 1:1 weekly; v2 official in notebook 08 |
-| C hedge-ratio variant (v1 historical) | done / merged | 60-day rolling OLS; v2 official in notebook 08 |
-| C Kalman variant (v1 historical) | done / merged | rolling-likelihood DLM; v2 official in notebook 08 |
+| A benchmark (v1 historical) | closed | 5 bps/1:1 result; v2 official in notebook 10 |
+| A diagnosis | closed | side × sector × era, K=5 vs K=10, costs; see notebook 10 |
+| B pre-test (v1 historical) | closed | adjacent-carry rank; v2 official in notebook 11 |
+| C baseline (v1 historical) | done / merged | 1:1 weekly; v2 official in notebook 12 |
+| C hedge-ratio variant (v1 historical) | done / merged | 60-day rolling OLS; v2 official in notebook 12 |
+| C Kalman variant (v1 historical) | done / merged | rolling-likelihood DLM; v2 official in notebook 12 |
 | D curve-momentum signal | done | N=2 main pair; 12-month formation; monthly |
-| D baseline (v1 historical) | done | v1 full gross +0.55%, net −0.99%; v2 official in notebook 08 |
+| D baseline (v1 historical) | done | v1 full gross +0.55%, net −0.99%; v2 official in notebook 13 |
 | Monthly rebalance engine | done | `last_trading_day_of_month`; weekly default unchanged |
 | Daily rebalance engine | done | D-015; `rebalance="daily"`; weekly default unchanged |
 | Backtest v2 framework | done / merged | holdings-based, layered costs, horizon, capacity; D-016 |
-| v2 re-runs A/D/C/C-hedge/B | done / official | notebook 08; D-018 conventions; D-019 final |
+| v2 re-runs A/D/C/C-hedge/B | done / official | notebooks 10–13; D-018 conventions; D-019 final |
 | Official results | done | v2 is the final reported result; v1 is historical |
 | E (Nelson–Siegel) | pending | back in scope under D-014 |
-| Tests | done | 117 passed |
-| Notebooks | done | `02_carry`, `03_mean_reversion`, `04_a_diagnose`, `05_b_pretest`, `06_curve_momentum`, `07_backtest_framework`, `08_v2_rerun` |
+| Tests | done | 124 passed |
+| Notebooks | done | `00`, `01`, `10_idea_a_carry`, `11_idea_b_adjacent_carry`, `12_idea_c_mean_reversion`, `13_idea_d_curve_momentum` |
 
 ---
 
@@ -103,7 +104,8 @@ worse. This is a valid negative result, not a bug. Do not tune on the test set.
   gross 已经负，成本不是主因。
 - 结论：**no support + wrong sign in-sample**；test 期 t +0.87，
   不写成 “proven absent”。不做 rescue 变体。
-- 文件：`src/a_diagnostics.py`、`notebooks/04_a_diagnose.ipynb`、
+- 文件：`src/a_diagnostics.py`、`notebooks/10_idea_a_carry.ipynb`（旧
+  `04_a_diagnose` 已 retired）、`docs/a_negative_result.md`
   `docs/a_negative_result.md`、`tests/test_a_diagnostics.py`。
 
 ---
@@ -122,7 +124,8 @@ Cheap, pre-registered B: long the highest-carry adjacent spread
 Gross is already negative; the pre-registered rule says **skip B = True**.
 This is the adjacent-carry version only; the residual/fitted-curve B was not
 tested and should be a separate idea if ever tried.
-Files: `src/b_pre_test.py`, `notebooks/05_b_pretest.ipynb`,
+Files: `src/b_pre_test.py`, `notebooks/11_idea_b_adjacent_carry.ipynb`
+（旧 `05_b_pretest` 已 retired）, `docs/b_pretest.md`
 `docs/b_pretest.md`, `tests/test_b_pre_test.py`.
 
 ---
@@ -153,8 +156,8 @@ A 和 B 都作为 **documented negative baselines** 收尾。结论已经足够�
 | B | Test | −1.25% | −0.07 | −2.96% | −0.15 |
 
 **Reading:** 成本放大亏损，但不改变符号。A 的 0 bps 结果和
-`04_a_diagnose` 的 cost-sensitivity 第一行一致；B 的 gross 列来自
-`05_b_pretest` 的 summary。
+`10_idea_a_carry` 的 cost-sensitivity 第一行一致；B 的 gross 列来自
+`11_idea_b_adjacent_carry` 的 summary。
 
 ---
 
@@ -272,7 +275,8 @@ Livestock +0.12%, Metals +0.03%, Industrials −0.76%. The aggregate gross is
 weak; costs turn it negative, and test gross is already negative. This is a
 **documented negative/mixed baseline**, not a tuning target. Static
 benchmark and monthly diagnostics are in
-`notebooks/06_curve_momentum.ipynb` and `output/curve_momentum_*`.
+`notebooks/13_idea_d_curve_momentum.ipynb` and `output/idea_d_*`
+(旧 `06_curve_momentum` 已 retired).
 
 Static benchmarks (full sample, same monthly engine): always +1 gross
 +0.35% / net −0.84% / turnover 11.4×; always −1 gross −0.37% / net −1.56%.
@@ -347,12 +351,14 @@ part of D and has not been implemented.
   `tests/test_continuous.py`, `tests/test_kalman.py`,
   `tests/test_a_diagnostics.py`, `tests/test_b_pre_test.py`,
   `tests/test_simulate.py`
-- `notebooks/02_carry.ipynb`, `notebooks/03_mean_reversion.ipynb`,
-  `notebooks/04_a_diagnose.ipynb`, `notebooks/05_b_pretest.ipynb`,
-  `notebooks/06_curve_momentum.ipynb`, `notebooks/07_backtest_framework.ipynb`,
-  `notebooks/08_v2_rerun.ipynb`
+- `tests/test_figures.py`, `tests/test_v2_rerun.py`
+- `notebooks/00_data_audit.ipynb`, `notebooks/01_panel_build.ipynb`,
+  `notebooks/10_idea_a_carry.ipynb`, `notebooks/11_idea_b_adjacent_carry.ipynb`,
+  `notebooks/12_idea_c_mean_reversion.ipynb`,
+  `notebooks/13_idea_d_curve_momentum.ipynb`
 - `docs/a_negative_result.md`, `docs/b_pretest.md`,
-  `docs/transaction_costs.md`, `docs/v1_v2_comparison.md`
+  `docs/transaction_costs.md`, `docs/v1_v2_comparison.md`,
+  `docs/notebook_history.md`
 - `docs/backtest_framework.md`, `docs/data_dictionary.md` §10
 
 ---
@@ -361,29 +367,23 @@ part of D and has not been implemented.
 
 ```bash
 python -m pytest -q
+jupyter nbconvert --execute --to notebook --inplace notebooks/00_data_audit.ipynb
+jupyter nbconvert --execute --to notebook --inplace notebooks/01_panel_build.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=600 notebooks/02_carry.ipynb
+  --ExecutePreprocessor.timeout=900 notebooks/10_idea_a_carry.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/03_mean_reversion.ipynb
+  --ExecutePreprocessor.timeout=900 notebooks/11_idea_b_adjacent_carry.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=600 notebooks/04_a_diagnose.ipynb
+  --ExecutePreprocessor.timeout=1800 notebooks/12_idea_c_mean_reversion.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
-jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=1800 notebooks/06_curve_momentum.ipynb
-jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=1800 notebooks/07_backtest_framework.ipynb
-python scripts/run_v2_rerun.py --strategies a,d,c,c_ols,c_kalman,b --force
-jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/08_v2_rerun.ipynb
+  --ExecutePreprocessor.timeout=900 notebooks/13_idea_d_curve_momentum.ipynb
 ```
 
-Notebook 02 produces the `output/carry_*` tables; 03 produces
-`output/mean_reversion_*`; 04 loads `output/carry_full_*` and writes the
-diagnosis tables; 05 writes `output/b_pretest_summary.csv`; 06 writes
-`output/curve_momentum_*`; 07 writes `output/figures/`; the rerun script
-writes `output/v2_rerun/*.csv` and 08 reads them. All outputs are
-gitignored.
+Notebooks 10–13 run their strategies and write `output/figures/idea_*`
+plus `output/v2_rerun/<strategy>_performance.csv`; optionally run
+`python scripts/run_v2_rerun.py --force` to refresh
+`output/v2_rerun/comparison.csv`. All outputs are gitignored. Old notebooks
+02–08 are retired; see `docs/notebook_history.md`.
 
 ---
 
@@ -395,7 +395,7 @@ gitignored.
    pre-registered project.
 3. D is closed as documented negative/mixed; do not tune it on the test set.
    `D-x` (cross-sectional basis-momentum) is a separate backlog item.
-4. Backtest v2 re-runs of A/D/C/C-hedge/B are complete in notebook 08;
+4. Backtest v2 re-runs of A/D/C/C-hedge/B are complete in notebooks 10–13;
    results remain negative/mixed. Do not tune on the v2 numbers.
 5. E (Nelson–Siegel curve dynamics) is back in scope under D-014.
 6. H (holding-period scan) is next; monthly engine support is ready.
@@ -425,7 +425,7 @@ gitignored.
 
 - `origin/jiaheng/backtest-v2` was merged into `main` (LOG-0039).
 - Added the holdings-based v2 simulator with layered costs, horizon
-  diagnostics, figures and capacity analysis; notebook 07.
+  diagnostics, figures and capacity analysis; `docs/backtest_framework.md`.
 - Incoming decisions renumbered to D-014 (ownership/E), D-015 (daily
   rebalance) and D-016 (v2); D-013 remains the D baseline.
 - `src/backtest.py` now supports weekly, monthly and daily rebalance through
@@ -444,5 +444,5 @@ gitignored.
   B −1.13% → −4.47%.
 - Test gross: D −0.21%, B −1.23%, C OLS −0.01%; C +0.16%, C Kalman +0.98%.
 - Results are v2-native and not directly comparable with v1; see
-  `docs/v1_v2_comparison.md` and `notebooks/08_v2_rerun.ipynb`.
+  `docs/v1_v2_comparison.md` and notebooks 10–13.
 - 117 tests pass; no push.

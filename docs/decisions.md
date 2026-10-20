@@ -522,3 +522,40 @@ Status values: `proposed`, `accepted`, `superseded`.
 - **Consequences:** README/HANDOFF/PROGRESS/onboarding and notebook 08 use
   v2 as the final result; v1 is historical. No code or locked data
   convention changes. No push.
+- **Note (2026-10-19):** D-020 retires the old v1/aggregate notebooks from
+  the working tree and replaces notebook 08 with per-idea notebooks. The
+  v1/v2 result hierarchy and the "v2 is official" rule are unchanged.
+
+---
+
+## D-020 · One notebook per trading idea; retire superseded notebooks
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** The v1 and v2 notebooks duplicated ideas, mixed historical and
+  official numbers, and gave each idea several notebooks. The user approved a
+  single notebook per idea with a fixed presentation.
+- **Decision:**
+  1. The notebook layout is: `00_data_audit`, `01_panel_build`,
+     `10_idea_a_carry`, `11_idea_b_adjacent_carry`,
+     `12_idea_c_mean_reversion` (1:1, rolling OLS, Kalman subsections),
+     `13_idea_d_curve_momentum`. Exactly one notebook per idea.
+  2. Every idea notebook runs only its own strategy on v2 and shows:
+     (a) cumulative PnL after each cost layer; (b) a two-panel position
+     figure with a month-end signed per-root heatmap and gross
+     exposure/turnover; (c) one full-sample all-in net Sharpe. C reports one
+     Sharpe per pre-registered variant, with 1:1 as the idea-level headline.
+  3. Delete notebooks 02–08 from the working tree. Historical v1 methodology
+     and results live in docs and git history; `docs/notebook_history.md`
+     records purpose, replacement and recovery commands. Do not recreate
+     retired notebooks.
+  4. v2 remains official (D-019). D-019 clause 2 (keep the v1 notebooks in
+     the working tree) is superseded by this decision; the result hierarchy
+     is unchanged.
+  5. Position semantics: `+` = long nearest-expiry leg / short the rest,
+     `-` = the opposite, `0` = flat. Heatmap colour is signed gross notional
+     divided by capital. Net signed dollar exposure is not used because a
+     calendar spread is dollar-neutral by construction.
+- **Consequences:** The working tree has four idea notebooks instead of seven
+  historical ones. v1 numbers remain in docs and are recoverable from git.
+  No data/backtest convention changes.

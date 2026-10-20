@@ -145,6 +145,10 @@ Project/
 
 **原则:** `raw/` 只读,`src/` 放逻辑,notebook 只做叙述和调用,`99_final_report.ipynb` 是唯一提交物。
 
+> **更新（D-020，2026-10-19）：** 上面的 notebook 编号是 proposal 时期的
+> 设想，实际布局已改为 `00/01` 数据层 + `10–13` 每个 idea 一个 notebook。
+> 当前映射和旧 notebook 的恢复方式见 `docs/notebook_history.md`。
+
 ---
 
 ## 7. 让合作者用 AI 读懂这个仓库

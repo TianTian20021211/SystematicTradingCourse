@@ -2,7 +2,8 @@
 
 **Scope:** cheap, pre-registered B version. Not a full curve-fitting B.
 **Status:** **closed** (2026-10-19); documented negative pre-test.
-**Detail:** `notebooks/05_b_pretest.ipynb`.
+**Detail:** `notebooks/11_idea_b_adjacent_carry.ipynb` (old `05_b_pretest`
+retired; recovery in `docs/notebook_history.md`).
 **Branch:** merged from `b-pre-test` into `main`.
 
 ---
@@ -80,7 +81,7 @@ not a failure of the data work.
 ```bash
 python -m pytest -q
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
+  --ExecutePreprocessor.timeout=900 notebooks/11_idea_b_adjacent_carry.ipynb
 ```
 
 Outputs go to `output/b_pretest_summary.csv` (gitignored).

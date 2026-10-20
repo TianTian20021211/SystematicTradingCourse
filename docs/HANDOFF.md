@@ -8,11 +8,13 @@ mixed/negative 收尾。
 **D curve-momentum / basis-momentum：** 已实现并收尾为
 documented negative/mixed；monthly engine support 已加入。
 **Backtest v2（jiaheng/backtest-v2）：** 已合入 main（LOG-0039）；
-notebook 07；D-014–D-016。
-**v2 重跑 A/D/C/C-hedge/B：** 已完成（LOG-0044）；notebook 08；
-结论仍是 negative/mixed；详见 `docs/v1_v2_comparison.md`。
+D-014–D-016。
+**v2 重跑 A/D/C/C-hedge/B：** 已完成（LOG-0044）；每个 idea 一个
+notebook（10–13，D-020）；结论仍是 negative/mixed；详见
+`docs/v1_v2_comparison.md`。
 
-**正式结果：** v2 重跑（D-019）；v1 notebook 和旧数字仅作历史 baseline。
+**正式结果：** v2 重跑（D-019）；v1 数字仅作历史 baseline。旧 notebook
+02–08 已 retired（D-020），见 `docs/notebook_history.md`。
 
 **Repo：** https://github.com/TianTian20021211/SystematicTradingCourse
 
@@ -25,7 +27,8 @@ simulator：`src/specs.py`、`src/marks.py`、`src/sizing.py`、
 `src/costs.py`、`src/simulate.py`、`src/horizon.py`、`src/report.py`、
 `src/figures.py`、`src/plotstyle.py`；另有
 `data/metadata/contract_specs.csv`、`docs/transaction_costs.md`、
-`presentations/mid/` 和 `notebooks/07_backtest_framework.ipynb`。
+`presentations/mid/`。框架说明见 `docs/backtest_framework.md`，当前
+展示在 notebooks 10–13。
 
 v2 重跑 A/D/C/C-rolling-OLS/C-Kalman/B 已完成（D-018）。Full-sample
 gross → all-in net：
@@ -40,8 +43,8 @@ gross → all-in net：
 | B adjacent carry | −1.13% | −4.47% |
 
 **v2 是正式结果（D-019）**；v1 仅作历史对照。结论仍是 negative/mixed；
-v1/v2 不可直接比较。详见 `notebooks/08_v2_rerun.ipynb` 和
-`docs/v1_v2_comparison.md`。
+v1/v2 不可直接比较。详见 notebooks 10–13、
+`docs/v1_v2_comparison.md` 和 `docs/notebook_history.md`。
 
 ---
 
@@ -54,11 +57,10 @@ v1/v2 不可直接比较。详见 `notebooks/08_v2_rerun.ipynb` 和
 5. `docs/data_dictionary.md` — 字段和 panel schema。
 6. `docs/logs/INDEX.md` + `AGENT_LOG.md` 最近几条 — 谁做了什么。
 7. `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` — 数据层。
-8. `notebooks/02_carry.ipynb` — A baseline；`03_mean_reversion.ipynb` — C
-   baseline + hedge-ratio；`04_a_diagnose.ipynb` — A 诊断；
-   `05_b_pretest.ipynb` — B 预测试；`06_curve_momentum.ipynb` — D
-   baseline；`07_backtest_framework.ipynb` — v2 框架（A 的分层成本、
-   horizon、容量）；`docs/PROGRESS.md` — 实时进度。
+8. `notebooks/10_idea_a_carry.ipynb` — A；`11_idea_b_adjacent_carry.ipynb`
+   — B；`12_idea_c_mean_reversion.ipynb` — C（1:1/OLS/Kalman）；
+   `13_idea_d_curve_momentum.ipynb` — D。旧 notebook 02–08 的替代和恢复
+   见 `docs/notebook_history.md`；`docs/PROGRESS.md` — 实时进度。
 
 ---
 
@@ -93,8 +95,8 @@ merge 后保持本地，不要 push。
 - monthly rebalance support：`curve.monthly_rebalance_dates`、
   `BacktestConfig.rebalance="last_trading_day_of_month"`；weekly 默认不变。
 - `CurveMomentumParams` / `curve_momentum_signal` + synthetic tests。
-- `notebooks/06_curve_momentum.ipynb`，输出 `output/curve_momentum_*`
-  （gitignored）。
+- `notebooks/13_idea_d_curve_momentum.ipynb`，输出 `output/idea_d_*`
+  （gitignored）；旧 `06_curve_momentum` 已 retired。
 - `D-013` 和 README / AGENTS / HANDOFF / PROGRESS / onboarding /
   backtest_framework / data_dictionary 更新。
 - **结果：** full gross +0.55%、net −0.99%；train gross +0.85%、net
@@ -151,7 +153,7 @@ A/B 已收尾（不再调参/不做 rescue），C/D 已 closed 并合入 main；
 - 0 full-day queue violations
 - CL 2020-04-20 = **−37.63** 仍在
 - **36 个 pytest 全过**
-- notebooks 00/01/02/04/05 都能 top-to-bottom 跑完
+- notebooks 00/01 和 10–13 都能 top-to-bottom 跑完
 
 A baseline（K=5；1986–2026）：
 
@@ -165,10 +167,12 @@ Conditional raw spread return：`target_positive` ≈ 0（t −0.27）；
 `target_negative` 为 **+0.000127（t +2.41）**，即 contango spread 平均会变强，
 short spread 是错的方向。**A 在这个 baseline 没有 edge。**
 
-A diagnosis（`04_a_diagnose.ipynb`）：short raw mean +0.000024（t +2.46），
+A diagnosis（v1 历史；当前见 `10_idea_a_carry.ipynb` 和
+`docs/a_negative_result.md`）：short raw mean +0.000024（t +2.46），
 long −0.000008（t −0.65）；K=10 不翻正；0/5/10/20 bps 下 gross 已经负。
 
-B pre-test（`05_b_pretest.ipynb`）：adjacent-carry rank，full gross −1.14%、
+B pre-test（v1 历史；当前见 `11_idea_b_adjacent_carry.ipynb` 和
+`docs/b_pretest.md`）：adjacent-carry rank，full gross −1.14%、
 net −2.84%（gross Sharpe −0.08）；预注册规则 **skip B = True**。
 
 **Zero-cost check：** A full gross ann. −0.53%（Sharpe −0.02）；B full gross
@@ -245,33 +249,36 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 - **A baseline framework**：`src/signals.py`、`src/backtest.py`、
   `src/metrics.py`；K=5 panel、per-contract mark state、event-loop engine、
   summary/conditional mean/sector/plot。
-- **A benchmark**：`notebooks/02_carry.ipynb`；full/train/test；负结果。
-- **A diagnosis**：`src/a_diagnostics.py`、`notebooks/04_a_diagnose.ipynb`；
-  side × sector × era、K=5 vs K=10、成本敏感性。
-- **B pre-test**：`src/b_pre_test.py`、`notebooks/05_b_pretest.ipynb`；
-  adjacent-carry rank；负结果，skip B。
+- **A benchmark**：`notebooks/10_idea_a_carry.ipynb`；full/train/test；负结果。
+  旧 v1 baseline 见 `docs/notebook_history.md`。
+- **A diagnosis**：`src/a_diagnostics.py`、`notebooks/10_idea_a_carry.ipynb`；
+  side × sector × era、K=5 vs K=10、成本敏感性；细节见
+  `docs/a_negative_result.md`。
+- **B pre-test**：`src/b_pre_test.py`、`notebooks/11_idea_b_adjacent_carry.ipynb`；
+  adjacent-carry rank；负结果，skip B；细节见 `docs/b_pretest.md`。
 - **C baseline**：`src/continuous.py`、`signals.mean_reversion_signal`、
-  `notebooks/03_mean_reversion.ipynb`；1:1 weekly；负结果。
+  `notebooks/12_idea_c_mean_reversion.ipynb`；1:1 weekly；负结果。
 - **C hedge-ratio variant**：60-day rolling OLS h、strict weekly 调仓、
-  0 bps gross 对照；负结果。
+  0 bps gross 对照；负结果；统一在 notebook 12 的 C2。
 - **C Kalman variant**：`src/kalman.py`、`tests/test_kalman.py`；
   rolling-likelihood DLM；aggregate mixed/negative，per-root NG 为正、
-  CL 为负；C 收尾。
+  CL 为负；C 收尾；统一在 notebook 12 的 C3。
 - **D curve-momentum / basis-momentum**：`signals.curve_momentum_signal`、
   `curve.monthly_rebalance_dates`、monthly `BacktestConfig`；
-  `notebooks/06_curve_momentum.ipynb`；N=2、12m、monthly、±1、5 bps；
+  `notebooks/13_idea_d_curve_momentum.ipynb`；N=2、12m、monthly、±1、5 bps；
   full gross +0.55%、net −0.99%；test gross −0.28%、net −1.89%；
   static +1 gross +0.35% / net −0.84%，D 的 gross 略高但 turnover 更高、
   net 更差；monthly net Sharpe full −0.90 / test −1.66，bootstrap t
   full −5.87 / test −5.41。documented negative/mixed。
 - **Backtest v2 framework**：holdings-based simulator、分层成本、
-  horizon / k sweep / capacity；notebook 07；`src/specs.py`–`plotstyle.py`。
+  horizon / k sweep / capacity；`docs/backtest_framework.md`、
+  `src/specs.py`–`plotstyle.py`。
 - **v2 重跑（正式结果，D-019）**：A/D/C/C-rolling-OLS/C-Kalman/B；
   `src/v2_signals.py`、`src/v2_rerun.py`、`scripts/run_v2_rerun.py`、
-  notebook 08；D-017/D-018；full-sample 结果全部 negative/mixed。
-  v1 notebook 和旧数字是历史 baseline，不删除、不重写。
-- **117 tests**；`docs/backtest_framework.md`；`docs/v1_v2_comparison.md`；
-  `docs/PROGRESS.md`。
+  notebooks 10–13；D-017/D-018；full-sample 结果全部 negative/mixed。
+  v1 数字保留在 docs 和 git history，仅作历史 baseline。
+- **124 tests**；`docs/backtest_framework.md`；`docs/v1_v2_comparison.md`；
+  `docs/notebook_history.md`；`docs/PROGRESS.md`。
 
 ---
 
@@ -316,28 +323,25 @@ python -m pytest -q
 jupyter nbconvert --execute --to notebook --inplace notebooks/00_data_audit.ipynb
 jupyter nbconvert --execute --to notebook --inplace notebooks/01_panel_build.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=600 notebooks/02_carry.ipynb
+  --ExecutePreprocessor.timeout=900 notebooks/10_idea_a_carry.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/03_mean_reversion.ipynb
+  --ExecutePreprocessor.timeout=900 notebooks/11_idea_b_adjacent_carry.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=600 notebooks/04_a_diagnose.ipynb
+  --ExecutePreprocessor.timeout=1800 notebooks/12_idea_c_mean_reversion.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
-jupyter nbconvert --execute --to notebook --inplace \
-  --ExecutePreprocessor.timeout=1800 notebooks/06_curve_momentum.ipynb
+  --ExecutePreprocessor.timeout=900 notebooks/13_idea_d_curve_momentum.ipynb
 ```
 
-第二个 notebook 会重建 `data/processed/*.parquet`；02 跑 A baseline，
-03 跑 C baseline + hedge-ratio，04 跑 A 诊断（依赖 02 的
-`output/carry_full_*`），05 跑 B 预测试，06 跑 D baseline；结果写到
-`output/`（gitignored）。
+第二个 notebook 会重建 `data/processed/*.parquet`；10–13 分别跑 A、B、
+C（1:1/OLS/Kalman）和 D；结果写到 `output/`（gitignored）。旧 notebook
+02–08 不再运行，替代关系见 `docs/notebook_history.md`。
 
 ---
 
 ## 7. Open questions（下一次决定）
 
 1. **C 已合入 main**：C 已有 1:1 baseline、rolling-OLS 和 Kalman variant；
-   notebook 03、LOG-0013–0018（baseline）、LOG-0022–0024（rolling OLS）和
+   notebook 12、LOG-0013–0018（baseline）、LOG-0022–0024（rolling OLS）和
    LOG-0026（Kalman）已合并。C 已作为 mixed/negative 收尾，不再做 daily
    replication。
 2. **A/B 已收尾**：不再做变体或调参；报告只简短说明 A/B 不行。
@@ -377,4 +381,4 @@ Sharpe bootstrap CI + 3 年窗口正收益比例，A 的 days-to-expiry / beta-n
 seasonality，B 的一段话，D 的机制检验待下一次对话确认。**尚未实现。**
 
 下一步：新对话先确认 D 的机制检验和是否需要 A 的 v1 对齐 robustness，再写
-`src/diagnostics.py` + `notebooks/09_failure_diagnostics.ipynb`。
+`src/diagnostics.py` + `notebooks/14_failure_diagnostics.ipynb`。

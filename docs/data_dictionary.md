@@ -370,6 +370,25 @@ Construction:
 - `SimResult.calendar` is the union marks calendar; `daily` is reindexed to
   it and flat days are zero-filled.
 
+### 10.4c `SimResult.positions` (valued holdings)
+
+`src.simulate.SimResult.positions` is the end-of-day holdings table enriched
+with marks; `holdings` itself stays `date, root, contract, n`.
+
+| Column | Description |
+|---|---|
+| `date`, `root`, `contract` | End-of-day position keys |
+| `n` | Contracts held (signed) |
+| `mark` | Contract mark used for valuation |
+| `point_value` | USD point value |
+| `signed_notional` | `n × point_value × mark` (USD, signed) |
+| `gross_notional` | `abs(signed_notional)` (USD) |
+| `pnl` | Next-session P&L for the position, when available |
+
+For display, `src.figures.position_panel` uses the sign of the nearest-expiry
+leg and the root's total `gross_notional / capital`; net signed notional is
+near zero for a calendar spread and is not used for the heatmap.
+
 ### 10.5 `BacktestResult`
 
 - `positions`: date, root, commodity, sector, group_id, contract, units, mark,

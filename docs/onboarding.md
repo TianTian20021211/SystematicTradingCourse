@@ -63,16 +63,17 @@ jupyter lab
 从 repo 根目录依次运行：
 
 ```text
-notebooks/00_data_audit.ipynb        # 只读审计 + 流动性诊断
-notebooks/01_panel_build.ipynb       # 建 panel，写 data/processed/*.parquet
-notebooks/02_carry.ipynb             # A baseline
-notebooks/03_mean_reversion.ipynb    # C baseline + hedge-ratio
-notebooks/04_a_diagnose.ipynb        # A 负结果诊断（依赖 02 的输出）
-notebooks/05_b_pretest.ipynb         # B adjacent-carry 预测试
-notebooks/06_curve_momentum.ipynb    # D curve-momentum / basis-momentum baseline
-notebooks/07_backtest_framework.ipynb # v2 holdings-based framework demo (A)
-notebooks/08_v2_rerun.ipynb          # v2 re-runs A/D/C/C-hedge/B + v1/v2 对照
+notebooks/00_data_audit.ipynb          # 只读审计 + 流动性诊断
+notebooks/01_panel_build.ipynb         # 建 panel，写 data/processed/*.parquet
+notebooks/10_idea_a_carry.ipynb        # A — carry
+notebooks/11_idea_b_adjacent_carry.ipynb # B — adjacent carry
+notebooks/12_idea_c_mean_reversion.ipynb # C — 1:1 / OLS / Kalman
+notebooks/13_idea_d_curve_momentum.ipynb # D — curve momentum
 ```
+
+每个 idea notebook 都展示自己的 PnL、持仓（热力图 + 总敞口/换手）和
+full-sample all-in net Sharpe。旧 notebook 02–08 已 retired（D-020）；
+替代关系和恢复方式见 `docs/notebook_history.md`。
 
 测试（不需要 raw data）：
 
@@ -96,12 +97,11 @@ python -m pytest -q
 
 数据层（Phases R–4）已完成：rank/contract/return/spread/universe/episodes
 panel、liquidity diagnostics、adjacent-pair robustness。
-A baseline 和 A 诊断已完成（`02_carry`、`04_a_diagnose`），B 预测试也已完成
-（`05_b_pretest`），C baseline + rolling-OLS + Kalman variant 已完成
-（`03_mean_reversion`、`src/kalman.py`），D curve-momentum baseline 也已完成
-（`06_curve_momentum`、`src/signals.py` 的 `curve_momentum_signal`）；
-A/B/C/D 都是负结果或 mixed-negative。A/B 已收尾，C/D 已 closed 并合入
-main。v2 回测框架（`src/simulate.py` 等、notebook 07）也已合入 main；
+A/B/C/D baseline 都已完成，并整理为每个 idea 一个 notebook：
+`10_idea_a_carry`、`11_idea_b_adjacent_carry`、`12_idea_c_mean_reversion`
+（1:1/OLS/Kalman）、`13_idea_d_curve_momentum`。A/B/C/D 都是负结果或
+mixed-negative；A/B 已收尾，C/D 已 closed 并合入 main。v2 回测框架
+（`src/simulate.py` 等）也已合入 main；
 v2 重跑 A/D/C/C-hedge/B（`src/v2_signals.py`、`src/v2_rerun.py`、
 notebook 08、`docs/v1_v2_comparison.md`）已完成，**v2 是正式结果
 （D-019）**；v1 notebook 和旧数字是历史 baseline。结论仍是 negative/mixed。

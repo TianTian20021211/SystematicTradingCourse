@@ -123,7 +123,7 @@ BacktestConfig(
 不会静默忽略。Signal 和 engine 必须使用同一个
 `curve.weekly_rebalance_dates` / `curve.monthly_rebalance_dates`，避免
 signal 日期和调仓日期漂移。`metrics.conditional_mean` 仍按 weekly
-evaluation 写；monthly 结果用 `notebooks/06_curve_momentum.ipynb` 里的
+evaluation 写；monthly 结果用 `notebooks/13_idea_d_curve_momentum.ipynb` 里的
 月度诊断，不要直接喂给它。
 
 ## Engine 的规则（必须知道）
@@ -145,17 +145,18 @@ evaluation 写；monthly 结果用 `notebooks/06_curve_momentum.ipynb` 里的
 - `src/backtest.py` — target legs + engine
 - `src/metrics.py` — summary, conditional mean, sector, plot
 - `src/panel.py` — `build_backtest_panel`, `build_contract_mark_state`
-- `notebooks/02_carry.ipynb` — A baseline example
+- `notebooks/10_idea_a_carry.ipynb` — A baseline example
+- `docs/notebook_history.md` — retired notebook map and recovery
 - `docs/data_dictionary.md` §10 — table schemas
 
 ## 当前状态
 
-A baseline 已跑通。结果见 `notebooks/02_carry.ipynb` 和
-`output/carry_summary.csv`。
+A baseline 已跑通。当前展示见 `notebooks/10_idea_a_carry.ipynb` 和
+`output/v2_rerun/a_performance.csv`；v1 历史数字见
+`docs/notebook_history.md`。
 
 C（mean reversion）baseline 已实现：连续价差层 + weekly z-score 状态机，
-结果见 `notebooks/03_mean_reversion.ipynb` 和
-`output/mean_reversion_summary.csv`。C 的 baseline 是负结果
+结果见 `notebooks/12_idea_c_mean_reversion.ipynb`。C 的 baseline 是负结果
 （full-sample net Sharpe 约 −0.03；energy sanity check 也是负的）。
 
 C 的 rolling-OLS hedge-ratio variant 也已完成（60-day levels、strict
@@ -171,16 +172,16 @@ mixed/negative 收尾**，不做 daily paper replication。
 
 D（curve momentum / basis-momentum）baseline 已实现：N=2 main pair、
 12-month formation、monthly rebalance、±1、5 bps；结果见
-`notebooks/06_curve_momentum.ipynb` 和 `output/curve_momentum_*`。
+`notebooks/13_idea_d_curve_momentum.ipynb` 和 `output/idea_d_*`。
 Full-sample gross 为正但很弱，net 为负；test gross 已经为负。D 作为
 documented negative/mixed baseline，不做 test-set tuning。`D-x`
 （cross-sectional basis-momentum）是单独的 backlog，不混入 D。
 
 ## v2（holdings-based, layered costs）
 
-新框架见 `notebooks/07_backtest_framework.ipynb` 和 D-016。v1（本页）保留不动，作为 A
-的原始 benchmark 和历史结果。**D-019 起，v2 重跑是正式/最终结果**；
-v1 notebook 和旧数字必须标注 `v1`，不进 headline 表。v2 的分层：
+新框架见 D-016 和本页；当前展示在 notebooks 10–13。v1（本页）保留不动，
+作为 A 的原始 benchmark 和历史结果。**D-019 起，v2 重跑是正式/最终结果**；
+v1 数字必须标注 `v1`，不进 headline 表。v2 的分层：
 `marks → sizing → simulate (+ costs) → report`，以及独立于执行的
 `horizon` 诊断。成本假设和文献见 `docs/transaction_costs.md`。
 
@@ -211,7 +212,8 @@ report.performance_table(res)
   `root_table` / `capacity_curve` 都按完整 calendar 年化。
 - **Adapters**：`src/v2_signals.py` 提供 A/D/C(1:1/OLS/Kalman)/B；
   `src/v2_rerun.py` + `scripts/run_v2_rerun.py` 负责重跑和缓存。
-  `notebooks/08_v2_rerun.ipynb` 是结果和 v1/v2 对照。
+  notebooks 10–13 是结果展示；旧 notebook 的替代见
+  `docs/notebook_history.md`。
 - **B 的例外**：B 的 adjacent-carry 排序是同一 root 内 3 个 maturity
   spreads 的排序，不是跨商品截面；作为 D-017 的 narrow exception 运行，
   使用 `execution="legs"`。它保留 v1 的 raw-rank universe，不是 v2 的
