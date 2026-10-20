@@ -191,3 +191,31 @@ report.performance_table(res)
 ```
 
 加一个新 idea：只写 signal function（输出 `date, root, target`，可选 `score`）。
+
+### v2 扩展（D-017）
+
+- **Hedge ratio**：signal 可带可选 `hedge_ratio` 列。near units =
+  `sign(target)`，far units = `-sign(target) * h`；`h` 是 contract ratio，
+  不是价格比的乘数。invalid/non-positive h 变成显式 flat。
+- **多腿**：`sizing.legs_from_rows(legs, budget)` 接受
+  `date, root, contract, units, target` 的显式腿表，按 contract 净额合并，
+  每个 `(date, root)` 只允许一个非 flat group。
+- **Resize key**：`LEG_COLUMNS` 增加可选 `resize_key`；`on_change` key 是
+  `(group_id, target, resize_key)`。`legs_from_signal` 在 h 存在时写
+  `_h{round(h, 6)}`；`legs_from_rows` 写 contract/units composition。
+  不要用原始 notional ratio 做 key，否则价格每天变化会触发日频调仓。
+- **完整 calendar**：`SimResult.calendar` 保存 marks 的 union calendar；
+  `_daily` 对其 reindex 并零填 flat days，`performance_table` /
+  `root_table` / `capacity_curve` 都按完整 calendar 年化。
+- **Adapters**：`src/v2_signals.py` 提供 A/D/C(1:1/OLS/Kalman)/B；
+  `src/v2_rerun.py` + `scripts/run_v2_rerun.py` 负责重跑和缓存。
+  `notebooks/08_v2_rerun.ipynb` 是结果和 v1/v2 对照。
+- **B 的例外**：B 的 adjacent-carry 排序是同一 root 内 3 个 maturity
+  spreads 的排序，不是跨商品截面；作为 D-017 的 narrow exception 运行，
+  使用 `execution="legs"`。它保留 v1 的 raw-rank universe，不是 v2 的
+  `d=5` universe。
+- **C hedge/Kalman**：h 在 weekly evaluation 日 snap，pair-change 日使用
+  当天 h；`resize_key` 让 h 变化只在预期日期触发调仓。
+- **口径**：D-018 锁定 `d=5`、`k=5`、`min_adv=100`、USD 10m、
+  equal-notional、三层成本；test 是 post-hoc slice；不要用 test 调参。
+  `d=5` 目前仍依赖 `last_trade_proxy`，不是严格 point-in-time。

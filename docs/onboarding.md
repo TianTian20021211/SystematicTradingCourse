@@ -69,6 +69,7 @@ notebooks/04_a_diagnose.ipynb        # A 负结果诊断（依赖 02 的输出�
 notebooks/05_b_pretest.ipynb         # B adjacent-carry 预测试
 notebooks/06_curve_momentum.ipynb    # D curve-momentum / basis-momentum baseline
 notebooks/07_backtest_framework.ipynb # v2 holdings-based framework demo (A)
+notebooks/08_v2_rerun.ipynb          # v2 re-runs A/D/C/C-hedge/B + v1/v2 对照
 ```
 
 测试（不需要 raw data）：
@@ -99,8 +100,9 @@ A baseline 和 A 诊断已完成（`02_carry`、`04_a_diagnose`），B 预测试
 （`06_curve_momentum`、`src/signals.py` 的 `curve_momentum_signal`）；
 A/B/C/D 都是负结果或 mixed-negative。A/B 已收尾，C/D 已 closed 并合入
 main。v2 回测框架（`src/simulate.py` 等、notebook 07）也已合入 main；
-下一步是用 v2 重跑 A/B/C/D 并比较 v1/v2、做 H，以及按 D-014 做 E；
-D-x 是 backlog。
+v2 重跑 A/D/C/C-hedge/B（`src/v2_signals.py`、`src/v2_rerun.py`、
+notebook 08、`docs/v1_v2_comparison.md`）已完成，结论仍是 negative/mixed。
+下一步是按 D-014 做 E，再做 H；D-x 是 backlog。
 先读 `docs/PROGRESS.md` 和 `docs/backtest_framework.md`。
 不要用 test set 调参。
 如果发现数据问题，先更新 `docs/logs/AGENT_LOG.md` 和 `docs/decisions.md`。

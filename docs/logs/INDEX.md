@@ -45,4 +45,5 @@
 | LOG-0041 | 2026-10-19 | Phase 9a | Claude Code | Pre-register v2 extensions (D-017) and rerun conventions (D-018) | docs/decisions.md, docs/logs/* | `9108cd3` |
 | LOG-0042 | 2026-10-19 | Phase 9b | Claude Code | Full-calendar annualization, resize keys, hedge-ratio and multi-leg legs | src/simulate.py, src/sizing.py, src/report.py, tests/test_simulate.py, tests/test_sizing.py | `116ec12` |
 | LOG-0043 | 2026-10-19 | Phase 9c | Claude Code | v2 adapters for A/D/C/C-OLS/C-Kalman/B | src/v2_signals.py, tests/test_v2_signals.py | `9116883` |
-| LOG-0044 | 2026-10-19 | Phase 9d | Claude Code | v2 re-runs A/D/C/C-hedge/B; notebook 08; refreshed 07 | src/v2_rerun.py, scripts/run_v2_rerun.py, scripts/run_all.sh, notebooks/07, notebooks/08 | this commit |
+| LOG-0044 | 2026-10-19 | Phase 9d | Claude Code | v2 re-runs A/D/C/C-hedge/B; notebook 08; refreshed 07 | src/v2_rerun.py, scripts/run_v2_rerun.py, scripts/run_all.sh, notebooks/07, notebooks/08 | `3d5019b` |
+| LOG-0045 | 2026-10-19 | Phase 9e | Claude Code | v1/v2 comparison doc and status close-out | docs/v1_v2_comparison.md, docs/backtest_framework.md, docs/data_dictionary.md, docs/HANDOFF.md, docs/PROGRESS.md, README.md, AGENTS.md | this commit |

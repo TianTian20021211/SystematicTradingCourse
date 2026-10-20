@@ -9,6 +9,8 @@ mixed/negative 收尾。
 documented negative/mixed；monthly engine support 已加入。
 **Backtest v2（jiaheng/backtest-v2）：** 已合入 main（LOG-0039）；
 notebook 07；D-014–D-016。
+**v2 重跑 A/D/C/C-hedge/B：** 已完成（LOG-0044）；notebook 08；
+结论仍是 negative/mixed；详见 `docs/v1_v2_comparison.md`。
 
 **Repo：** https://github.com/TianTian20021211/SystematicTradingCourse
 
@@ -22,6 +24,21 @@ simulator：`src/specs.py`、`src/marks.py`、`src/sizing.py`、
 `src/figures.py`、`src/plotstyle.py`；另有
 `data/metadata/contract_specs.csv`、`docs/transaction_costs.md`、
 `presentations/mid/` 和 `notebooks/07_backtest_framework.ipynb`。
+
+v2 重跑 A/D/C/C-rolling-OLS/C-Kalman/B 已完成（D-018）。Full-sample
+gross → all-in net：
+
+| 策略 | gross | all-in net |
+|---|---:|---:|
+| A carry | −0.48% | −2.61% |
+| D curve momentum | +0.22% | −1.42% |
+| C 1:1 | +0.61% | −3.70% |
+| C rolling-OLS | +0.12% | −3.06% |
+| C Kalman | +0.61% | −6.10% |
+| B adjacent carry | −1.13% | −4.47% |
+
+结论仍是 negative/mixed；v1/v2 不可直接比较。详见
+`notebooks/08_v2_rerun.ipynb` 和 `docs/v1_v2_comparison.md`。
 
 ---
 
@@ -199,6 +216,8 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 | D-014 | Ownership：Tian 负责 A/D；Jiaheng 负责 C/E；E（Nelson–Siegel curve dynamics）重新纳入 scope，必须显式处理 3 参数 / 4 合约的自由度问题 |
 | D-015 | `BacktestConfig.rebalance` 增加 `"daily"`；weekly 仍是默认；A 结果不变 |
 | D-016 | Backtest v2：holdings-based simulator、分层成本（half-spread / fee / impact）、horizon / capacity 诊断；v1 保留为 A 的原始 benchmark，v1/v2 数字不直接可比 |
+| D-017 | v2 扩展：optional hedge-ratio legs、`legs_from_rows` 多腿、`resize_key`；B 的 within-root adjacent-carry 排序是 narrow exception，用 `execution="legs"` |
+| D-018 | v2 重跑口径：`d=5`、`k=5`、`min_adv=100`、USD 10m、equal-notional、三层成本；C/D/B 大 band；test 是 post-hoc slice，不用 test 调参 |
 
 完整内容见 `docs/decisions.md`。
 
@@ -241,10 +260,12 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
   net 更差；monthly net Sharpe full −0.90 / test −1.66，bootstrap t
   full −5.87 / test −5.41。documented negative/mixed。
 - **Backtest v2 framework**：holdings-based simulator、分层成本、
-  horizon / k sweep / capacity；notebook 07；`src/specs.py`–`plotstyle.py`；
-  已在 merge 后跑通 **101 tests**。
-- **80 tests**（D 完成时）；merge v2 后 **101 tests**；
-  `docs/backtest_framework.md`；`docs/PROGRESS.md`。
+  horizon / k sweep / capacity；notebook 07；`src/specs.py`–`plotstyle.py`。
+- **v2 重跑**：A/D/C/C-rolling-OLS/C-Kalman/B；`src/v2_signals.py`、
+  `src/v2_rerun.py`、`scripts/run_v2_rerun.py`、notebook 08；
+  D-017/D-018；full-sample 结果全部 negative/mixed。
+- **117 tests**；`docs/backtest_framework.md`；`docs/v1_v2_comparison.md`；
+  `docs/PROGRESS.md`。
 
 ---
 
@@ -334,9 +355,9 @@ B 的 adjacent-carry rank 在成本前就为负；C 的 1:1、rolling-OLS 和 Ka
 
 1. C/D 已 closed；不做 daily paper replication；v2 的 `rebalance="daily"`
    只用于新的日频策略（C/E），不改变 C 的收尾结论；
-2. 用 v2 重跑已验证的 A/B/C/D，比较 v1/v2 的差异来源（rebalance、pair
-   rule、成本、denominator），不要把它们混在同一张表里；
-3. 做 H（holding-period scan）；monthly engine support 已就绪；
-4. E（Nelson–Siegel curve dynamics）按 D-014 重新纳入 scope；
+2. v2 重跑 A/D/C/C-hedge/B 已完成；结论仍是 negative/mixed，不再用 v2
+   数字调参或做 rescue 变体；
+3. 做 E（Nelson–Siegel curve dynamics），按 D-014 纳入 scope；
+4. 做 H（holding-period scan）；monthly engine support 已就绪；
 5. D-x（cross-sectional basis-momentum）作为独立 backlog，等 H 之后决定；
 6. 不要用 test 调参；A/B 已收尾，C/D 不再做 rescue 变体。

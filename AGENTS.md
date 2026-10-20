@@ -123,8 +123,13 @@ do not log every `ls`.
   `src/signals.py` rather than editing the engine.
 - The v2 stack is parallel, not a replacement: `marks → sizing → simulate
   (+ costs) → report`, with execution-independent `src/horizon.py`
-  diagnostics. V2 signals output `date, root, target` (optionally `score`);
-  add a new idea there without changing the simulator.
+  diagnostics. V2 signals output `date, root, target` (optionally `score`
+  and `hedge_ratio`); add a new idea there without changing the simulator.
+- Multi-leg ideas use `sizing.legs_from_rows`; do not feed multiple
+  non-flat groups for one `(date, root)`. Explicit exits are
+  `group_id="flat"` rows; a missing row means keep holdings.
+- `resize_key` is for strategy-defined unit changes (weekly h, B
+  composition); never put price-derived notional ratios in it.
 - Do not mix v1 and v2 numbers in one table; state which engine produced
   each result.
 
@@ -153,13 +158,20 @@ analysis: `src/specs.py`, `src/marks.py`, `src/sizing.py`, `src/costs.py`,
 `src/plotstyle.py`, `data/metadata/contract_specs.csv`, and
 `notebooks/07_backtest_framework.ipynb`. D-015 adds `rebalance="daily"`;
 D-016 defines the v2 stack. v1 (`src/backtest.py`) is kept unchanged as A's
-original benchmark, and v1/v2 numbers are not directly comparable. E
-(Nelson–Siegel curve dynamics) is back in scope under D-014. The next phase
-is H plus re-running the validated A/B/C/D ideas through v2; do not tune on
-the 2016–2026 test sample. Do not build a daily C paper-replication branch;
-if revisited, it is a separate pre-registered project. Do not change the
-locked A/C conventions without a new `docs/decisions.md` entry. Keep the
-panels reproducible from the raw CSV and the notebooks.
+original benchmark, and v1/v2 numbers are not directly comparable.
+
+D-017 adds optional hedge-ratio legs, `legs_from_rows` multi-leg targets and
+an optional `resize_key`, and makes B's within-root adjacent-carry ranking a
+narrow exception to D-016's time-series-only rule. D-018 fixes the v2 re-run
+conventions (`d=5`, `k=5`, `min_adv=100`, USD 10m, equal-notional, three-layer
+costs, calendar overrides). The v2 re-runs of A/D/C/C-hedge/B are complete in
+`notebooks/08_v2_rerun.ipynb` and `docs/v1_v2_comparison.md`; they remain
+negative/mixed. E (Nelson–Siegel curve dynamics) is back in scope under
+D-014. The next phase is E and H; do not tune on the 2016–2026 test sample.
+Do not build a daily C paper-replication branch; if revisited, it is a
+separate pre-registered project. Do not change the locked A/C conventions
+without a new `docs/decisions.md` entry. Keep the panels reproducible from
+the raw CSV and the notebooks.
 
 ## Questions / ownership
 

@@ -7,8 +7,9 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 > 这个 repo 是**数据层 + 研究脚手架**。数据层、A baseline、A 负结果诊断、
 > B 预测试、C baseline、C rolling-OLS hedge-ratio、C Kalman variant、
 > D curve-momentum baseline 和 v2 holdings-based 回测框架已完成；
-> A/B/C/D 都是负结果或 mixed-negative。C 和 D 已 closed；下一步是 H，
-> 并把已验证的 A/B/C/D 用 v2 框架重跑一遍。
+> A/B/C/D 都是负结果或 mixed-negative。C 和 D 已 closed。v2 重跑
+> A/D/C/C-hedge/B 已完成（notebook 08），结论仍是 negative/mixed；
+> 下一步是 E（Nelson–Siegel）和 H（holding-period scan）。
 >
 > A/B 的负结果在 **0 bps（不考虑 transaction cost）** 下已经成立；
 > C 的 1:1、rolling OLS 和 Kalman variant 也都不是稳健正的；D 的 gross
@@ -39,15 +40,17 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 - [x] Monthly rebalance engine support
 - [x] v2 holdings-based framework：分层成本（half-spread / fee / impact）、
       horizon 诊断、k sweep、容量曲线；notebook 07
-- [ ] 用 v2 重跑 A/B/C/D 并比较 v1/v2；E（Nelson–Siegel）
-- [ ] H（holding-period scan）；D-x 是 backlog
+- [x] 用 v2 重跑 A/D/C/C-rolling-OLS/C-Kalman/B；notebook 08；
+      v1/v2 对比见 `docs/v1_v2_comparison.md`
+- [ ] E（Nelson–Siegel）；H（holding-period scan）；D-x 是 backlog
 
 `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb`、`02_carry.ipynb`、
 `03_mean_reversion.ipynb`、`04_a_diagnose.ipynb`、`05_b_pretest.ipynb`、
-`06_curve_momentum.ipynb` 和 `07_backtest_framework.ipynb` 已可从头运行；
-01 生成 `data/processed/*.parquet`，02 生成 `output/carry_*`，03 生成
-`output/mean_reversion_*`，04/05 生成诊断和 B 预测试输出，06 生成
-`output/curve_momentum_*`，07 生成 `output/figures/`（都不提交）。
+`06_curve_momentum.ipynb`、`07_backtest_framework.ipynb` 和
+`08_v2_rerun.ipynb` 已可从头运行；01 生成 `data/processed/*.parquet`，
+02 生成 `output/carry_*`，03 生成 `output/mean_reversion_*`，04/05 生成
+诊断和 B 预测试输出，06 生成 `output/curve_momentum_*`，07 生成
+`output/figures/`，08 读取 `output/v2_rerun/`（都不提交）。
 
 **新对话 / 队友先读：** `docs/HANDOFF.md` → `AGENTS.md` → `docs/decisions.md` → `docs/logs/INDEX.md`。
 
@@ -86,12 +89,15 @@ MTH 9897 · Project 7 · Baruch MFE 2026
    notebooks/05_b_pretest.ipynb
    notebooks/06_curve_momentum.ipynb
    notebooks/07_backtest_framework.ipynb
+   notebooks/08_v2_rerun.ipynb
    ```
 
    第二个 notebook 会生成 `data/processed/*.parquet`（不提交到 repo）；
    第三个跑 A baseline，03 跑 C baseline + hedge-ratio，04 跑 A 诊断，
    05 跑 B 预测试，06 跑 D curve-momentum baseline，07 用 v2 框架演示
-   A 的分层成本和 horizon 诊断；结果写到 `output/`（不提交）。
+   A 的分层成本和 horizon 诊断，08 展示 v2 重跑 A/D/C/C-hedge/B 和
+   v1/v2 对照；结果写到 `output/`（不提交）。08 之前先跑
+   `python scripts/run_v2_rerun.py --force`。
 
 ---
 
@@ -107,6 +113,7 @@ docs/
   HANDOFF.md              # 当前状态、关键数字、open questions、下一步
   PROGRESS.md             # 实时进度（给另一个 agent / 队友）
   backtest_framework.md   # 回测框架一页：v1、v2 五层、接口、扩展方式
+  v1_v2_comparison.md     # v1/v2 架构与结果对照、已知限制
   transaction_costs.md    # v2 成本模型：half-spread / fee / impact 与文献
   research_notes.md       # roll / spread 的论文与业界惯例、为什么这样选
   data_dictionary.md      # raw + derived fields + panel schemas
@@ -131,9 +138,12 @@ src/                      # 所有数据处理逻辑（notebook 只调用）
   report.py               # v2 performance / root / capacity tables
   figures.py              # v2 journal-grade figures
   plotstyle.py            # v2 matplotlib style and export
-notebooks/                # 00, 01, 02, 03, 04, 05, 06, 07
+  v2_signals.py           # A/D/C/C-hedge/B adapters to LEG_COLUMNS
+  v2_rerun.py             # v2 rerun orchestration and CSV output
+notebooks/                # 00, 01, 02, 03, 04, 05, 06, 07, 08
 tests/                    # synthetic fixtures + parser/roll/spread/backtest/simulate tests
-scripts/run_all.sh        # 一键复现：依赖 + tests + A/B/C/D + v2 notebook
+scripts/run_all.sh        # 一键复现：依赖 + tests + A/B/C/D + v2 reruns
+scripts/run_v2_rerun.py   # v2 A/D/C/C-hedge/B rerun driver
 
 data/raw/                  # 原始数据（本地；public repo 不提交）
 data/metadata/             # 24 商品元数据 + checksum + contract_specs.csv（提交）
@@ -171,6 +181,12 @@ output/                    # 生成的图/报告（gitignored）
   weekly 仍是默认。
 - **Backtest v2（D-016）：** holdings-based simulator、分层成本、
   horizon / capacity 诊断；v1 保留为 A 的原始 benchmark，两套数字不直接可比。
+- **v2 扩展（D-017）：** optional hedge-ratio legs、`legs_from_rows`
+  多腿目标、`resize_key`；B 的 within-root adjacent-carry 排序是
+  time-series-only 规则的 narrow exception，用 `execution="legs"`。
+- **v2 重跑口径（D-018）：** `d=5`、`k=5`、`min_adv=100`、USD 10m、
+  equal-notional、三层成本；C/D/B 用大 `rebalance_band`；test 是
+  post-hoc slice，不用 test 调参。
 
 详见 `docs/decisions.md`。
 

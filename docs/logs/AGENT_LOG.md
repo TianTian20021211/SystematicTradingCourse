@@ -1985,3 +1985,39 @@ Kalman and B.
 **Commit:** `feat(v2): run A/D/C/C-hedge/B and add notebook 08`
 
 **Next:** Write the v1/v2 comparison doc and update status docs.
+
+---
+
+## LOG-0045 · 2026-10-19 23:10 · Phase 9e · Claude Code
+
+**Goal:** Document the v1/v2 comparison and close out the v2 re-run phase.
+
+**Actions:**
+- Added `docs/v1_v2_comparison.md` with the architecture table, v1 vs v2
+  results, adapter mapping, fixed bugs and remaining caveats.
+- Updated `docs/backtest_framework.md` for hedge_ratio, legs_from_rows,
+  resize_key, full-calendar annualization, adapters and D-017/D-018.
+- Updated `docs/data_dictionary.md` §10.4b for the v2 leg schema.
+- Updated README/AGENTS/HANDOFF/PROGRESS/onboarding for notebook 08,
+  D-017/D-018 and the negative/mixed results.
+- No push.
+
+**Files changed:** `docs/v1_v2_comparison.md`, `docs/backtest_framework.md`,
+`docs/data_dictionary.md`, `docs/HANDOFF.md`, `docs/PROGRESS.md`,
+`docs/onboarding.md`, `README.md`, `AGENTS.md`, `docs/logs/*`
+
+**Commands:**
+- `git diff --check` → clean
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 117 passed
+
+**Why:** Close out the v2 re-run phase and give the next agent a single
+comparison reference.
+
+**Validation:**
+- Results in the doc match `output/v2_rerun/comparison.csv`.
+- Notebooks 07/08 have no error outputs.
+- No locked conventions changed; D-017/D-018 are pre-registered.
+
+**Commit:** `docs(v2): record v1/v2 comparison and close out reruns`
+
+**Next:** E (Nelson–Siegel); H; no push.

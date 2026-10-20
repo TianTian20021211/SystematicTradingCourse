@@ -37,9 +37,10 @@ end-of-phase snapshot remains `docs/HANDOFF.md`; decisions are in
 | Monthly rebalance engine | done | `last_trading_day_of_month`; weekly default unchanged |
 | Daily rebalance engine | done | D-015; `rebalance="daily"`; weekly default unchanged |
 | Backtest v2 framework | done / merged | holdings-based, layered costs, horizon, capacity; D-016 |
+| v2 re-runs A/D/C/C-hedge/B | done | notebook 08; full-sample results negative/mixed; D-018 |
 | E (Nelson–Siegel) | pending | back in scope under D-014 |
-| Tests | done | 101 passed after the v2 merge |
-| Notebooks | done | `02_carry`, `03_mean_reversion`, `04_a_diagnose`, `05_b_pretest`, `06_curve_momentum`, `07_backtest_framework` |
+| Tests | done | 117 passed |
+| Notebooks | done | `02_carry`, `03_mean_reversion`, `04_a_diagnose`, `05_b_pretest`, `06_curve_momentum`, `07_backtest_framework`, `08_v2_rerun` |
 
 ---
 
@@ -306,7 +307,8 @@ part of D and has not been implemented.
 - `src/b_pre_test.py` — cheap adjacent-carry B pre-test
 - v2: `src/specs.py`, `src/marks.py`, `src/sizing.py`, `src/costs.py`,
   `src/simulate.py`, `src/horizon.py`, `src/report.py`, `src/figures.py`,
-  `src/plotstyle.py`
+  `src/plotstyle.py`, `src/v2_signals.py`, `src/v2_rerun.py`
+- `scripts/run_v2_rerun.py`
 - `tests/test_eligibility.py`, `tests/test_signals.py`,
   `tests/test_curve_momentum.py`, `tests/test_backtest.py`,
   `tests/test_continuous.py`, `tests/test_kalman.py`,
@@ -314,9 +316,10 @@ part of D and has not been implemented.
   `tests/test_simulate.py`
 - `notebooks/02_carry.ipynb`, `notebooks/03_mean_reversion.ipynb`,
   `notebooks/04_a_diagnose.ipynb`, `notebooks/05_b_pretest.ipynb`,
-  `notebooks/06_curve_momentum.ipynb`, `notebooks/07_backtest_framework.ipynb`
+  `notebooks/06_curve_momentum.ipynb`, `notebooks/07_backtest_framework.ipynb`,
+  `notebooks/08_v2_rerun.ipynb`
 - `docs/a_negative_result.md`, `docs/b_pretest.md`,
-  `docs/transaction_costs.md`
+  `docs/transaction_costs.md`, `docs/v1_v2_comparison.md`
 - `docs/backtest_framework.md`, `docs/data_dictionary.md` §10
 
 ---
@@ -337,12 +340,16 @@ jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=1800 notebooks/06_curve_momentum.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=1800 notebooks/07_backtest_framework.ipynb
+python scripts/run_v2_rerun.py --strategies a,d,c,c_ols,c_kalman,b --force
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=900 notebooks/08_v2_rerun.ipynb
 ```
 
 Notebook 02 produces the `output/carry_*` tables; 03 produces
 `output/mean_reversion_*`; 04 loads `output/carry_full_*` and writes the
 diagnosis tables; 05 writes `output/b_pretest_summary.csv`; 06 writes
-`output/curve_momentum_*`; 07 writes `output/figures/`. All outputs are
+`output/curve_momentum_*`; 07 writes `output/figures/`; the rerun script
+writes `output/v2_rerun/*.csv` and 08 reads them. All outputs are
 gitignored.
 
 ---
@@ -355,15 +362,14 @@ gitignored.
    pre-registered project.
 3. D is closed as documented negative/mixed; do not tune it on the test set.
    `D-x` (cross-sectional basis-momentum) is a separate backlog item.
-4. Backtest v2 is merged; re-run the validated A/B/C/D ideas through v2 and
-   compare v1/v2 by construction (rebalance, pair rule, costs, denominator),
-   not in a single mixed table.
-5. H (holding-period scan) is next; monthly engine support is ready.
-   E (Nelson–Siegel curve dynamics) is back in scope under D-014.
+4. Backtest v2 re-runs of A/D/C/C-hedge/B are complete in notebook 08;
+   results remain negative/mixed. Do not tune on the v2 numbers.
+5. E (Nelson–Siegel curve dynamics) is back in scope under D-014.
+6. H (holding-period scan) is next; monthly engine support is ready.
    Robustness (liquidity buckets, tick-based cost, dollar P&L, point-in-time
    D=10 proxy) only if needed for the final report; it is not an attempt to
    rescue A/B/C/D.
-6. No report has been written yet; A/B/C/D are documented as negative or
+7. No report has been written yet; A/B/C/D are documented as negative or
    mixed-negative baselines.
 
 ---
@@ -391,5 +397,19 @@ gitignored.
   rebalance) and D-016 (v2); D-013 remains the D baseline.
 - `src/backtest.py` now supports weekly, monthly and daily rebalance through
   one dispatcher; v1 behavior is otherwise unchanged.
-- 101 tests pass after the merge.
+- 101 tests passed after the merge.
 - Next: re-run A/B/C/D through v2; then H and E.
+
+---
+
+## v2 re-runs (A/D/C/C-hedge/B)
+
+- D-017/D-018 pre-registered before any result was produced.
+- `src/v2_signals.py` adapters and `src/v2_rerun.py` driver added.
+- Full-sample gross → all-in net: A −0.48% → −2.61%; D +0.22% → −1.42%;
+  C 1:1 +0.61% → −3.70%; C OLS +0.12% → −3.06%; C Kalman +0.61% → −6.10%;
+  B −1.13% → −4.47%.
+- Test gross: D −0.21%, B −1.23%, C OLS −0.01%; C +0.16%, C Kalman +0.98%.
+- Results are v2-native and not directly comparable with v1; see
+  `docs/v1_v2_comparison.md` and `notebooks/08_v2_rerun.ipynb`.
+- 117 tests pass; no push.

@@ -346,6 +346,30 @@ Construction:
 | `target` | Signal target |
 | `hedge_ratio` | Optional; far units = `−target × hedge_ratio`; absent for the 1:1 baseline |
 
+### 10.4b v2 leg targets (`sizing.LEG_COLUMNS`)
+
+`src.sizing.legs_from_signal()` and `src.sizing.legs_from_rows()` return:
+
+| Column | Description |
+|---|---|
+| `date`, `root` | Signal keys |
+| `group_id` | Pair label (`root_near_far`) or explicit multi-leg label |
+| `contract` | Actual contract code; NaN for an explicit flat row |
+| `units` | Contract ratio; sign = direction |
+| `budget` | Group gross notional as a fraction of capital; 0 for flat |
+| `target` | Signal target; 0 for flat |
+| `resize_key` | Optional extra on_change key; `_h{round(h, 6)}` for hedge-ratio signals, a contract/units composition hash for `legs_from_rows`, `""` otherwise |
+
+- An optional `hedge_ratio` column on the signal replaces the default leg
+  ratio: near units = `sign(target)`, far units = `−sign(target) × h`.
+  Invalid/non-positive h produces an explicit flat row.
+- A missing leg row means "keep holdings"; `group_id="flat"`,
+  `contract=NaN`, `units=0`, `budget=0`, `target=0` means "exit".
+- `legs_from_rows` requires one non-flat group per `(date, root)`, nets
+  duplicate contracts, and rejects mixed flat/active rows.
+- `SimResult.calendar` is the union marks calendar; `daily` is reindexed to
+  it and flat days are zero-filled.
+
 ### 10.5 `BacktestResult`
 
 - `positions`: date, root, commodity, sector, group_id, contract, units, mark,
