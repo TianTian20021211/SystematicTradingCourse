@@ -1606,6 +1606,6 @@ Paper timing on the paper sample: 3.55%/yr, Sharpe 2.03; tradable: −0.18%/yr
 
 **Validation:** see D-018 numbers.
 
-**Commit:** `feat(nelson-siegel): fit significance, paper-timing costs, Kalman A/B`
+**Commit:** `feat(nelson-siegel): fit significance, paper-timing costs, Kalman A/B` (`aa28cd6`)
 
 **Next:** merge into main; D (curve momentum).
