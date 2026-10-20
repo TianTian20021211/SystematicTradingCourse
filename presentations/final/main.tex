@@ -130,7 +130,7 @@
 \section{Setup}
 
 \begin{frame}{Project 7: what we study}
-\begin{columns}[T, onlytextwidth]
+\begin{columns}[c, onlytextwidth]
 \begin{column}{0.55\textwidth}
 \footnotesize
 \begin{itemize}
@@ -163,71 +163,71 @@
 \begin{table}
 \scriptsize
 \renewcommand{\arraystretch}{0.9}
-\setlength{\tabcolsep}{4pt}
-\begin{minipage}[t]{0.485\textwidth}
+\setlength{\tabcolsep}{2.4pt}
+\begin{minipage}[t]{0.495\textwidth}
 \vspace{0pt}
 \centering
-\begin{tabular}{@{}l L{2.85cm} l c@{}}
+\begin{tabular}{@{}l l l c c c@{}}
 \toprule
-Code & Underlying & Exchange & Sample \\
+Code & Underlying & Exch. & Since & Delivery & Months \\
 \midrule
-\multicolumn{4}{@{}l}{\color{navy}\textbf{Energy}} \\
-CL & WTI crude oil & NYMEX & 1986--2026 \\
-CO & Brent crude oil & ICE & 1988--2026 \\
-HO & Heating oil (ULSD) & NYMEX & 1986--2026 \\
-NG & Natural gas (Henry Hub) & NYMEX & 1990--2026 \\
-XB & RBOB gasoline & NYMEX & 2005--2026 \\
+\multicolumn{6}{@{}l}{\color{navy}\textbf{Energy}} \\
+CL & WTI crude oil & NYMEX & 1986 & physical & 12 \\
+CO & Brent crude oil & ICE & 1988 & cash & 12 \\
+HO & Heating oil (ULSD) & NYMEX & 1986 & physical & 12 \\
+NG & Natural gas & NYMEX & 1990 & physical & 12 \\
+XB & RBOB gasoline & NYMEX & 2005 & physical & 12 \\
 \midrule
-\multicolumn{4}{@{}l}{\color{navy}\textbf{Grains}} \\
-C & Corn & CBOT & 1986--2026 \\
-O & Oats & CBOT & 1986--2026 \\
-RR & Rough rice & CBOT & 1988--2026 \\
-W & Wheat (Chicago SRW) & CBOT & 1986--2026 \\
+\multicolumn{6}{@{}l}{\color{navy}\textbf{Grains}} \\
+C & Corn & CBOT & 1986 & physical & 5 \\
+O & Oats & CBOT & 1986 & physical & 5 \\
+RR & Rough rice & CBOT & 1988 & physical & 6 \\
+W & Wheat (SRW) & CBOT & 1986 & physical & 5 \\
 \midrule
-\multicolumn{4}{@{}l}{\color{navy}\textbf{Oilseeds}} \\
-BO & Soybean oil & CBOT & 1986--2026 \\
-S & Soybeans & CBOT & 1986--2026 \\
-SM & Soybean meal & CBOT & 1986--2026 \\
+\multicolumn{6}{@{}l}{\color{navy}\textbf{Oilseeds}} \\
+BO & Soybean oil & CBOT & 1986 & physical & 8 \\
+S & Soybeans & CBOT & 1986 & physical & 7 \\
+SM & Soybean meal & CBOT & 1986 & physical & 8 \\
 \bottomrule
 \end{tabular}
 \end{minipage}\hfill
-\begin{minipage}[t]{0.485\textwidth}
+\begin{minipage}[t]{0.495\textwidth}
 \vspace{0pt}
 \centering
-\begin{tabular}{@{}l L{2.85cm} l c@{}}
+\begin{tabular}{@{}l l l c c c@{}}
 \toprule
-Code & Underlying & Exchange & Sample \\
+Code & Underlying & Exch. & Since & Delivery & Months \\
 \midrule
-\multicolumn{4}{@{}l}{\color{navy}\textbf{Softs}} \\
-CC & Cocoa & ICE US & 1986--2026 \\
-JO & Orange juice (FCOJ) & ICE US & 1986--2026 \\
-KC & Coffee C (arabica) & ICE US & 1986--2026 \\
-SB & Sugar No.~11 & ICE US & 1986--2026 \\
+\multicolumn{6}{@{}l}{\color{navy}\textbf{Softs}} \\
+CC & Cocoa & ICE US & 1986 & physical & 5 \\
+JO & Orange juice & ICE US & 1986 & physical & 6 \\
+KC & Coffee (arabica) & ICE US & 1986 & physical & 5 \\
+SB & Sugar No.~11 & ICE US & 1986 & physical & 4 \\
 \midrule
-\multicolumn{4}{@{}l}{\color{navy}\textbf{Industrials}} \\
-CT & Cotton No.~2 & ICE US & 1986--2026 \\
-LB & Random-length lumber & CME & 1986--2023 \\
+\multicolumn{6}{@{}l}{\color{navy}\textbf{Industrials}} \\
+CT & Cotton No.~2 & ICE US & 1986 & physical & 5 \\
+LB & Lumber & CME & 1986 & physical & 6 \\
 \midrule
-\multicolumn{4}{@{}l}{\color{navy}\textbf{Livestock}} \\
-FC & Feeder cattle & CME & 1986--2026 \\
-LC & Live cattle & CME & 1986--2026 \\
-LH & Lean hogs & CME & 1986--2026 \\
+\multicolumn{6}{@{}l}{\color{navy}\textbf{Livestock}} \\
+FC & Feeder cattle & CME & 1986 & cash & 8 \\
+LC & Live cattle & CME & 1986 & physical & 6 \\
+LH & Lean hogs & CME & 1986 & cash & 8 \\
 \midrule
-\multicolumn{4}{@{}l}{\color{navy}\textbf{Metals}} \\
-GC & Gold & COMEX & 1986--2026 \\
-HG & Copper & COMEX & 1988--2026 \\
-SI & Silver & COMEX & 1986--2026 \\
+\multicolumn{6}{@{}l}{\color{navy}\textbf{Metals}} \\
+GC & Gold & COMEX & 1986 & physical & 6 \\
+HG & Copper & COMEX & 1988 & physical & 5 \\
+SI & Silver & COMEX & 1986 & physical & 5 \\
 \bottomrule
 \end{tabular}
 \end{minipage}
-\caption{The 24 commodities. Daily settlement, volume, open interest and generic
-ticker for ranks M1--M4 (slots, not contracts), 1986-01-02 to 2026-10-13.}
+\caption{The 24 commodities, daily M1--M4 settlement, volume, open interest and generic
+ticker to 2026-10-13 (LB to 2023). Months: contract months per year used by the M1--M4 roll.}
 \end{table}
 \end{frame}
 
 % =====================================================================
 \begin{frame}{From slots to contracts: the panel}
-\begin{columns}[T, onlytextwidth]
+\begin{columns}[c, onlytextwidth]
 \begin{column}{0.55\textwidth}
 \footnotesize
 \begin{itemize}
@@ -385,7 +385,7 @@ A and B are convergence designs, C to E are paper-based. The final section combi
 \section{A: Spread convergence}
 
 \begin{frame}{A \textperiodcentered\ Spread convergence: the idea}
-\begin{columns}[T, onlytextwidth]
+\begin{columns}[c, onlytextwidth]
 \begin{column}{0.55\textwidth}
 \footnotesize
 \begin{itemize}
@@ -442,7 +442,7 @@ Test 2016--2026 & $+0.46$ & $0.51$ & $1.58$ & $0.84$ \\
 \caption{A by period. Gross only, 0.5$\times$ equal notional, costs deferred to the portfolio.}
 \end{table}
 \vspace{-1ex}
-\begin{columns}[T, onlytextwidth]
+\begin{columns}[c, onlytextwidth]
 \begin{column}{0.54\textwidth}
 \begin{figure}
 \centering
@@ -494,7 +494,7 @@ Test 2016--2026 & $+0.46$ & $0.51$ & $1.58$ & $0.84$ \\
 \section{B: Curve relative value convergence}
 
 \begin{frame}{B \textperiodcentered\ Curve relative value convergence: the idea}
-\begin{columns}[T, onlytextwidth]
+\begin{columns}[c, onlytextwidth]
 \begin{column}{0.55\textwidth}
 \footnotesize
 \begin{itemize}
@@ -596,7 +596,7 @@ is a stability slice, not out of sample.}
 
 \begin{frame}{C \textperiodcentered\ Spread mean reversion: the idea}
 \paperref{lubnau2015trading}
-\begin{columns}[T, onlytextwidth]
+\begin{columns}[c, onlytextwidth]
 \begin{column}{0.56\textwidth}
 \footnotesize
 \begin{itemize}
@@ -713,7 +713,7 @@ CL $-0.26$, NG $+0.31$.}
 \section{D: Curve momentum}
 
 \begin{frame}{D \textperiodcentered\ Curve momentum: the trade idea}
-\begin{columns}[T, onlytextwidth]
+\begin{columns}[c, onlytextwidth]
 \begin{column}{0.57\textwidth}
 \footnotesize
 \begin{itemize}
@@ -834,7 +834,7 @@ Placebo & block shuffle $p<0.001$, lag-1m IC $0.016$, future-score lead $0.028$ 
 \begin{frame}{E \textperiodcentered\ Term-structure trading with Nelson--Siegel factors}
 \paperref{bianchi2023exploiting}
 \vspace{-0.8ex}
-\begin{columns}[T, onlytextwidth]
+\begin{columns}[c, onlytextwidth]
 \begin{column}{0.57\textwidth}
 \footnotesize
 \begin{itemize}
@@ -984,7 +984,7 @@ LOO $R^2$ (bottom), paper $\lambda$, 1986--2026.}
 
 \begin{frame}{E$^{*}$ \textperiodcentered\ Can a Kalman filter stabilize the betas?}
 \footnotesize
-\begin{columns}[T, onlytextwidth]
+\begin{columns}[c, onlytextwidth]
 \begin{column}{0.47\textwidth}
 \begin{itemize}
   \item Four prices pin down three betas, and $\lambda$ is chosen too, so the
@@ -1069,7 +1069,7 @@ the direction.}
 
 \begin{frame}{Is an alpha informative? Time-series IC with a day-block bootstrap}
 \footnotesize
-\begin{columns}[T, onlytextwidth]
+\begin{columns}[c, onlytextwidth]
 \begin{column}{0.55\textwidth}
 \textbf{Metric}: rank IC of alpha $a$ with the spread return over the next
 $h$ days, per commodity $r$ over time, then averaged
@@ -1332,7 +1332,7 @@ and only 1/24 has a positive 95\% CI.}
 \end{frame}
 
 \begin{frame}{Appendix: where does the 22-day ridge book earn?}
-\begin{columns}[T, onlytextwidth]
+\begin{columns}[c, onlytextwidth]
 \begin{column}{0.47\textwidth}
 \begin{table}
 \centering

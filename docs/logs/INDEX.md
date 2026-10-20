@@ -83,3 +83,4 @@
 | LOG-0079 | 2026-10-20 | Phase 15 | Claude Code | Final deck roadmap and conclusion: E and combined-alpha rows (branch jiaheng/final-deck, merge with Tian later) | presentations/final/main.tex, docs/logs/* | `faeff26` |
 | LOG-0080 | 2026-10-20 | Phase 15 | Claude Code | Merge Tian A-D deck with jiaheng/final-deck by user rules (formatting, slides 3/6, E onwards from Jiaheng); A figures redrawn | presentations/final/*, scripts/make_slide_figures.py, docs/logs/* | `bc93057` |
 | LOG-0081 | 2026-10-20 | Phase 15 | Claude Code | Final deck: Backup renamed Appendix, appendix slide on 22-day ridge book by contract months and settlement, title date | presentations/final/*, scripts/make_slide_tables.py, docs/logs/* | `ac436c3` |
+| LOG-0082 | 2026-10-20 | Phase 15 | Claude Code | Final deck: center figure/text columns, Table 1 delivery type and contracts per year | presentations/final/main.tex, docs/logs/* | this commit |

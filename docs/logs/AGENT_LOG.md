@@ -3634,3 +3634,21 @@ Brent Index with optional EFP delivery (ICE product guide); FC and LH are cash
 settled against CME indices.
 
 **Commit:** `feat(slides): appendix on contract structure and settlement, title date` (`ac436c3`).
+
+---
+
+## LOG-0082 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Final deck layout: vertically center two-column slides that pair a
+figure or table with text, and add delivery type and contracts per year to
+Table 1.
+
+**What changed:** `presentations/final/main.tex`: eleven `columns`
+environments with one float column switched from top to center alignment;
+Table 1 gains "Delivery" (CO, FC, LH cash, others physical) and "Months"
+(contract months per year used by the M1–M4 roll) columns, "Since" replaces
+"Sample", and long underlying names are shortened.
+
+**Validation / results:** deck compiles, Table 1 fits, no new overflow.
+
+**Commit:** `style(slides): center figure-text columns, delivery and months in Table 1` (`this commit`).
