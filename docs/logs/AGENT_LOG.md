@@ -3727,4 +3727,4 @@ half-lives 5, 21, 63 days); `--corr` draws only these two.
 combined forecast peaks near h = 42 in validation (0.12) and falls to 0.04 at
 252. Both slides fit.
 
-**Commit:** `feat(slides): alpha correlation and IC-horizon slides` (this commit).
+**Commit:** `feat(slides): alpha correlation and IC-horizon slides` (`97efde8`).

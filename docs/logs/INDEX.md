@@ -87,4 +87,4 @@
 | LOG-0083 | 2026-10-20 | Phase 15 | Claude Code | Final deck: plain-language engine slide, internal notation removed, eligibility matches backtests | presentations/final/*, scripts/make_slide_tables.py, docs/logs/* | `04308b8` |
 | LOG-0084 | 2026-10-20 | Phase 15 | Claude Code | Final deck: drop the A-D capital figure (gross is capital-free) | presentations/final/main.tex, docs/logs/* | `cf94110` |
 | LOG-0085 | 2026-10-20 | Phase 15 | Claude Code | Final deck: alpha slide notation, back-references and family descriptions | presentations/final/main.tex, docs/logs/* | `b164d3b` |
-| LOG-0086 | 2026-10-20 | Phase 15 | Claude Code | Final deck: alpha correlation matrix and IC-horizon slides | presentations/final/*, scripts/make_slide_figures.py, docs/logs/* | this commit |
+| LOG-0086 | 2026-10-20 | Phase 15 | Claude Code | Final deck: alpha correlation matrix and IC-horizon slides | presentations/final/*, scripts/make_slide_figures.py, docs/logs/* | `97efde8` |
