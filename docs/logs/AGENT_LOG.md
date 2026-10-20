@@ -1306,3 +1306,43 @@ the A/B close-out.
 **Commit:** `merge: integrate idea C baselines`
 
 **Next:** D/H; C closed.
+
+---
+
+## LOG-0028 · 2026-10-19 20:34 · Phase 8a · Claude Code
+
+**Goal:** Add monthly rebalance support and the curve-momentum /
+basis-momentum signal for idea D.
+
+**Actions:**
+- Added `curve.monthly_rebalance_dates` (last trading day of each calendar
+  month, holiday fallback), shared by engine and signal.
+- Extended `BacktestConfig.rebalance` and `_Engine` to support
+  `last_trading_day_of_month`; the weekly default is unchanged.
+- Added `CurveMomentumParams`, `_rank_return_index`, and
+  `curve_momentum_signal` to `src/signals.py`.
+- Added synthetic tests for the signal and monthly calendar.
+
+**Files changed:**
+- `src/curve.py`, `src/backtest.py`, `src/signals.py`
+- `tests/test_backtest.py`, `tests/test_curve_momentum.py`
+
+**Commands:**
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 80 passed
+- Real-data signal smoke test: 243,699 rows; 11,310 signal dates;
+  target counts +1 123,221 / −1 112,924 / 0 7,554.
+
+**Why:** D needs a 12-month rank-slot momentum signal and monthly
+rebalancing; the monthly calendar is reusable for H.
+
+**Validation:**
+- Weekly default is unchanged (equivalence test).
+- Signal tests cover roll-adjusted compounding, min observations, negative
+  prices, forward-fill, missing-month reset, mid-month pair changes, and
+  no look-ahead.
+- CL 2020-04-20 invalidates the 12-month windows; the signal recovers after
+  the window rolls past the event.
+
+**Commit:** `feat(curve-momentum): add monthly engine and basis-momentum signal`
+
+**Next:** Add the D baseline notebook and run the full-sample diagnostics.

@@ -344,6 +344,66 @@ def test_weekly_rebalance_dates_holiday_fallback() -> None:
     assert curve.weekly_rebalance_dates(days) == {pd.Timestamp("2020-12-24")}
 
 
+def test_monthly_rebalance_dates_match_legacy_expression() -> None:
+    days = pd.bdate_range("2020-01-01", periods=90)
+    series = pd.Series(days)
+    expected = set(
+        pd.to_datetime(
+            series.groupby(series.dt.to_period("M")).max()
+        ).tolist()
+    )
+    assert curve.monthly_rebalance_dates(days) == expected
+
+
+def test_monthly_rebalance_dates_holiday_fallback() -> None:
+    days = pd.DatetimeIndex(
+        [
+            day
+            for day in pd.bdate_range("2020-12-28", "2020-12-31")
+            if day != pd.Timestamp("2020-12-31")
+        ]
+    )
+    assert curve.monthly_rebalance_dates(days) == {pd.Timestamp("2020-12-30")}
+
+
+def test_monthly_rebalance_runs_and_trades() -> None:
+    pair, contract, _signal, targets = _case(n=45)
+    result = backtest.run_backtest(
+        pair,
+        contract,
+        targets,
+        backtest.BacktestConfig(
+            start_date="2020-01-01",
+            end_date="2020-03-05",
+            rebalance="last_trading_day_of_month",
+        ),
+    )
+    assert not result.trades.empty
+    assert result.trades["date"].min() == pd.Timestamp("2020-02-03")
+
+
+def test_weekly_default_is_unchanged() -> None:
+    pair, contract, _signal, targets = _case(n=45)
+    default = backtest.run_backtest(
+        pair,
+        contract,
+        targets,
+        backtest.BacktestConfig(end_date="2020-03-05"),
+    )
+    explicit = backtest.run_backtest(
+        pair,
+        contract,
+        targets,
+        backtest.BacktestConfig(
+            end_date="2020-03-05",
+            rebalance="last_trading_day_of_week",
+        ),
+    )
+    pd.testing.assert_frame_equal(
+        default.portfolio_returns, explicit.portfolio_returns
+    )
+
+
 def test_config_guards() -> None:
     pair, contract, _signal, targets = _case()
     with pytest.raises(ValueError):

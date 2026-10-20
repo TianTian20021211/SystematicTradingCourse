@@ -26,6 +26,18 @@ def weekly_rebalance_dates(trading_days: pd.DatetimeIndex) -> set[pd.Timestamp]:
     return set(pd.to_datetime(series.groupby(periods).max()).tolist())
 
 
+def monthly_rebalance_dates(trading_days: pd.DatetimeIndex) -> set[pd.Timestamp]:
+    """Last trading day of each calendar month (holiday fallback).
+
+    Shared by the backtest engine and the signal layer so that a monthly signal
+    is evaluated on exactly the dates the engine uses for rebalancing.
+    """
+
+    series = pd.Series(pd.to_datetime(trading_days))
+    periods = series.dt.to_period("M")
+    return set(pd.to_datetime(series.groupby(periods).max()).tolist())
+
+
 def add_contract_calendar(
     contract_panel: pd.DataFrame,
     trading_days: pd.DatetimeIndex | None = None,
