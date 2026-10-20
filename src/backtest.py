@@ -140,6 +140,25 @@ def build_target_legs(
     ).reset_index(drop=True)
 
 
+REBALANCE_RULES = ("last_trading_day_of_week", "daily")
+
+
+def _rebalance_dates(
+    trading_days: pd.DatetimeIndex, rule: str
+) -> set[pd.Timestamp]:
+    """Dates on which the signal is allowed to change the position.
+
+    ``daily`` uses every trading day; ``last_trading_day_of_week`` uses the
+    weekly schedule. Pair changes trigger a roll on any day under either rule.
+    """
+
+    if rule == "daily":
+        return set(pd.to_datetime(trading_days).tolist())
+    if rule == "last_trading_day_of_week":
+        return curve.weekly_rebalance_dates(trading_days)
+    raise ValueError(f"rebalance must be one of {REBALANCE_RULES}, got {rule!r}")
+
+
 def _pair_lookup(pair_panel: pd.DataFrame) -> dict[tuple[Any, Any], tuple[Any, Any]]:
     """Map (date, root) to (contract_near, contract_far)."""
 
@@ -235,7 +254,7 @@ class _Engine:
             self.trading_days = self.trading_days[
                 self.trading_days <= pd.Timestamp(config.end_date)
             ]
-        self.rebalance_dates = curve.weekly_rebalance_dates(self.trading_days)
+        self.rebalance_dates = _rebalance_dates(self.trading_days, config.rebalance)
 
         self._targets = self._index_targets(target_legs)
         contracts = set()
@@ -726,9 +745,9 @@ def run_backtest(
     cfg = config or BacktestConfig()
     if cfg.execution_lag != 1:
         raise ValueError("Only execution_lag=1 is supported for now")
-    if cfg.rebalance != "last_trading_day_of_week":
+    if cfg.rebalance not in REBALANCE_RULES:
         raise ValueError(
-            "Only rebalance='last_trading_day_of_week' is supported for now"
+            f"rebalance must be one of {REBALANCE_RULES}, got {cfg.rebalance!r}"
         )
     if cfg.return_denominator != "gross_notional":
         raise ValueError(

@@ -1306,3 +1306,280 @@ the A/B close-out.
 **Commit:** `merge: integrate idea C baselines`
 
 **Next:** D/H; C closed.
+
+
+## LOG-0028 · 2026-10-19 · Phase 6 · Claude Code
+
+**Goal:** Record the C/E ownership split and let the engine rebalance daily,
+which C (Lubnau & Todorova) and E (Bianchi et al.) need.
+
+**Actions:**
+- Added D-013 (Tian: A, D; Jiaheng: C, E; Nelson–Siegel back in scope) and
+  D-014 (daily rebalance option) to `docs/decisions.md`.
+- Added `REBALANCE_RULES` and `_rebalance_dates` to `src/backtest.py`;
+  `BacktestConfig(rebalance="daily")` now rebalances on every trading day.
+  The default stays weekly.
+- Updated the config guard test and added two daily-rebalance tests.
+- Updated the config section of `docs/backtest_framework.md`.
+
+**Files changed:**
+- `src/backtest.py` — rebalance dispatcher, config guard
+- `tests/test_backtest.py` — `rebalance` arg in `_run`, two new tests
+- `docs/decisions.md` — D-013, D-014
+- `docs/backtest_framework.md` — supported rebalance values
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 34 passed
+
+**Why:** Weekly rebalancing would change C (daily band entries/exits, 2–21 day
+holds) and E (1-day holds) instead of reproducing them.
+
+**Validation:**
+- Daily: a Wednesday signal fills Thursday; a constant target trades once.
+- A flip on Monday fills Tuesday under daily and the following Monday under
+  weekly.
+- All pre-existing tests unchanged and passing; A defaults untouched.
+
+**Commit:** `feat(backtest): add holdings-based v2 framework with layered costs` (`0b3d947`, includes the daily rebalance option)
+
+**Next:** plan and implement the C and E signal modules on the shared engine.
+
+## LOG-0029 · 2026-10-19 · Phase 7 · Claude Code
+
+**Goal:** Rebuild the backtest framework so costs are layered (half-spread,
+fees, impact), scale with capital, and signals can be diagnosed across
+horizons; demonstrate on idea A.
+
+**Actions:**
+- Read the cost and position-construction sections of Paschke et al.,
+  Lubnau & Todorova and Bianchi et al.; searched literature on futures
+  bid-ask spreads (Wang, Garcia & Irwin), fees (Gao et al.) and square-root
+  impact (Tóth et al.). Summary in `docs/transaction_costs.md`.
+- Added `data/metadata/contract_specs.csv` (point value, tick in Bloomberg
+  quote units) and v2 modules `src/specs.py`, `marks.py`, `sizing.py`,
+  `costs.py`, `simulate.py`, `horizon.py`, `report.py`.
+- Added `notebooks/03_backtest_framework.ipynb` (calls only) and added it to
+  `scripts/run_all.sh`; D-015 in `docs/decisions.md`.
+- Fixed issues found on real data: CL/CO/NG legs expiring inside the holding
+  window (use `d=5` pairs + expiry exits); missing volume treated as zero
+  liquidity (impute root median ADV); missing signal treated as flat (now
+  hold); 1/N collapsing on exchange holidays (5-day max N); one-lot orders
+  charged square-root impact (first lot impact free).
+
+**Files changed:**
+- `src/specs.py`, `src/marks.py`, `src/sizing.py`, `src/costs.py`,
+  `src/simulate.py`, `src/horizon.py`, `src/report.py` — new
+- `tests/test_simulate.py` — new (16 tests)
+- `data/metadata/contract_specs.csv`, `docs/transaction_costs.md`,
+  `notebooks/03_backtest_framework.ipynb` — new
+- `docs/decisions.md`, `docs/backtest_framework.md`, `scripts/run_all.sh`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 50 passed
+- `python -m nbconvert --execute --to notebook --inplace --ExecutePreprocessor.timeout=900 notebooks/03_backtest_framework.ipynb` → OK (~70 s)
+
+**Why:** Replication of C/D/E needs daily trading, non-1:1 legs, cost
+attribution and capacity; signal quality should be visible before execution.
+
+**Validation:**
+- Synthetic tests: t+1 fill / t+2 first P&L, flip size, blocked fills,
+  expiry and forced exits, lossless P&L across gaps, spread execution halves
+  the half-spread, square-root impact and impact-free first lot, k smoothing,
+  fixed-pair forward returns, Newey-West, capacity re-costing = re-simulation.
+- Carry (A), USD 10m, ADV >= 100: gross −0.48%/yr, − half-spread −0.84%,
+  − fees −1.00%, − impact −2.61%; turnover 26x/yr. Signed forward return is
+  negative at every horizon (t_NW −2.7 to −4.6); cross-sectional rank IC of
+  annualised carry −0.031 (t_NW −6.2). Consistent with LOG-0012.
+
+**Commit:** `feat(backtest): add holdings-based v2 framework with layered costs` (`0b3d947`)
+
+**Next:** implement C/D/E signal functions on v2; calibrate `min_adv` and
+impact volatility (leg vs spread) as robustness.
+
+## LOG-0030 · 2026-10-19 · Phase 7b · Claude Code
+
+**Goal:** Remove cross-sectional diagnostics (all strategies are time series)
+and add liquidity-aware sizing.
+
+**Actions:**
+- `src/horizon.py`: replaced the cross-sectional rank IC and date-wise bins
+  with `ts_ic` (per-root Spearman over time, NW t on standardised rank
+  products), `rolling_ts_ic`, and `bin_returns` on each root's expanding
+  (ex-ante) score percentile.
+- `src/sizing.py`: `attach_leg_liquidity` adds `dollar_adv` (thinner leg);
+  `scheme="liquidity"` sizes by dollar_ADV ** alpha; equal stays default.
+- `src/report.py`: `plot_ts_ic`, `plot_capacity_compare`,
+  `impact_bps_of_book` in `root_table`.
+- Notebook 03: time-series IC/bins, new section 8 comparing equal vs
+  liquidity sizing; D-015 and `docs/transaction_costs.md` updated.
+
+**Files changed:** `src/horizon.py`, `src/sizing.py`, `src/report.py`,
+`tests/test_simulate.py`, `notebooks/03_backtest_framework.ipynb`,
+`docs/decisions.md`, `docs/transaction_costs.md`, `docs/logs/*`
+
+**Commands:**
+- `python -m pytest -q` → 52 passed
+- notebook 03 executed top to bottom
+
+**Why:** Settlement times differ across exchanges and the cross-section is
+~20 markets; equal notional lets the thinnest markets set capacity.
+
+**Validation:** Carry, USD 10m: mean per-root time-series IC −0.049 (18 of 24
+roots negative); own-history quintile 1 +4.8 bps vs quintile 5 −2.7 bps over
+t+1 -> t+6. Liquidity sizing (alpha 0.5): impact drag 161 -> 85 bps/yr,
+net −2.61% -> −1.62%/yr; O participation 6.3% -> 0.4%.
+
+**Commit:** `0b3d947` (with LOG-0029)
+
+**Next:** C/D/E signal functions on v2.
+
+## LOG-0031 · 2026-10-19 · Phase 7c · Claude Code
+
+**Goal:** Journal-grade figures for the v2 framework.
+
+**Actions:**
+- New `src/plotstyle.py`: LaTeX text (Computer Modern) with mathtext
+  fallback, 8-9 pt type, single/full column widths, hairline axes and grid,
+  colour-blind-validated categorical order and an ordinal blue ramp, shared
+  `finalize` layout (figure title, one legend below the panels), PDF + 600
+  dpi PNG export to `output/figures/`.
+- New `src/figures.py` with all figures; plotting removed from
+  `src/report.py` (tables only). Titles state what is measured and how,
+  axes carry units, estimated means show 95% Newey-West intervals, cost
+  components keep one colour across figures, the test sample is shaded.
+- `horizon.rolling_ts_ic`: full-window minimum and a date x root panel
+  carried over market holidays, so dates are never averaged over one or two
+  commodities (removed spikes from ICE-only trading days).
+- Notebook 03 calls `figures` and saves every figure.
+
+**Files changed:** `src/plotstyle.py`, `src/figures.py` (new),
+`src/report.py`, `src/horizon.py`, `notebooks/03_backtest_framework.ipynb`,
+`docs/logs/*`
+
+**Commands:**
+- `python -m pytest -q` → 52 passed
+- notebook 03 executed top to bottom (9 figures, no errors)
+
+**Why:** Figures go into the final presentation and report; each must be
+self-explanatory from its title and labels.
+
+**Validation:** Every figure rendered and inspected for overlap, clipping and
+legend placement.
+
+**Commit:** `0b3d947` (with LOG-0029)
+
+**Next:** C/D/E signal functions on v2.
+
+## LOG-0032 · 2026-10-19 · Phase 7d · Claude Code
+
+**Goal:** Merge main (A diagnosis, B pre-test, C baselines and Kalman
+close-out) into `jiaheng/backtest-v2`.
+
+**Actions:**
+- Merged `origin/main` (`cb755d0`). Main keeps its IDs; this branch's entries
+  were renumbered: D-010/011/012 -> D-013/014/015 and LOG-0013..0016 ->
+  LOG-0028..0031 (cross-references updated).
+- `src/backtest.py`: kept the `_rebalance_dates` dispatcher; its weekly
+  branch now calls main's shared `curve.weekly_rebalance_dates`.
+- Renamed `notebooks/03_backtest_framework.ipynb` ->
+  `notebooks/06_backtest_framework.ipynb` (main uses 03-05);
+  `scripts/run_all.sh` runs 03-06.
+- D-013 gained a merge note: C was implemented and closed on main by Tian;
+  the C ownership in D-013 is historical.
+
+**Commands:**
+- `python -m pytest -q` → 86 passed
+
+**Why:** Keep the branch current with main before adding more v2 figures.
+
+**Commit:** merge commit on `jiaheng/backtest-v2`
+
+**Next:** marginal horizon and k-profile figures; per-commodity block
+bootstrap of the time-series IC.
+
+## LOG-0033 · 2026-10-19 · Phase 7e · Claude Code
+
+**Goal:** Add the horizon-decay, dense k-profile and per-commodity
+bootstrap-IC figures to notebook 06.
+
+**Actions:**
+- `horizon.marginal_horizons` / `cumulative_horizons`: windows
+  [t+h, t+h+1] and [t+1, t+1+h], h = 1..20.
+- `horizon.block_bootstrap_ic`: per-commodity moving-block bootstrap
+  (21-day blocks, 2,000 draws) of the time-series rank IC; percentile CI and
+  two-sided p-value.
+- `report.k_sweep` reports Newey-West t per layer; `figures.k_sweep` adds
+  95% bands; new `figures.horizon_decay` and
+  `figures.bootstrap_ic_distribution` (one vertical histogram per
+  commodity with p-values).
+- `plotstyle.finalize` reads existing legends and sizes multi-line titles.
+- Notebook 06: new cells in section 5, dense k grid (1..60), updated
+  conclusions and next steps (Chinese narrative).
+
+**Commands:**
+- `python -m pytest -q` → 87 passed
+- notebook 06 executed top to bottom (11 figures, no errors)
+
+**Validation:** Carry: marginal signed return significant only on days 1-3
+(t_NW −4.6, −3.5, −2.6); bootstrap p < 0.05 for 14 of 24 commodities
+(13 at p < 0.01); k = 1 → 60 cuts turnover 26× → 14.5×.
+
+**Commit:** `feat(figures): add horizon decay, k profile and bootstrap IC` (`95db2ee`)
+
+**Next:** D/E signals on v2.
+
+## LOG-0034 · 2026-10-19 · Phase 8 · Claude Code
+
+**Goal:** Fix the replication protocol for idea E (Bianchi et al. 2023)
+before writing code.
+
+**Actions:**
+- Read §2, §3, §4.1, §5.5 and Tables 3, 9, 10 of `paper/predict_curve.pdf`.
+- Added D-016: order of work, four-contract eligibility (skip for snapshot
+  OLS, three allowed for Kalman), maturity to last trading day in months,
+  λ_t = 1.7933 / M̄_t, S/C signals and instruments, tradable vs paper timing,
+  time-series aggregation, samples, conditional extensions, costs.
+
+**Why:** The paper's λ rule makes the fit a 1-dof OLS, its non-NS
+benchmark already earns most of the Sharpe, and its trades fill at the
+signal's own settle; each needs an explicit test.
+
+**Commit:** `docs(decisions): add D-016 idea E replication protocol` (`6080881`)
+
+**Next:** `src/nelson_siegel.py` and tests.
+
+## LOG-0035 · 2026-10-19 · Phase 8b · Claude Code
+
+**Goal:** Implement and run idea E (D-016) with λ as a causal
+hyperparameter; resize the framework to a USD 1m book.
+
+**Actions:**
+- New `src/nelson_siegel.py`: last trading days (censored contracts by root
+  median offset), eligible curve, four-contract wide panel, NS loadings,
+  batched OLS with sub-model R², λ rules (`paper`, `fixed_m`,
+  `rolling_ssr`), ΔβS/ΔβC and ΔS signals without differencing across gaps,
+  S pair panel with explicit flats, C butterfly legs, coverage and Table 3
+  summaries, strategy builder.
+- `src/simulate.py`: `round_lots`; typed empty trade/status tables (a book
+  that rounds to zero lots no longer crashes). `src/costs.py`:
+  `proportional_bps`, `paper_scenarios()`. `src/report.py`:
+  `execution_free_returns`, `return_summary`. `src/figures.py`: `ns_betas`,
+  `lambda_validation`, `timing_comparison`; `[t, t+1]` tick label.
+- `notebooks/07_nelson_siegel.ipynb` (Chinese narrative); notebook 06 moved to
+  USD 1m with a USD 100k–100m capacity grid; D-017; cost doc updated.
+
+**Commands:**
+- `python -m pytest -q` → 95 passed
+- notebooks 06 and 07 executed top to bottom, no errors
+
+**Validation:** NS R² 96.6% / 81.5% / 43.3% (paper 96.5 / 82.7 / 37.5).
+Paper timing on the paper sample: 3.55%/yr, Sharpe 2.03; tradable: −0.18%/yr
+(t = −0.6). Validation selects `rolling_ssr` (Sharpe 0.017); test gross
++0.15%/yr (t = 0.2). Whole lots at USD 100k: 2,957 root-days held vs
+137,288 fractional.
+
+**Commit:** `feat(nelson-siegel): replicate idea E; lambda selection; $1m book` (`56ecff6`)
+
+**Next:** D (curve momentum) on v2.
