@@ -649,7 +649,7 @@ holds) and E (1-day holds) instead of reproducing them.
   weekly.
 - All pre-existing tests unchanged and passing; A defaults untouched.
 
-**Commit:** `feat(backtest): add daily rebalance option` (pending)
+**Commit:** `feat(backtest): add holdings-based v2 framework with layered costs` (`0b3d947`, includes the daily rebalance option)
 
 **Next:** plan and implement the C and E signal modules on the shared engine.
 
@@ -701,7 +701,7 @@ attribution and capacity; signal quality should be visible before execution.
   negative at every horizon (t_NW −2.7 to −4.6); cross-sectional rank IC of
   annualised carry −0.031 (t_NW −6.2). Consistent with LOG-0012.
 
-**Commit:** `feat(backtest): add holdings-based v2 framework with layered costs` (pending)
+**Commit:** `feat(backtest): add holdings-based v2 framework with layered costs` (`0b3d947`)
 
 **Next:** implement C/D/E signal functions on v2; calibrate `min_adv` and
 impact volatility (leg vs spread) as robustness.
@@ -739,7 +739,7 @@ roots negative); own-history quintile 1 +4.8 bps vs quintile 5 −2.7 bps over
 t+1 -> t+6. Liquidity sizing (alpha 0.5): impact drag 161 -> 85 bps/yr,
 net −2.61% -> −1.62%/yr; O participation 6.3% -> 0.4%.
 
-**Commit:** pending (with LOG-0014)
+**Commit:** `0b3d947` (with LOG-0014)
 
 **Next:** C/D/E signal functions on v2.
 
@@ -776,6 +776,6 @@ self-explanatory from its title and labels.
 **Validation:** Every figure rendered and inspected for overlap, clipping and
 legend placement.
 
-**Commit:** `feat(figures): add publication figure style and figure module`
+**Commit:** `0b3d947` (with LOG-0014)
 
 **Next:** C/D/E signal functions on v2.
