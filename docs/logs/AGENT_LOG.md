@@ -3651,4 +3651,4 @@ Table 1 gains "Delivery" (CO, FC, LH cash, others physical) and "Months"
 
 **Validation / results:** deck compiles, Table 1 fits, no new overflow.
 
-**Commit:** `style(slides): center figure-text columns, delivery and months in Table 1` (`this commit`).
+**Commit:** `style(slides): center figure-text columns, delivery and months in Table 1` (`9afec00`).
