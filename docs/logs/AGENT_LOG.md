@@ -1898,3 +1898,38 @@ correctly, and flat days must not be dropped from annualisation.
 **Commit:** `fix(simulate): calendar annualization, resize keys, hedge legs`
 
 **Next:** Add v2 signal adapters for A/D/C/C-OLS/C-Kalman/B.
+
+---
+
+## LOG-0043 · 2026-10-19 22:40 · Phase 9c · Claude Code
+
+**Goal:** Add v2 adapters for A, D, C (1:1/OLS/Kalman) and B.
+
+**Actions:**
+- Added `src/v2_signals.py`: `load_v2_inputs`, `a_legs`, `d_legs`,
+  `c_legs(method="1:1"|"ols"|"kalman")`, `b_legs`, plus explicit-flat,
+  weekly-h-snap and pair-change helpers.
+- A/D/C use `legs_from_signal`; C hedge passes an optional `hedge_ratio`
+  (far units = `-sign(target) * h`) and snaps h to weekly evaluation dates.
+- B reuses `b_pre_test.build_b_targets`, drops zero-unit validation rows,
+  nets shared contracts, samples to weekly + main-pair change dates, and
+  builds explicit multi-leg rows with `legs_from_rows`.
+- Added `tests/test_v2_signals.py` (B netting, weekly h snap, flats).
+
+**Files changed:** `src/v2_signals.py`, `tests/test_v2_signals.py`,
+`docs/logs/*`
+
+**Commands:**
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 117 passed
+- Real-data smoke test: A/D/C/B/OLS/Kalman all produced legs and results.
+
+**Why:** D-017/D-018 require the C hedge variants and B to run through v2.
+
+**Validation:**
+- B synthetic fixture nets P2 +1 / P3 −2 / P4 +1 and one group.
+- Weekly snapshot uses evaluation and pair-change dates; invalid h flats.
+- Real-data runs produced non-empty legs for all six strategies.
+
+**Commit:** `feat(v2): add A/D/C/C-hedge/B signal adapters`
+
+**Next:** Add the rerun driver, notebook 08 and refreshed notebook 07.

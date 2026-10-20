@@ -43,4 +43,5 @@
 | LOG-0039 | 2026-10-19 | Phase 8f | Claude Code | Merge jiaheng/backtest-v2 into main; resolve rebalance, decision, log and notebook numbering | src/backtest.py, scripts/run_all.sh, docs/*, docs/logs/*, notebooks/07_backtest_framework.ipynb | `8baeda1` |
 | LOG-0040 | 2026-10-19 | Phase 8g | Claude Code | Keep math escapes in mathtext fallback; run notebook 07 without LaTeX | src/plotstyle.py, tests/test_plotstyle.py, docs/logs/* | this commit |
 | LOG-0041 | 2026-10-19 | Phase 9a | Claude Code | Pre-register v2 extensions (D-017) and rerun conventions (D-018) | docs/decisions.md, docs/logs/* | `9108cd3` |
-| LOG-0042 | 2026-10-19 | Phase 9b | Claude Code | Full-calendar annualization, resize keys, hedge-ratio and multi-leg legs | src/simulate.py, src/sizing.py, src/report.py, tests/test_simulate.py, tests/test_sizing.py | this commit |
+| LOG-0042 | 2026-10-19 | Phase 9b | Claude Code | Full-calendar annualization, resize keys, hedge-ratio and multi-leg legs | src/simulate.py, src/sizing.py, src/report.py, tests/test_simulate.py, tests/test_sizing.py | `116ec12` |
+| LOG-0043 | 2026-10-19 | Phase 9c | Claude Code | v2 adapters for A/D/C/C-OLS/C-Kalman/B | src/v2_signals.py, tests/test_v2_signals.py | this commit |
