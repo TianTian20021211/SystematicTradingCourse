@@ -753,7 +753,7 @@ Status values: `proposed`, `accepted`, `superseded`.
 
 ---
 
-## D-025 · B-flip as a post-hoc gross-only signal-research hypothesis
+## D-026 · B-flip as a post-hoc gross-only signal-research hypothesis
 
 - **Status:** accepted
 - **Date:** 2026-10-20

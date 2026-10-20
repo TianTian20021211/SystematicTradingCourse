@@ -48,7 +48,7 @@ gross → all-in net：
 v1/v2 不可直接比较。详见 notebooks 10–14、
 `docs/v1_v2_comparison.md` 和 `docs/notebook_history.md`。
 
-### B-flip signal research（2026-10-20，D-025）
+### B-flip signal research（2026-10-20，D-026）
 
 Notebook 11 新增 post-hoc、gross-only 的 B-flip：long carry 最低的
 adjacent spread，short carry 最高的；D=10 eligible、`min_adv=100`、

@@ -2336,13 +2336,13 @@ D-020 layout; the two histories collided on decision, log and notebook IDs.
 **Next:** Align A's information tests with `horizon.horizon_profile`,
 `ts_ic`/`block_bootstrap_ic`, and `block_bootstrap_mean`.
 
-## LOG-0055 · 2026-10-20 · Phase 12 · Claude Code
+## LOG-0056 · 2026-10-20 · Phase 12 · Claude Code
 
 **Goal:** Add B-flip as a post-hoc, gross-only signal-research headline in
 notebook 11, with the original B negative result retained as history.
 
 **Actions:**
-- Defined D-025: long the lowest-carry adjacent spread, short the highest;
+- Defined D-026: long the lowest-carry adjacent spread, short the highest;
   D=10 eligible, `min_adv=100`, USD 10m, weekly, k=1; gross headline, v2
   cost layers as a diagnostic; raw exact flip as a reference; static
   front/back as the maturity control.

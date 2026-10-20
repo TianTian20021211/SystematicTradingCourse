@@ -41,7 +41,7 @@ Source: `output/v2_rerun/comparison.csv`; narrative:
 notebooks 10–14; framework comparison:
 `docs/v1_v2_comparison.md`.
 
-### B-flip signal research (D-025, 2026-10-20)
+### B-flip signal research (D-026, 2026-10-20)
 
 Notebook 11 now leads with B-flip (post-hoc, gross-only): long the
 lowest-carry adjacent spread, short the highest; D=10 eligible,

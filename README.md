@@ -36,7 +36,7 @@ E（Nelson–Siegel）不在这个 v2 表中：它是 paper replication，paper 
 可复现（Sharpe 2.03），t+1 fill 后消失；见
 `notebooks/14_idea_e_nelson_siegel.ipynb` 和 D-021–D-023。
 原始 CSV 在 `output/v2_rerun/comparison.csv`（本地，gitignored）。Notebook 11
-另含 **B-flip** 的 post-hoc、gross-only signal research（D-025）；上表的 B
+另含 **B-flip** 的 post-hoc、gross-only signal research（D-026）；上表的 B
 仍是原 B 的 negative 结果，B-flip 不进这张 official net 表。v1 历史口径
 （5 bps/leg、`d=None`、1:1 contracts）见 `docs/v1_v2_comparison.md`；
 旧 notebook 已 retired，恢复方式见 `docs/notebook_history.md`。
@@ -212,7 +212,7 @@ output/                    # 生成的图/报告（gitignored）
   A/B/C/D/E；旧 notebook 02–08 已 retired，历史内容在 docs 和 git history。
   每个 idea notebook 固定展示 PnL、持仓（热力图 + 总敞口/换手）和
   一个 full-sample all-in net Sharpe。
-- **B-flip（D-025）：** notebook 11 的 post-hoc、gross-only signal research；
+- **B-flip（D-026）：** notebook 11 的 post-hoc、gross-only signal research；
   原 B 仍是 negative/closed，B-flip 不进 official comparison。
 - **E（D-021–D-023）：** Nelson–Siegel 曲线动态；paper timing 的 Sharpe
   2.03 在 t+1 fill 后消失，E closed as not tradable；notebook 14。

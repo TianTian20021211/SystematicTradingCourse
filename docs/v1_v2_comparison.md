@@ -53,7 +53,7 @@ legs. The v2 columns are the primary result of this phase (D-018).
 pre-registered negative and is unchanged. Notebook 11 additionally reports
 B-flip (long lowest carry / short highest) as a post-hoc **gross-only**
 signal study; it is not an official net result and is not added to this
-comparison (D-025).
+comparison (D-026).
 
 ### 2.2 Train / test gross, annualised %
 
