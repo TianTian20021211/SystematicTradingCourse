@@ -33,4 +33,4 @@
 | LOG-0029 | 2026-10-19 | Phase 8b | Claude Code | Idea D baseline notebook and diagnostics | notebooks/06_curve_momentum.ipynb, scripts/run_all.sh | `cf94b1f` |
 | LOG-0030 | 2026-10-19 | Phase 8c | Claude Code | Record idea D baseline and close-out docs | README.md, AGENTS.md, paper/README.md, docs/* | `8a92198` |
 | LOG-0031 | 2026-10-19 | Phase 8d | Claude Code | Record idea D local merge handoff and done/not-done state | docs/HANDOFF.md, docs/PROGRESS.md, docs/logs/* | `3bb0f36` |
-| LOG-0032 | 2026-10-19 | Phase 8e | Claude Code | Merge idea D curve-momentum baseline into main | merge of feat/idea-d-curve-momentum; src/*, tests/*, notebooks/06_curve_momentum.ipynb, docs/* | pending |
+| LOG-0032 | 2026-10-19 | Phase 8e | Claude Code | Merge idea D curve-momentum baseline into main | merge of feat/idea-d-curve-momentum; src/*, tests/*, notebooks/06_curve_momentum.ipynb, docs/* | `08de3e7` |

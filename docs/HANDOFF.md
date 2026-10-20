@@ -32,6 +32,8 @@ documented negative/mixed；monthly engine support 已加入。
 
 **Branch：** `feat/idea-d-curve-momentum`（本地，**未 push**）。
 
+**Merged into `main`：** `08de3e7`（local merge commit；未 push）。
+
 **Base：** `main` at `cb755d0`（C merge）。
 
 **Commits：**
@@ -41,22 +43,16 @@ documented negative/mixed；monthly engine support 已加入。
 - `8a92198` `docs(curve-momentum): record idea D baseline`
 - `c3e9fce` `docs(logs): record idea D baseline commit hash`
 - `3bb0f36` `docs(handoff): record idea D local merge handoff`
+- `08de3e7` `merge: integrate idea D curve-momentum baseline`（在 `main` 上）
 
 **Working tree：** clean；`pytest -q` → 80 passed；notebook 06 已执行。
 
 **未 push：** 所有 commits 只在本地；不要 push，除非用户明确要求。
 
-**Merge 注意：** `main` 当前 checkout 在
-`/Users/tian/Library/Mobile Documents/com~apple~CloudDocs/Baruch/第三学期/Systematic Trading/Project-ab-merge`。
-当前 worktree 不能直接 `git switch main`；在那个 worktree 里 merge：
-
-```bash
-cd "/Users/tian/Library/Mobile Documents/com~apple~CloudDocs/Baruch/第三学期/Systematic Trading/Project-ab-merge"
-git merge --no-ff feat/idea-d-curve-momentum
-python -m pytest -q
-```
-
-或者新建一个 worktree。merge 后保持本地，不要 push。
+**Merge 已完成：** `main` 当前 checkout 在
+`/Users/tian/Library/Mobile Documents/com~apple~CloudDocs/Baruch/第三学期/Systematic Trading/Project-ab-merge`，
+已经用 `git merge --no-ff feat/idea-d-curve-momentum` 合并；不需要再次 merge。
+merge 后保持本地，不要 push。
 
 **D 已完成：**
 
