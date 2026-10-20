@@ -379,3 +379,91 @@ Status values: `proposed`, `accepted`, `superseded`.
   capacity curve. Contract specs live in `data/metadata/contract_specs.csv`.
   v1 and v2 numbers for A differ (weekly vs on-change rebalancing, cost model,
   pair rule) and are not directly comparable.
+
+---
+
+## D-016 · Idea E: Nelson–Siegel curve-dynamics replication protocol
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** Bianchi, Fan, Miffre & Zhang (2023, JBF 154) fit a
+  Nelson–Siegel (NS) curve each day to the nearest four contracts of each
+  commodity and trade the sign of the one-day change in the slope (S) and
+  curvature (C) betas, holding for one day (gross Sharpe 1.41 for S; net
+  0.44–1.04; post-GFC net 0.20). Three facts shape the protocol: (i) λ_t is
+  set by rule, not estimated, so with four contracts and three betas the fit
+  is a one-degree-of-freedom OLS and ΔβS is close to a fixed linear
+  combination of the four price changes; (ii) their non-NS benchmark
+  ΔS_t = Δ(F¹ − F⁴) already earns Sharpe 1.31 (Table 10), so the NS
+  increment must be measured, not assumed; (iii) their trades are "set up at
+  the end of day t and implemented for one day", i.e. filled at the same
+  settle that produced the signal, which this project treats as not
+  tradable (D-009, D-015).
+- **Decision:**
+  1. **Order of work.** (a) Replicate the paper's S and C strategies as
+     specified; (b) compare the paper's timing with the tradable timing;
+     (c) run the non-NS benchmark ΔS_t; (d) only if the edge survives a t+1
+     fill, run the filtering/shrinkage extensions in item 10.
+  2. **Contract set.** Per root and day, the eligible contracts among M1–M4
+     are those with a tradable settle, not in their delivery month, and
+     before their last trading day (the paper holds a contract until the
+     last trading day before the front enters its maturity month).
+     - Snapshot OLS (main replication): fit only when exactly four eligible
+       contracts exist. Otherwise no fit and an explicit flat target for that
+       root-day (three contracts would be an exact, zero-dof fit).
+     - Kalman/state-space variants (item 10): update with whatever eligible
+       contracts exist (minimum three), dropping missing rows from the
+       measurement equation.
+     - The number of days lost to the four-contract rule is reported per
+       root.
+  3. **Maturity.** M = calendar days from t to the contract's last trading
+     day, divided by 365.25/12 (months). The last trading day is on the
+     exchange calendar and therefore ex ante. For expired contracts it is the
+     contract's last appearance in the generic M1–M4 roll (Bloomberg rolls at
+     expiry); for contracts still trading at the end of the extract
+     (`is_censored`), it is the delivery-month start plus the root's median
+     historical offset. Robustness: maturity to the delivery-month start.
+  4. **Fit.** Price levels (as in the paper, Eq. 1), λ_t = 1.7933 / M̄_t
+     where M̄_t is the mean maturity of the fitted contracts (the curvature
+     loading peaks at λM ≈ 1.7933; paper footnote 4); betas by OLS. Store
+     βL, βS, βC, λ, R² and the R² of the L+S and L+C sub-models (paper
+     Table 3: 96.5%, 37.5%, 82.7% on average).
+  5. **Signals.** S: sign(ΔβS,t); C: sign(ΔβC,t), with Δ between
+     consecutive fitted days of the same root. Days on which the fitted
+     contract set changed (rolls) are flagged; the main replication keeps
+     them (as the paper does), a robustness run drops them.
+  6. **Instruments and weights.** S trades the slope spread of the first
+     and fourth fitted contracts (long 1st / short 4th when ΔβS > 0), equal
+     notional legs. C trades the butterfly short 1st / long 2nd / short 4th
+     when ΔβC > 0 with leg weights |w1| = |w4| = ½|w2| (paper: 1/(4N),
+     1/(2N), 1/(4N)). This deviates from the D-008 common pair by design;
+     the D-008 pair is a robustness run for S.
+  7. **Timing.** Main (tradable): signal at the t settle, fill at the t+1
+     settle, first P&L t+1 -> t+2, one-day holding, `rebalance="daily"`
+     (D-014). The paper's timing, window [t, t+1], is reported only as an
+     execution-free diagnostic and is labelled not tradable.
+  8. **Aggregation.** Time series per root; no cross-sectional ranking
+     (settlement times differ across exchanges). Equal weight across active
+     roots by default, liquidity weight (dollar ADV^½) as robustness. The
+     paper's equal split of capital between the long and short sides is not
+     imposed and the difference is stated in the results.
+  9. **Samples.** (i) Replication: the paper's 21 commodities (our 24 minus
+     CO, NG, SB) from 1992-01-02 to 2019-06-28; (ii) full panel: 24
+     commodities, 1986–2015 train / 2016–2026 test. No parameter is chosen
+     on the test sample.
+  10. **Extensions (conditional on item 1d).** Random-walk state-space NS
+      (Kalman filter; equivalent to shrinking each day's fit toward the
+      previous filtered betas), AR(1)/VAR(1) dynamic NS with the forecast
+      E[Δβ_{t+1} | F_t] as the signal (Diebold–Li; Grønborg–Lunde), and
+      3/5-day moving averages of ΔβS (paper Table 9). Noise variances and
+      AR parameters are estimated on the training sample or an expanding
+      window, never on the full sample.
+  11. **Costs and reporting.** v2 three-layer costs (D-015), plus the
+      paper's TC1–TC3 scenarios for comparability. Report the full v2 set:
+      cost layers, turnover, marginal and cumulative horizon decay, k sweep,
+      and the per-commodity block-bootstrap IC of ΔβS.
+- **Consequences:** New `src/nelson_siegel.py` (eligible set, maturities,
+  daily fit, signals), a multi-leg weight path in `src/sizing.py` for the C
+  butterfly and the 1st/4th spread, and `notebooks/07_nelson_siegel.ipynb`.
+  The 1-dof critique of `docs/project_brief.md` §4 is addressed by items 1c,
+  4 and 10. Changing any item requires a new decision entry.

@@ -1529,3 +1529,23 @@ bootstrap-IC figures to notebook 06.
 **Commit:** `feat(figures): add horizon decay, k profile and bootstrap IC` (`95db2ee`)
 
 **Next:** D/E signals on v2.
+
+## LOG-0034 · 2026-10-19 · Phase 8 · Claude Code
+
+**Goal:** Fix the replication protocol for idea E (Bianchi et al. 2023)
+before writing code.
+
+**Actions:**
+- Read §2, §3, §4.1, §5.5 and Tables 3, 9, 10 of `paper/predict_curve.pdf`.
+- Added D-016: order of work, four-contract eligibility (skip for snapshot
+  OLS, three allowed for Kalman), maturity to last trading day in months,
+  λ_t = 1.7933 / M̄_t, S/C signals and instruments, tradable vs paper timing,
+  time-series aggregation, samples, conditional extensions, costs.
+
+**Why:** The paper's λ rule makes the fit a 1-dof OLS, its non-NS
+benchmark already earns most of the Sharpe, and its trades fill at the
+signal's own settle; each needs an explicit test.
+
+**Commit:** `docs(decisions): add D-016 idea E replication protocol`
+
+**Next:** `src/nelson_siegel.py` and tests.

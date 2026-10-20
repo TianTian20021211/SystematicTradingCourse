@@ -35,3 +35,4 @@
 | LOG-0031 | 2026-10-19 | Phase 7c | Claude Code | Journal-grade figures: plotstyle + figures modules, stable rolling IC | src/plotstyle.py, src/figures.py, src/report.py, src/horizon.py, notebooks/03_backtest_framework.ipynb | `0b3d947` |
 | LOG-0032 | 2026-10-19 | Phase 7d | Claude Code | Merge main into backtest-v2; renumber D-013–015, LOG-0028–0031; notebook 06 | src/backtest.py, scripts/run_all.sh, docs/*, notebooks/06_backtest_framework.ipynb | merge |
 | LOG-0033 | 2026-10-19 | Phase 7e | Claude Code | Horizon decay, dense k profile, per-commodity block-bootstrap IC | src/horizon.py, src/report.py, src/figures.py, src/plotstyle.py, tests/test_simulate.py, notebooks/06_backtest_framework.ipynb | `95db2ee` |
+| LOG-0034 | 2026-10-19 | Phase 8 | Claude Code | D-016: idea E (Nelson–Siegel) replication protocol | docs/decisions.md | pending |
