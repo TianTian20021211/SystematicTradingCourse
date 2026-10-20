@@ -2909,3 +2909,480 @@ merge both and push to origin main.
 
 **Next:** Push to `origin main`; then fill the E and portfolio slides and the
 result figures.
+
+---
+
+## LOG-0065 · 2026-10-20 · Phase 15 · Claude Code
+
+**Goal:** Finalize the A section of the final deck for the 20-minute talk:
+copy the A-flip diagnostics into the deck, keep the three-page-per-idea
+structure, and make the robustness slide easy to narrate.
+
+**Actions:**
+- Copied `idea_a_flip_horizon_decay.pdf` and `idea_a_flip_ic_bootstrap.pdf`
+  from the `a-flip-diag` worktree into `presentations/final/figures/`.
+- Replaced the dense A robustness bullet list with the horizon-decay figure
+  plus three bullets: timing, 5-day IC, and the test/MDE caveat.
+- Added a backup frame with the per-root 5-day IC bootstrap; the main deck
+  stays at three A pages (idea, backtest + robustness, position/P&L).
+- Updated the deck README page count and figure notes.
+
+**Files changed:**
+- presentations/final/main.tex
+- presentations/final/README.md
+- presentations/final/figures/a_flip_horizon_decay.pdf
+- presentations/final/figures/a_flip_ic_bootstrap.pdf
+- docs/logs/AGENT_LOG.md, docs/logs/INDEX.md
+
+**Commands:**
+- `tectonic -X compile --outdir build main.tex` → 26 pages (21 main frames + backup)
+
+**Why:** The user wanted a simple, presentable A section that states the
+flip-signal verdict clearly; the diagnostic figures already exist in the
+worktree, so copying them avoids re-running the notebook.
+
+**Validation:**
+- Deck compiles; the A robustness slide now shows the 3-row table, the
+  horizon-decay figure and three bullets.
+- Backup IC slide is readable and outside the main timing.
+- The A numbers are unchanged from D-025: full +0.63%, Sharpe 0.63,
+  NW t 4.29; test +0.46%, Sharpe 0.51, t 1.58, MDE 0.84.
+
+**Commit:** uncommitted (working tree).
+
+**Next:** B/C/D sections unchanged; fill E and the portfolio placeholder when
+the teammate's material is ready.
+
+---
+
+## LOG-0066 · 2026-10-20 · Phase 15 · Claude Code
+
+**Goal:** Restructure the final deck's Idea C section into the same three-page
+pattern as A/B — idea, backtest + robustness, position/P&L — keeping the
+robustness evidence but reducing the amount of text on each slide. Render the
+deck after the edit.
+
+**Actions:**
+- Replaced the old C frames (paper model, replication choices, result table)
+  with three frames:
+  1. `C · Spread mean reversion: the idea`: residual hedge, z-score entry/exit,
+     three hedge ratios, and a compact paper-vs-project table.
+  2. `C · Spread mean reversion: backtest and robustness`: official weekly v2
+     table (C1/C2/C3 gross, all-in net, net Sharpe, test gross), C1 cost
+     ladder, and a six-row robustness table (three hedge ratios, train→test,
+     daily validation gate, execution lag/placebo, breadth/jackknife,
+     IC/OOS R²).
+  3. `C · Position book and P&L: turnover eats the edge`: C1 weekly positions
+     and the P&L path by cost layer.
+- Copied `output/figures/idea_c_1to1_positions.pdf` and
+  `idea_c_1to1_pnl.pdf` to
+  `presentations/final/figures/c_mean_reversion_positions.pdf` and
+  `c_mean_reversion_pnl.pdf`; no new figures were generated.
+- Updated `presentations/final/README.md`: C row in the timing table, the
+  three-page-pattern note, the figure provenance, and the remaining-questions
+  entry for D.
+
+**Files changed:**
+- presentations/final/main.tex
+- presentations/final/README.md
+- presentations/final/figures/c_mean_reversion_positions.pdf
+- presentations/final/figures/c_mean_reversion_pnl.pdf
+- docs/logs/AGENT_LOG.md, docs/logs/INDEX.md
+
+**Commands:**
+- `tectonic -X compile --outdir build main.tex` → 26 pages
+- `pdftoppm -f 13 -l 15 -r 130 -png build/main.pdf /tmp/cslide` → rendered and
+  inspected the three C slides
+
+**Why:** The user asked for a compact C report in the deck: one page on what
+the strategy does, one on the backtest plus stability checks, and one on the
+position book and P&L line. The existing C section had no position/P&L page
+and mixed the replication discussion into a separate frame.
+
+**Validation:**
+- Deck compiles to 26 pages; C is pages 13–15; total main-frame count and the
+  A/B/D/E/portfolio structure are unchanged.
+- The three C slides were rendered and checked at 130 dpi: no clipped text or
+  figures; the C-specific overfull warnings were removed. Remaining overfull
+  warnings are pre-existing (title page line 124, B page line 417, references
+  line 908).
+- Numbers are unchanged from D-019 (weekly official), D-027 (daily validation
+  audit) and D-029 (descriptive test read); no new backtest was run.
+- Labels distinguish weekly official, daily validation-only and descriptive
+  test numbers; C remains closed.
+
+**Commit:** uncommitted (working tree).
+
+**Next:** Review the rendered C pages; fill E and the portfolio placeholder;
+optionally add a D position/P&L page.
+
+---
+
+## LOG-0067 · 2026-10-20 · Phase 15 · Claude Code
+
+**Goal:** Reframe the final deck's Idea D section as an information study:
+merge the paper and replication frames, replace the cost-layer result table
+with a gross-only sign-rule table, keep the D-028 signal-validity checks, and
+add a position book + gross P&L page.
+
+**Actions:**
+- Merged the two D idea frames (paper; what we replicated) into one frame:
+  paper result, 12-month formation, N=2 main pair, gross-only project scope,
+  and a compact paper-vs-project table.
+- Replaced the D result frame with:
+  1. `D · Curve momentum: gross sign-rule and signal validity`: gross table
+     (full/train/test: +0.22/+0.37/-0.21 %/yr; Sharpe 0.25/0.41/-0.26;
+     NW t 1.77/2.60/-0.83; 80% MDE 0.43/0.51/0.84) and a five-row validity
+     table (core IC, horizon, independence, stability, placebo).
+  2. `D · Curve momentum: position book and gross P&L`: standalone month-end
+     heatmap and a gross-only cumulative return line.
+- Generated `presentations/final/figures/d_positions.pdf/.png` from
+  `F.position_panel` and `d_gross_pnl.pdf/.png` from `res.daily["ret_gross"]`
+  after rerunning the existing D v2 path; no new backtest specification.
+- Fixed the D static benchmark bullet: the old `+0.108%/yr, Sharpe 0.21`
+  figure was B's D=10 static front/back, not D's static always-long. The
+  validity table now uses the D-028 comparison: static 11.1 vs D timing 11.2
+  bp/month.
+- Updated `presentations/final/README.md`: D row in the timing table, the D
+  three-page note, the position/P&L provenance, and the remaining questions.
+
+**Files changed:**
+- presentations/final/main.tex
+- presentations/final/README.md
+- presentations/final/figures/d_gross_pnl.pdf, d_gross_pnl.png
+- presentations/final/figures/d_positions.pdf, d_positions.png
+- docs/logs/AGENT_LOG.md, docs/logs/INDEX.md
+
+**Commands:**
+- `/Users/tian/miniconda3/envs/mfe/bin/python /tmp/make_d_figs.py` — reran D
+  and generated the two figures; temporary driver, removed.
+- `tectonic -X compile --outdir build main.tex` — 26 pages.
+- `pdftoppm -f 16 -l 18 -r 110 -png build/main.pdf /tmp/d_slides2` — rendered
+  and inspected the three D pages.
+
+**Why:** The user wants D framed as "is there valid information?", not "does
+the strategy make money". Costs are out of scope for this section; gross
+Sharpe, signal validity, the position book and the gross P&L line are enough.
+Merging the paper and replication pages keeps D at three pages, matching A/B/C
+and preserving the talk timing.
+
+**Validation:**
+- Deck compiles to 26 pages; D is pages 16–18, three frames, matching the
+  A/B/C pattern.
+- Rendered D pages: no clipped text or figures; the first result page's
+  overfull warning was removed by dropping the quintile footnote. Remaining
+  D warning is 0.4 pt on the position page (invisible); other overfull
+  warnings are pre-existing (title line 124, B line 417, references line 887).
+- Numbers are the existing D-019 gross rows and D-028 validity tables; no
+  parameter scan and no test-set tuning. The gross P&L figure was checked
+  against the +0.22% full-sample gross row.
+- The old D static bullet was removed because its number came from B's D=10
+  static front/back.
+
+**Commit:** uncommitted (working tree).
+
+**Next:** Review the rendered D pages; decide whether to keep the 80% MDE
+column; fill E and the portfolio placeholder.
+
+---
+
+## LOG-0068 · 2026-10-20 · Phase 15 · Claude Code
+
+**Goal:** Remove the "Raw exact version" row from the B backtest table so the
+B section stays easy to explain in the 20-minute talk.
+
+**Actions:**
+- Deleted the row from `presentations/final/main.tex`; the B table now shows
+  only Convergence and Static front/back.
+- Recompiled the deck.
+
+**Files changed:**
+- presentations/final/main.tex
+- docs/logs/AGENT_LOG.md, docs/logs/INDEX.md
+
+**Commands:**
+- `tectonic -X compile --outdir build main.tex` → 26 pages
+
+**Why:** The raw exact row is the mechanical sign flip of the original B on
+the raw universe, includes non-tradable near-expiry pairs, and invites
+questions that do not help the talk.
+
+**Validation:**
+- `pdftotext` on page 11 shows only Convergence and Static front/back.
+- Deck compiles to 26 pages; B remains pages 10–12.
+
+**Commit:** uncommitted (working tree).
+
+**Next:** None; B is otherwise unchanged.
+
+---
+
+## LOG-0069 · 2026-10-20 · Phase 15 · Claude Code
+
+**Goal:** Change B's related paper from Masturzo & Leung (2025) to
+Lubnau & Todorova (2015), framed as supporting the convergence premise, and
+sync the roadmap and deck README.
+
+**Actions:**
+- Replaced the B idea frame's "Related paper" block. It now says Lubnau &
+  Todorova (2015) find significant positive risk-adjusted returns in
+  intra-commodity calendar-spread mean reversion (energy futures, 1992–2013;
+  Kalman hedge ratios, Bollinger bands; many parameterizations above
+  Sharpe 2 in their sample), and that this supports B's convergence premise;
+  the paper's two-leg design differs from B's carry-ranked book.
+- Updated the roadmap's B reference from Masturzo & Leung (2025) to
+  Lubnau & Todorova (2015). Added a note: B cites the paper as support;
+  C replicates it.
+- Updated `presentations/final/README.md`: B's related reference is now
+  Lubnau & Todorova (2015), with the B-support / C-replication distinction.
+- `masturzo2025inter` remains in `refs.bib` as an uncited entry; the
+  References page prints only cited works.
+
+**Files changed:**
+- presentations/final/main.tex
+- presentations/final/README.md
+- docs/logs/AGENT_LOG.md, docs/logs/INDEX.md
+
+**Commands:**
+- `tectonic -X compile --outdir build main.tex` — 26 pages
+- `pdftoppm -f 6/10 ...` and `pdftotext -f 6/10 ...` — checked the roadmap
+  and B idea pages
+
+**Why:** The user prefers a paper that directly supports the idea that
+intra-commodity calendar spreads can earn significant risk-adjusted returns.
+The paper is not a replication of B and does not establish that
+intra-commodity pairs generally dominate inter-commodity pairs; the slide
+text says only that it supports the convergence premise. C remains the direct
+replication, so the roadmap note makes the shared citation explicit.
+
+**Validation:**
+- Deck compiles to 26 pages. Page 6 renders the new B reference and the
+  B-support / C-replication note without clipping.
+- Page 10 renders the new block in full; the frame's overfull box is about
+  1.3 pt (invisible). The text reads "Lubnau and Todorova (2015)" and the
+  supporting-premise sentence.
+- No result numbers changed; B's backtest pages are untouched.
+
+**Commit:** uncommitted (working tree).
+
+**Next:** Review the B idea page wording; decide whether to keep the explicit
+"many parameterizations above Sharpe 2 in their sample" clause or shorten the
+block. Be ready to explain in Q&A that B cites the paper as support while C
+is the direct replication.
+
+---
+
+## LOG-0070 · 2026-10-20 · Phase 15 · Claude Code
+
+**Goal:** Make the C position/P&L page (slide 15) use the same simple
+two-figure style as A/B/D: one year-end signed-position heatmap and one
+cumulative gross P&L line.
+
+**Actions:**
+- Checked the C notebook and output figures first: the ready-made C figures
+  were the notebook's two-panel `F.positions` diagnostic and the four-line
+  cost-layer path, neither matching the A/B/D presentation style.
+- Added `scripts/make_c_deck_figures.py`. It reruns the official weekly C1 v2
+  path (`v2_rerun.run_strategy("c", ...)`, D-019 settings) and draws the same
+  two simple charts used on the A/B/D pages: `F.position_panel(...,
+  freq="YE")` with the A/B colormap, symmetric 99th-percentile scaling and
+  2016 marker; and `res.daily["ret_gross"].cumsum()` as one gross line.
+- Regenerated `presentations/final/figures/c_mean_reversion_positions.pdf`
+  and `c_mean_reversion_pnl.pdf` (replacing the two-panel and cost-layer
+  figures).
+- Updated the slide: captions now read "Year-end position..." and "Gross
+  P&L, \$10m capital; dashed line = 2016."; trimmed the bullets to three so
+  the larger single figures fit. The cost ladder remains in the backtest-page
+  table, so the cost story is not lost.
+- Updated `presentations/final/README.md` figure provenance.
+
+**Files changed:**
+- presentations/final/main.tex
+- presentations/final/README.md
+- presentations/final/figures/c_mean_reversion_positions.pdf
+- presentations/final/figures/c_mean_reversion_pnl.pdf
+- scripts/make_c_deck_figures.py
+- docs/logs/AGENT_LOG.md, docs/logs/INDEX.md
+
+**Commands:**
+- `/Users/tian/miniconda3/envs/mfe/bin/python scripts/make_c_deck_figures.py`
+  → C1 gross +0.614%/yr, all-in net −3.695%/yr, turnover 43.17×/yr
+- `tectonic -X compile --outdir build main.tex` → 26 pages
+- `pdftoppm -f 15 -l 15 -r 150 -png build/main.pdf /tmp/slide15e` → rendered
+  and inspected the C position/P&L page
+
+**Why:** The user asked for C's P&L and heatmap to look like the cleaner
+A/B/D pair. The notebook figures were diagnostics (two panels and four cost
+layers); regenerating from the same official C1 run keeps the numbers tied to
+D-019 while matching the deck's presentation style.
+
+**Validation:**
+- The regenerated run matches the official C1 row: gross +0.614%/yr, all-in
+  net −3.695%/yr, turnover 43.17×/yr; no new specification, no test tuning.
+- Deck compiles to 26 pages. Slide 15 has no overfull box; remaining warnings
+  are pre-existing (title line 124, B lines 418/464, D line 732, references
+  line 891).
+- Rendered page 15: both figures are readable, the last bullet is not clipped,
+  and the style matches the A/B/D position pages.
+
+**Commit:** uncommitted (working tree).
+
+**Next:** Review the page-15 wording; if a month-end snapshot is preferred
+over year-end, change `freq="YE"` to `"ME"` in the script and the caption.
+
+---
+
+## LOG-0071 · 2026-10-20 · Phase 15 · Claude Code
+
+**Goal:** Remove the B idea page's "Related paper" block. Lubnau & Todorova
+(2015) is C's related paper, not B's.
+
+**Actions:**
+- Deleted the B `Related paper` block from `presentations/final/main.tex`.
+  The B idea page now ends with the adjacent-spread illustration and the
+  "Illustration only, not data." note.
+- Changed the roadmap's B reference from Lubnau & Todorova (2015) to `---`
+  (no related paper for B); C keeps Lubnau & Todorova (2015). Reverted the
+  roadmap note to "A/B are convergence designs; C/D/E are paper-based."
+- Updated `presentations/final/README.md`: A has the Kanamura et al. (2010)
+  related reference; B has no related-paper block; C is the direct
+  replication of Lubnau & Todorova (2015).
+- `masturzo2025inter` remains in `refs.bib` as an uncited entry; the
+  References page prints only cited works.
+
+**Files changed:**
+- presentations/final/main.tex
+- presentations/final/README.md
+- docs/logs/AGENT_LOG.md, docs/logs/INDEX.md
+
+**Commands:**
+- `tectonic -X compile --outdir build main.tex` — 26 pages
+- `pdftoppm -f 6/10 ...` and `pdftotext -f 6/10 ...` — checked the roadmap
+  and B idea pages
+
+**Why:** The user wants Lubnau & Todorova (2015) to stay with C, where it is
+the direct replication. B is a design statement and does not need a related
+paper block.
+
+**Validation:**
+- Deck compiles to 26 pages. Page 6 shows B with `---` in the Reference
+  column and C with Lubnau & Todorova (2015).
+- Page 10 no longer has the Related paper block; the illustration and note
+  render normally. The B frame's previous 1.3 pt overfull box is gone.
+- No result numbers changed; B's backtest pages are untouched.
+
+**Commit:** uncommitted (working tree).
+
+**Next:** Review the B idea page's empty lower-right space; if it looks too
+sparse, consider moving the illustration or adding a design note, not a paper
+block.
+
+---
+
+## LOG-0072 · 2026-10-20 · Phase 15 · Claude Code
+
+**Goal:** Simplify the final deck's D section into three pages: trade idea
+and parameters, backtest and robustness, and the unchanged position/P&L
+page. Remove the paper/replication framing and the takeaway box.
+
+**Actions:**
+- Replaced the D idea page with `D · Curve momentum: the trade idea`:
+  within-curve near/far ranking, roll-adjusted 12-month momentum score
+  `m_near - m_far`, sign rule, month-end signal / t+1 fill / monthly hold,
+  and a parameter table (N=2, 12m formation, 1m holding, delivery/expiry
+  buffers, ADV, execution, gross-only). The paper is a one-line reference,
+  not a separate frame.
+- Replaced the D result page with `D · Curve momentum: backtest and
+  robustness`: the gross full/train/test table plus a five-row
+  Check/Data/Conclusion table (core IC, horizon, independence, stability,
+  placebo). Removed the takeaway box.
+- Kept the D position book and gross P&L page unchanged.
+- Updated `presentations/final/README.md`: the D row and D three-page note
+  now describe the idea/parameters and backtest/robustness structure.
+
+**Files changed:**
+- presentations/final/main.tex
+- presentations/final/README.md
+- docs/logs/AGENT_LOG.md, docs/logs/INDEX.md
+
+**Commands:**
+- `tectonic -X compile --outdir build main.tex` — 26 pages
+- `pdftoppm -f 16 -l 17 -r 150 -png build/main.pdf /tmp/d_new2` — rendered
+  and inspected the two revised D pages
+
+**Why:** The user asked for a simpler D section: explain the trade idea and
+signal construction in detail on page 1, list each backtest/robustness result
+with its conclusion on page 2, remove the takeaway, and keep page 3 as is.
+
+**Validation:**
+- Deck compiles to 26 pages. Pages 16–17 render without clipped text; D has
+  only tiny overfull boxes (1.2pt on page 16, 0.6pt on page 17; page 18's
+  0.45pt vbox is unchanged). Pre-existing title/A/C warnings remain.
+- D numbers are unchanged: gross +0.22/+0.37/−0.21 %/yr, IC 0.049, FDR
+  2/24, static 11.1 vs timing 11.2 bp/month.
+- Page 18 is unchanged.
+
+**Commit:** uncommitted (working tree).
+
+**Next:** Review the new page 16 parameter table wording; if the audience
+does not need the ADV/liquidity row, remove it to keep the page lighter.
+
+---
+
+## LOG-0073 · 2026-10-20 · Phase 15 · Claude Code
+
+**Goal:** Revise the C section to evaluate the signal **gross-only**. Remove
+transaction-cost and all-in net results from the C slides, and base C's
+verdict on the gross evidence.
+
+**Actions:**
+- C idea page: removed the `0.1%/trade` vs execution-model row; the result
+  row now compares the paper's Sharpe > 2 with this project's **gross Sharpe
+  0.38**. The design bullet now says "gross-only".
+- C backtest page: replaced the table columns `All-in net` and `Net Sharpe`
+  with `Gross Sharpe` and `NW t`; rows now show C1 0.38/2.62, C2 0.11/0.69,
+  C3 0.25/1.62. Deleted the C1 cost-ladder line. The "Three hedge ratios"
+  row now reports gross `+0.61/+0.12/+0.61` and gross Sharpe
+  `0.38/0.11/0.25`. The footnote says gross-only with costs deferred to the
+  portfolio. The paper note no longer discusses the paper's flat cost model.
+- C position page: title changed from "turnover eats the edge" to "position
+  book and gross P&L"; bullets now report gross `+0.61%/yr` full sample and
+  `+0.16%/yr` test, and the small/unstable gross slope. No turnover or cost
+  bullet.
+- Roadmap: C verdict changed from `negative` to `weak gross`.
+- Conclusion: C row now `+0.61`, net `---`, gross Sharpe `0.38`, verdict
+  `weak gross`; the Sharpe column is labeled `Gross Sharpe` and D's value is
+  its gross Sharpe `0.25` (previously the net figure). The C/D bullet now
+  says the gross signal is weak and unstable, not that costs consume it.
+- Updated `presentations/final/README.md` to describe C as gross-only.
+
+**Files changed:**
+- presentations/final/main.tex
+- presentations/final/README.md
+- docs/logs/AGENT_LOG.md, docs/logs/INDEX.md
+
+**Commands:**
+- `tectonic -X compile --outdir build main.tex` → 26 pages
+- `pdftoppm -f 13/14/15/21 ...` → rendered and checked the C idea, backtest,
+  position and conclusion pages
+
+**Why:** The user wants C judged as a signal-information study, not as a
+net-of-cost strategy. Costs are deferred to the portfolio, as on the A/B
+pages. C's closure is now supported by the gross robustness checks (daily
+validation gate, execution lag/placebo, IC/OOS R²), not by the cost ladder.
+
+**Validation:**
+- Gross numbers are unchanged from D-019: C1 +0.61%/yr, Sharpe 0.38,
+  NW t 2.62; C2 +0.12, 0.11, 0.69; C3 +0.61, 0.25, 1.62. No new backtest.
+- The six robustness checks are unchanged and remain gross/daily
+  validation diagnostics.
+- Deck compiles to 26 pages; the C pages have no overfull boxes. Remaining
+  warnings are pre-existing (title line 124, B line 417, D lines 676/713/734,
+  references line 893).
+- Rendered pages 13–15 and 21: no clipped text, and the C verdict is
+  consistently `weak gross`.
+
+**Commit:** uncommitted (working tree).
+
+**Next:** Decide whether C should still appear as a portfolio input on page
+20, or be labeled clearly as closed/weak-gross there as well.
