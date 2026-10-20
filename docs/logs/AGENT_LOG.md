@@ -1546,7 +1546,7 @@ before writing code.
 benchmark already earns most of the Sharpe, and its trades fill at the
 signal's own settle; each needs an explicit test.
 
-**Commit:** `docs(decisions): add D-016 idea E replication protocol`
+**Commit:** `docs(decisions): add D-016 idea E replication protocol` (`6080881`)
 
 **Next:** `src/nelson_siegel.py` and tests.
 
@@ -1580,6 +1580,6 @@ Paper timing on the paper sample: 3.55%/yr, Sharpe 2.03; tradable: −0.18%/yr
 +0.15%/yr (t = 0.2). Whole lots at USD 100k: 2,957 root-days held vs
 137,288 fractional.
 
-**Commit:** `feat(nelson-siegel): replicate idea E; lambda selection; $1m book`
+**Commit:** `feat(nelson-siegel): replicate idea E; lambda selection; $1m book` (`56ecff6`)
 
 **Next:** D (curve momentum) on v2.
