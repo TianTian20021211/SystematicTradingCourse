@@ -3686,4 +3686,4 @@ percent of capital do not depend on it.
 sentence removed; "$10m" removed from the C and D gross P&L captions and the D
 period table caption.
 
-**Commit:** `style(slides): drop the A-D capital figure` (`this commit`).
+**Commit:** `style(slides): drop the A-D capital figure` (`cf94110`).
