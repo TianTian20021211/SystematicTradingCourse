@@ -1824,3 +1824,34 @@ mathtext fallback is the supported path.
 **Commit:** `fix(plotstyle): keep math escapes in mathtext fallback`
 
 **Next:** Re-run A/B/C/D through v2; compare v1/v2.
+
+---
+
+## LOG-0041 · 2026-10-19 22:10 · Phase 9a · Claude Code
+
+**Goal:** Pre-register the v2 extension and re-run conventions before
+producing any A/D/C/B result.
+
+**Actions:**
+- Added D-017: optional hedge-ratio legs, `legs_from_rows`, `resize_key`,
+  and B's within-root exception to D-016's time-series-only rule.
+- Added D-018: v2 re-run universe, sizing, costs, calendar overrides and
+  reporting conventions.
+- No code, notebook or data changes; no results produced yet.
+
+**Files changed:**
+- `docs/decisions.md`, `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- none
+
+**Why:** Avoid result-driven changes to the universe, costs or execution
+once the v2 numbers are visible.
+
+**Validation:**
+- D-017/D-018 reference D-016 and the affected signals/variants.
+- No locked D=10 / delivery-month / dollar-primary conventions changed.
+
+**Commit:** `docs(decisions): pre-register v2 extensions and rerun conventions`
+
+**Next:** Implement core v2 fixes and tests.

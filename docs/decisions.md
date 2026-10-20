@@ -429,3 +429,70 @@ Status values: `proposed`, `accepted`, `superseded`.
   capacity curve. Contract specs live in `data/metadata/contract_specs.csv`.
   v1 and v2 numbers for A differ (weekly vs on-change rebalancing, cost model,
   pair rule) and are not directly comparable.
+
+---
+
+## D-017 · v2 hedge-ratio and multi-leg extensions; B within-root exception
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** D-016 defined v2 as a two-leg, time-series-only simulator.
+  C's rolling-OLS and Kalman variants need a time-varying hedge ratio; B's
+  adjacent-carry pre-test needs explicit multi-leg rows and ranks adjacent
+  maturity spreads within one root. Without an extension those variants
+  cannot run through v2 without ad-hoc leg tables.
+- **Decision:**
+  1. v2 leg targets may carry an optional `hedge_ratio` column. Near units
+     are `sign(target)`, far units are `-sign(target) * h`; `h` is a contract
+     ratio, not a multiplier on the price ratio. Invalid or non-positive h
+     produces an explicit flat row.
+  2. v2 gains a generic explicit-row builder, `sizing.legs_from_rows`, for
+     multi-leg targets. It nets duplicate contracts, requires one non-flat
+     group per `(date, root)`, and requires explicit flat rows for exits.
+  3. The on-change resize key includes an optional `resize_key` column in
+     addition to `(group_id, target)`, so weekly hedge-ratio changes and B
+     composition changes trigger a resize without daily notional churn.
+  4. B's adjacent-carry ranking is a narrow exception to D-016's
+     time-series-only rule: it ranks the three adjacent maturity spreads
+     within one root on the same exchange, not commodities across the panel.
+     It must be reported separately and may not be used to justify
+     cross-commodity ranking. B runs with `execution="legs"` because the
+     spread-order cost pairing is not group-aware.
+- **Consequences:** C rolling-OLS/Kalman and B can run through v2; A, D and
+  C 1:1 stay two-leg and use the default path. The extension is additive;
+  existing v2 signals and notebook 07 keep their interface.
+
+---
+
+## D-018 · v2 re-run conventions for A/D/C/B
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** The team is re-running the validated A/D/C ideas and the C
+  hedge / B variants through v2. The universe, cost model and execution
+  conventions must be fixed before looking at results.
+- **Decision:**
+  1. **Universe and pairs:** `panel.build_backtest_panel(rank, d=5, k=5)`;
+     `min_adv=100` on the thinner leg; all roots. B keeps its original
+     raw-rank adjacent universe and its own `d=None` main-pair validation.
+  2. **Capital and sizing:** capital USD 10m; equal 1/N budget;
+     equal-notional legs except hedge-ratio signals; fractional contracts;
+     `resize="on_change"`.
+  3. **Costs:** v2 three layers (half-spread, USD 1.5/contract fee,
+     square-root impact); no flat 5 bps translation.
+  4. **Calendar strategies:** A uses the v2-native daily on_change path with
+     `rebalance_band=0.25`. C 1:1 and C hedge/Kalman use a large band so
+     only weekly target changes, weekly-snapped h changes and pair rolls
+     resize. D uses a large band so only monthly target changes and pair
+     rolls resize. B uses weekly rebalance dates plus main-pair change dates
+     and a large band.
+  5. **C hedge/Kalman:** h is daily but snapped to weekly evaluation dates;
+     pair-change dates use the current-day h; invalid h is flat.
+  6. **B:** `execution="legs"`; budget 1/N per root-date; net shared
+     contracts; one group per root-date.
+  7. **Reporting:** full 1986–2026, train 1986–2015, test 2016–2026; train
+     and test are post-hoc slices of the full simulation, not flat restarts.
+     Gross and each cost layer are reported separately. Do not tune on test.
+- **Consequences:** Results are v2-native and not directly comparable with
+  v1's 5 bps/leg, weekly/monthly, 1:1-contract numbers. The comparison doc
+  must label the differences by construction.
