@@ -235,7 +235,12 @@ class _Engine:
             self.trading_days = self.trading_days[
                 self.trading_days <= pd.Timestamp(config.end_date)
             ]
-        self.rebalance_dates = curve.weekly_rebalance_dates(self.trading_days)
+        if config.rebalance == "last_trading_day_of_week":
+            self.rebalance_dates = curve.weekly_rebalance_dates(self.trading_days)
+        elif config.rebalance == "last_trading_day_of_month":
+            self.rebalance_dates = curve.monthly_rebalance_dates(self.trading_days)
+        else:
+            raise ValueError(f"Unknown rebalance: {config.rebalance!r}")
 
         self._targets = self._index_targets(target_legs)
         contracts = set()
@@ -726,9 +731,13 @@ def run_backtest(
     cfg = config or BacktestConfig()
     if cfg.execution_lag != 1:
         raise ValueError("Only execution_lag=1 is supported for now")
-    if cfg.rebalance != "last_trading_day_of_week":
+    if cfg.rebalance not in {
+        "last_trading_day_of_week",
+        "last_trading_day_of_month",
+    }:
         raise ValueError(
-            "Only rebalance='last_trading_day_of_week' is supported for now"
+            "rebalance must be 'last_trading_day_of_week' or "
+            "'last_trading_day_of_month'"
         )
     if cfg.return_denominator != "gross_notional":
         raise ValueError(

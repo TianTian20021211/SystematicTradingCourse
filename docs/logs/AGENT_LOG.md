@@ -1306,3 +1306,200 @@ the A/B close-out.
 **Commit:** `merge: integrate idea C baselines`
 
 **Next:** D/H; C closed.
+
+---
+
+## LOG-0028 · 2026-10-19 20:34 · Phase 8a · Claude Code
+
+**Goal:** Add monthly rebalance support and the curve-momentum /
+basis-momentum signal for idea D.
+
+**Actions:**
+- Added `curve.monthly_rebalance_dates` (last trading day of each calendar
+  month, holiday fallback), shared by engine and signal.
+- Extended `BacktestConfig.rebalance` and `_Engine` to support
+  `last_trading_day_of_month`; the weekly default is unchanged.
+- Added `CurveMomentumParams`, `_rank_return_index`, and
+  `curve_momentum_signal` to `src/signals.py`.
+- Added synthetic tests for the signal and monthly calendar.
+
+**Files changed:**
+- `src/curve.py`, `src/backtest.py`, `src/signals.py`
+- `tests/test_backtest.py`, `tests/test_curve_momentum.py`
+
+**Commands:**
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 80 passed
+- Real-data signal smoke test: 243,699 rows; 11,310 signal dates;
+  target counts +1 123,221 / −1 112,924 / 0 7,554.
+
+**Why:** D needs a 12-month rank-slot momentum signal and monthly
+rebalancing; the monthly calendar is reusable for H.
+
+**Validation:**
+- Weekly default is unchanged (equivalence test).
+- Signal tests cover roll-adjusted compounding, min observations, negative
+  prices, forward-fill, missing-month reset, mid-month pair changes, and
+  no look-ahead.
+- CL 2020-04-20 invalidates the 12-month windows; the signal recovers after
+  the window rolls past the event.
+
+**Commit:** `feat(curve-momentum): add monthly engine and basis-momentum signal`
+
+**Next:** Add the D baseline notebook and run the full-sample diagnostics.
+
+---
+
+## LOG-0029 · 2026-10-19 20:35 · Phase 8b · Claude Code
+
+**Goal:** Add the idea D baseline notebook and reproduce the full
+diagnostics.
+
+**Actions:**
+- Added `notebooks/06_curve_momentum.ipynb`: K=5 panel, rank return index,
+  monthly signal, targets, full/test backtests, summary, sector, static
+  benchmarks, monthly Sharpe, block bootstrap, and cumulative plot.
+- Added notebook 06 to `scripts/run_all.sh` and the metadata-clean list.
+- Wrote `output/curve_momentum_*` (gitignored).
+
+**Files changed:**
+- `notebooks/06_curve_momentum.ipynb`
+- `scripts/run_all.sh`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `~/miniconda3/envs/mfe/bin/jupyter nbconvert --execute --to notebook \
+  --inplace --ExecutePreprocessor.timeout=1800 \
+  notebooks/06_curve_momentum.ipynb` → OK
+
+**Why:** The project needs an honest first read on D before deciding whether
+to add robustness or move to H.
+
+**Validation:**
+- Notebook executes top-to-bottom.
+- Full gross +0.55%/yr, net −0.99%/yr; train gross +0.85%, net −0.65%;
+  test gross −0.28%, net −1.89%.
+- Static +1: gross +0.35%, net −0.84%, turnover 11.4×; static −1: gross
+  −0.37%, net −1.56%.
+- Monthly net Sharpe: full −0.90, train −0.61, test −1.66; block-bootstrap
+  t-stat full −5.87, test −5.41.
+- Sector gross: Energy +1.51%, Oilseeds +0.65%, Grains +0.48%, Softs
+  +0.19%, Livestock +0.12%, Metals +0.03%, Industrials −0.76%.
+- CL 2020-04-20 signal is NaN for the affected 12-month windows; no stale
+  target.
+
+**Commit:** `feat(curve-momentum): add idea D baseline notebook`
+
+**Next:** Record the D decision and close-out docs; then H.
+
+---
+
+## LOG-0030 · 2026-10-19 20:36 · Phase 8c · Claude Code
+
+**Goal:** Record the D decision and close-out documentation.
+
+**Actions:**
+- Added D-013: D baseline conventions, first result, and the deferred
+  N=4/weekly/6m/liquidity/inverse-vol/decay list.
+- Recorded `D-x` (cross-sectional basis-momentum) as a separate backlog
+  item, not part of D.
+- Updated `README.md`, `AGENTS.md`, `docs/HANDOFF.md`,
+  `docs/PROGRESS.md`, `docs/onboarding.md`,
+  `docs/backtest_framework.md`, and `docs/data_dictionary.md` for D.
+- Updated `paper/README.md` to list the local `basis_momentum.pdf`.
+- Added LOG-0028–LOG-0030 and INDEX rows.
+
+**Files changed:**
+- `README.md`, `AGENTS.md`, `paper/README.md`
+- `docs/HANDOFF.md`, `docs/PROGRESS.md`, `docs/decisions.md`,
+  `docs/onboarding.md`, `docs/backtest_framework.md`,
+  `docs/data_dictionary.md`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 80 passed
+- `git diff --check` → clean
+
+**Why:** D is a documented negative/mixed baseline; the docs must say so
+without inviting test-set tuning. D-x is explicitly deferred and must not be
+mixed into D.
+
+**Validation:**
+- D-013 matches the executed notebook summary and static/monthly tables.
+- README/AGENTS/HANDOFF/PROGRESS/onboarding/backtest_framework/
+  data_dictionary all list D and notebook 06 consistently.
+- No raw data, PDFs, processed parquet, or output files are staged.
+
+**Commit:** `docs(curve-momentum): record idea D baseline`
+
+**Next:** H (holding-period scan); D-x remains a separate backlog item.
+
+---
+
+## LOG-0031 · 2026-10-19 20:40 · Phase 8d · Claude Code
+
+**Goal:** Record the local D merge handoff and done/not-done state for a
+new conversation.
+
+**Actions:**
+- Added HANDOFF §0b: branch, base, commits, worktree/merge instructions,
+  D results, done/not-done/backlog.
+- Added a local merge handoff block to PROGRESS.
+- Recorded that nothing is pushed and `main` is checked out in the
+  `Project-ab-merge` worktree.
+
+**Files changed:**
+- `docs/HANDOFF.md`, `docs/PROGRESS.md`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `git status -sb` → clean
+- `git log --oneline --decorate -6` → 4 D commits ahead of main
+- `git worktree list` → main in `Project-ab-merge`
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 80 passed
+
+**Why:** The user will switch to another conversation to merge locally;
+the next agent needs branch/commit/worktree instructions and the exact
+done/not-done state.
+
+**Validation:**
+- HANDOFF §0b matches the actual branch, commits, worktree, and test count.
+- D results match the executed notebook and earlier logs.
+- No push was performed.
+
+**Commit:** `docs(handoff): record idea D local merge handoff`
+
+**Next:** Merge locally; H; D-x backlog.
+
+---
+
+## LOG-0032 · 2026-10-19 20:45 · Phase 8e · Claude Code
+
+**Goal:** Merge idea D into `main` locally.
+
+**Actions:**
+- Merged `feat/idea-d-curve-momentum` into `main` with `--no-ff`.
+- No conflicts; all D code, tests, notebook, docs, and logs are included.
+- Kept the merge local; no push.
+
+**Files changed:**
+- Merge of the D branch: `src/curve.py`, `src/backtest.py`,
+  `src/signals.py`, `tests/test_backtest.py`,
+  `tests/test_curve_momentum.py`, `notebooks/06_curve_momentum.ipynb`,
+  `scripts/run_all.sh`, `AGENTS.md`, `README.md`, `paper/README.md`,
+  `docs/*`, `docs/logs/*`.
+
+**Commands:**
+- `git merge --no-ff feat/idea-d-curve-momentum` → clean
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 80 passed
+
+**Why:** The user asked to merge the completed D baseline into local `main`.
+The D branch is based directly on `cb755d0`; no conflicts.
+
+**Validation:**
+- 80 tests pass on `main`.
+- D notebook 06 is present and executed.
+- No push performed.
+
+**Commit:** `merge: integrate idea D curve-momentum baseline`
+
+**Next:** H; D-x backlog; keep local unless asked to push.

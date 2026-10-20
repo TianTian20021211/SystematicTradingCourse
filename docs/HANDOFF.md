@@ -5,6 +5,9 @@
 **B pre-test：** `d257e0e`。  
 **C baseline + hedge-ratio + Kalman variant：** 已合入 main；C 已作为
 mixed/negative 收尾。  
+**D curve-momentum / basis-momentum：** 已实现并收尾为
+documented negative/mixed；monthly engine support 已加入。
+
 **Repo：** https://github.com/TianTian20021211/SystematicTradingCourse
 
 ---
@@ -20,17 +23,74 @@ mixed/negative 收尾。
 7. `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` — 数据层。
 8. `notebooks/02_carry.ipynb` — A baseline；`03_mean_reversion.ipynb` — C
    baseline + hedge-ratio；`04_a_diagnose.ipynb` — A 诊断；
-   `05_b_pretest.ipynb` — B 预测试；`docs/PROGRESS.md` — 实时进度。
+   `05_b_pretest.ipynb` — B 预测试；`06_curve_momentum.ipynb` — D
+   baseline；`docs/PROGRESS.md` — 实时进度。
+
+---
+
+## 0b. 本地 merge handoff（idea D，2026-10-19）
+
+**Branch：** `feat/idea-d-curve-momentum`（本地，**未 push**）。
+
+**Base：** `main` at `cb755d0`（C merge）。
+
+**Commits：**
+
+- `4db6849` `feat(curve-momentum): add monthly engine and basis-momentum signal`
+- `cf94b1f` `feat(curve-momentum): add idea D baseline notebook`
+- `8a92198` `docs(curve-momentum): record idea D baseline`
+- `c3e9fce` `docs(logs): record idea D baseline commit hash`
+- `3bb0f36` `docs(handoff): record idea D local merge handoff`
+
+**Working tree：** clean；`pytest -q` → 80 passed；notebook 06 已执行。
+
+**未 push：** 所有 commits 只在本地；不要 push，除非用户明确要求。
+
+**Merge 注意：** `main` 当前 checkout 在
+`/Users/tian/Library/Mobile Documents/com~apple~CloudDocs/Baruch/第三学期/Systematic Trading/Project-ab-merge`。
+当前 worktree 不能直接 `git switch main`；在那个 worktree 里 merge：
+
+```bash
+cd "/Users/tian/Library/Mobile Documents/com~apple~CloudDocs/Baruch/第三学期/Systematic Trading/Project-ab-merge"
+git merge --no-ff feat/idea-d-curve-momentum
+python -m pytest -q
+```
+
+或者新建一个 worktree。merge 后保持本地，不要 push。
+
+**D 已完成：**
+
+- monthly rebalance support：`curve.monthly_rebalance_dates`、
+  `BacktestConfig.rebalance="last_trading_day_of_month"`；weekly 默认不变。
+- `CurveMomentumParams` / `curve_momentum_signal` + synthetic tests。
+- `notebooks/06_curve_momentum.ipynb`，输出 `output/curve_momentum_*`
+  （gitignored）。
+- `D-013` 和 README / AGENTS / HANDOFF / PROGRESS / onboarding /
+  backtest_framework / data_dictionary 更新。
+- **结果：** full gross +0.55%、net −0.99%；train gross +0.85%、net
+  −0.65%；test gross −0.28%、net −1.89%；static +1 net −0.84%；
+  monthly net Sharpe full −0.90 / test −1.66；bootstrap t full −5.87 /
+  test −5.41。**D 作为 documented negative/mixed 收尾，不用 test 调参。**
+
+**D 未做（backlog）：**
+
+- H（holding-period scan）。
+- D-x（cross-sectional basis-momentum）：按 BM 排序商品、long top /
+  short bottom；是独立 idea，不混入 D。
+- D robustness：N=4、weekly、6-month formation、liquidity thresholds、
+  inverse-vol、exponential decay、D-vs-A correlation、carry-regime
+  conditioning。
+- Push / PR / merge 到 `origin`：故意只留本地。
 
 ---
 
 ## 1. 一句话
 
-**数据层 + A/B/C baseline 已完成：K=5 ex-ante panel → carry /
-mean-reversion signal → return-based event-loop backtest →
+**数据层 + A/B/C/D baseline 已完成：K=5 ex-ante panel → carry /
+mean-reversion / curve-momentum signal → return-based event-loop backtest →
 full/train/test benchmark。**  
-**A、B、C 1:1、C rolling-OLS、C Kalman 都是负结果或 mixed-negative；
-A/B 已收尾（不再调参/不做 rescue），C 已 closed 并合入 main；D/H 还没开始。**
+**A、B、C 1:1、C rolling-OLS、C Kalman、D 都是负结果或 mixed-negative；
+A/B 已收尾（不再调参/不做 rescue），C/D 已 closed 并合入 main；下一步是 H。**
 
 ---
 
@@ -125,6 +185,7 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 | D-010 | C baseline：additive roll-chained continuous index（signal-only）、dollar z L=20、weekly ±2/0、1:1 dollar、5 bps/leg；daily/log/adjacent 后置 |
 | D-011 | C hedge-ratio variant：60-day rolling OLS levels、h>0、strict weekly h 调仓、0 bps gross 对照；returns/20/120/cap 后置 |
 | D-012 | C Kalman variant：paper-style DLM、252-day likelihood、q grid、0 bps gross；结果 mixed/negative，C closed；不做 daily replication |
+| D-013 | D curve-momentum / basis-momentum baseline：N=2 main pair、12m formation、month-end lookback、rank return index、≥80% valid、负价格 window invalid、纯 sign、target 日度 forward-fill、monthly rebalance、±1、5 bps/leg；结果 gross 弱、net 负，documented negative/mixed；D-x cross-sectional BM 是 backlog |
 
 完整内容见 `docs/decisions.md`。
 
@@ -159,7 +220,14 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 - **C Kalman variant**：`src/kalman.py`、`tests/test_kalman.py`；
   rolling-likelihood DLM；aggregate mixed/negative，per-root NG 为正、
   CL 为负；C 收尾。
-- **66 tests**；`docs/backtest_framework.md`；`docs/PROGRESS.md`。
+- **D curve-momentum / basis-momentum**：`signals.curve_momentum_signal`、
+  `curve.monthly_rebalance_dates`、monthly `BacktestConfig`；
+  `notebooks/06_curve_momentum.ipynb`；N=2、12m、monthly、±1、5 bps；
+  full gross +0.55%、net −0.99%；test gross −0.28%、net −1.89%；
+  static +1 gross +0.35% / net −0.84%，D 的 gross 略高但 turnover 更高、
+  net 更差；monthly net Sharpe full −0.90 / test −1.66，bootstrap t
+  full −5.87 / test −5.41。documented negative/mixed。
+- **80 tests**；`docs/backtest_framework.md`；`docs/PROGRESS.md`。
 
 ---
 
@@ -167,14 +235,16 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 
 - C 已合入 main 并 closed；不做 daily paper replication。若以后重开，
   daily CL/NG 是独立的 pre-registered 项目。
-- D/H 的正式实现（engine 可复用）。
+- D 已 closed 为 documented negative/mixed；不做 test-set tuning；
+  D-x（cross-sectional basis-momentum）是单独的 backlog，不混入 D。
+- H（holding-period scan）的正式实现；monthly engine support 已就绪。
 - A/B 已收尾，不再做变体或调参；residual B 不计划，除非以后作为独立
   预注册 idea。
 - Robustness：D=5/20、liquidity buckets、tick-based cost、
   point-in-time D=10 proxy。
 - 最终 liquidity threshold（baseline 不硬筛）。
 - Contract multiplier / tick size 静态表（做美元 P&L 和容量需要）。
-- Proposal 的 holding horizon `h`（baseline 用 weekly；H 扫描 deferred）。
+- Proposal 的 holding horizon `h`（baseline 用 weekly/monthly；H 扫描 deferred）。
 - Paper replication。
 - 队友 GitHub collaborator 权限已解决。
 
@@ -209,11 +279,14 @@ jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=600 notebooks/04_a_diagnose.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=1800 notebooks/06_curve_momentum.ipynb
 ```
 
 第二个 notebook 会重建 `data/processed/*.parquet`；02 跑 A baseline，
 03 跑 C baseline + hedge-ratio，04 跑 A 诊断（依赖 02 的
-`output/carry_full_*`），05 跑 B 预测试；结果写到 `output/`（gitignored）。
+`output/carry_full_*`），05 跑 B 预测试，06 跑 D baseline；结果写到
+`output/`（gitignored）。
 
 ---
 
@@ -226,22 +299,21 @@ jupyter nbconvert --execute --to notebook --inplace \
 2. **A/B 已收尾**：不再做变体或调参；报告只简短说明 A/B 不行。
    residual B 不计划，除非以后作为独立预注册 idea。
 3. **Liquidity threshold**：baseline 不硬筛；robustness 用 1k/5k/10k/20k 中的哪个？
-4. **Signal 优先级**：C 已 closed；下一步是 D（curve momentum）/ H
-   （holding-period scan），还没实现。
-5. **Proposal 的 h**：baseline 用 weekly；H 扫描 1/5/21 天。
+4. **Signal 优先级**：C/D 已 closed；下一步是 H（holding-period scan）。
+5. **Proposal 的 h**：A/C baseline 用 weekly，D 用 monthly；H 扫描 1/5/21 天。
 6. **Contract multiplier / tick size**：美元 P&L、容量、tick-based cost 需要时再建。
-7. **Adjacent pairs**：A 主结果只用 main pair；B/D 的多腿以后再决定。
+7. **Adjacent pairs**：A/D 主结果只用 main pair；D-x 的横截面组合以后再决定。
 
 ---
 
 ## 8. 下一步
 
-A、B、C 都已作为负结果或 mixed-negative 收尾：A 的 contango short 方向错；
+A、B、C、D 都已作为负结果或 mixed-negative 收尾：A 的 contango short 方向错；
 B 的 adjacent-carry rank 在成本前就为负；C 的 1:1、rolling-OLS 和 Kalman
-都没有稳健、可交易的 edge。C 已合入 main 并 closed。下一步：
+都没有稳健、可交易的 edge；D 的 gross 很弱，5 bps 后为负，test gross 已经
+为负。C/D 已合入 main 并 closed。下一步：
 
-1. C 已合入 main；保留 notebook 03、LOG-0013–0018（baseline）、
-   LOG-0022–0024（rolling OLS）和 LOG-0026（Kalman）；
-2. C 已 closed；不做 daily paper replication；若重开，daily CL/NG 是独立项目；
-3. 做 D/H（engine 可复用）；
-4. 不要用 test 调参；A/B 已收尾，不再做变体。
+1. C/D 已 closed；不做 daily paper replication；若重开，daily CL/NG 是独立项目；
+2. 做 H（holding-period scan）；monthly engine support 已就绪；
+3. D-x（cross-sectional basis-momentum）作为独立 backlog，等 H 之后决定；
+4. 不要用 test 调参；A/B 已收尾，C/D 不再做 rescue 变体。

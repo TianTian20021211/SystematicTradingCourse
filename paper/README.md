@@ -27,7 +27,12 @@ Use the citations below to retrieve them through the library or the course.
 ## Additional references
 
 4. Boons, M., & Porras Prado, M. (2019). *Basis-Momentum.*
-   Journal of Finance, 74(1), 239–279. (Not in the local folder.)
+   Journal of Finance, 74(1), 239–279.
+   - Local file: `basis_momentum.pdf`.
+   - The difference between first- and second-nearby momentum; it subsumes
+     basis and conventional momentum in joint tests.
+   - Used as the theoretical/empirical basis for idea D (the within-commodity
+     signal is mathematically basis-momentum).
 5. Hong, S., & Klabjan, D. (2026). Graph learning for calendar spreads.
    (Not in the local folder; cited in the proposal.)
 

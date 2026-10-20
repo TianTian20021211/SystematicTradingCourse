@@ -30,8 +30,11 @@ end-of-phase snapshot remains `docs/HANDOFF.md`; decisions are in
 | C baseline | done / merged | 1:1 weekly; negative net result |
 | C hedge-ratio variant | done / merged | 60-day rolling OLS; negative gross result |
 | C Kalman variant | done / merged | rolling-likelihood DLM; mixed/negative; C closed |
-| Tests | done | 66 passed on the C branch |
-| Notebooks | done | `02_carry`, `03_mean_reversion`, `04_a_diagnose`, `05_b_pretest` |
+| D curve-momentum signal | done | N=2 main pair; 12-month formation; monthly |
+| D baseline | done | full gross +0.55%, net −0.99%; test gross −0.28%; negative/mixed |
+| Monthly rebalance engine | done | `last_trading_day_of_month`; weekly default unchanged |
+| Tests | done | 80 passed |
+| Notebooks | done | `02_carry`, `03_mean_reversion`, `04_a_diagnose`, `05_b_pretest`, `06_curve_momentum` |
 
 ---
 
@@ -217,6 +220,44 @@ ratio uses `LOG-0022`–`LOG-0024`; the Kalman variant and close-out use
 
 ---
 
+## D curve-momentum / basis-momentum baseline
+
+Signal: `score = mom_near - mom_far` over a 12-month formation window;
+`target = sign(score)`. N=2 main pair, month-end signal, daily
+forward-filled target, monthly rebalance, ±1, 5 bps/leg, no liquidity
+filter. The signal is mathematically basis-momentum (Paschke et al. 2020;
+Boons & Porras Prado 2019).
+
+| Period | Gross ann. | Net ann. | Sharpe gross | Sharpe net | Max DD net | Turnover |
+|---|---:|---:|---:|---:|---:|---:|
+| Full 1986–2026 | +0.55% | −0.99% | 0.024 | −0.041 | −34.8% | 16.1× |
+| Train 1986–2015 | +0.85% | −0.65% | 0.049 | −0.036 | −18.7% | 15.6× |
+| Test 2016–2026 | −0.28% | −1.89% | −0.007 | −0.053 | −19.6% | 16.8× |
+
+Sector gross: Energy +1.51%, Oilseeds +0.65%, Grains +0.48%, Softs +0.19%,
+Livestock +0.12%, Metals +0.03%, Industrials −0.76%. The aggregate gross is
+weak; costs turn it negative, and test gross is already negative. This is a
+**documented negative/mixed baseline**, not a tuning target. Static
+benchmark and monthly diagnostics are in
+`notebooks/06_curve_momentum.ipynb` and `output/curve_momentum_*`.
+
+Static benchmarks (full sample, same monthly engine): always +1 gross
++0.35% / net −0.84% / turnover 11.4×; always −1 gross −0.37% / net −1.56%.
+D's gross is slightly above static +1, but its turnover is higher, so net is
+worse; the dynamic timing adds no tradable value.
+
+Monthly Sharpe (net): full −0.90, train −0.61, test −1.66. Month-level block
+bootstrap t-stat: full −5.87, test −5.41. The result is significantly
+negative at the monthly horizon, not just noisy.
+
+`D-x` (cross-sectional basis-momentum: rank commodities by BM, long the top
+bucket and short the bottom bucket) is a separate backlog item. It is not
+part of D and has not been implemented.
+
+**Log IDs:** D uses `LOG-0028`–`LOG-0030` (signal/engine, notebook, docs).
+
+---
+
 ## Decisions in force
 
 - Backtest eligibility is K=5 ex ante; D=10 research panels are kept.
@@ -232,29 +273,35 @@ ratio uses `LOG-0022`–`LOG-0024`; the Kalman variant and close-out use
   rebalancing; 0 bps gross first).
 - C Kalman hedge ratio: D-012 (rolling 252-day likelihood; q grid; h>0;
   0 bps gross; C closed as mixed/negative).
+- D curve momentum / basis-momentum: D-013 (N=2 main pair; 12m formation;
+  month-end signal; rank return index; ≥80% valid; negative-price window
+  invalid; daily forward-filled target; monthly rebalance; ±1; 5 bps/leg;
+  documented negative/mixed; D-x backlog).
 
 ---
 
 ## Main files
 
-- `src/curve.py` — `d=None` K-only eligibility; shared weekly calendar
+- `src/curve.py` — `d=None` K-only eligibility; shared weekly/monthly calendars
 - `src/panel.py` — `build_backtest_panel`, `build_contract_mark_state`
 - `src/continuous.py` — roll-chained leg indices; rolling OLS hedge ratio
 - `src/kalman.py` — Kalman-filter hedge ratio (rolling-likelihood DLM)
 - `src/signals.py` — `CarryParams` / `carry_signal`;
-  `MeanReversionParams` / `mean_reversion_signal`
-- `src/backtest.py` — `BacktestConfig`, `BacktestResult`, `build_target_legs`
-  (optional hedge-ratio weights), `run_backtest`
+  `MeanReversionParams` / `mean_reversion_signal`;
+  `CurveMomentumParams` / `curve_momentum_signal`
+- `src/backtest.py` — `BacktestConfig` (weekly/monthly), `BacktestResult`,
+  `build_target_legs` (optional hedge-ratio weights), `run_backtest`
 - `src/metrics.py` — `summarize`, `conditional_mean`, `sector_summary`,
   `plot_result`
 - `src/a_diagnostics.py` — A negative-result diagnostics
 - `src/b_pre_test.py` — cheap adjacent-carry B pre-test
 - `tests/test_eligibility.py`, `tests/test_signals.py`,
-  `tests/test_backtest.py`, `tests/test_continuous.py`,
-  `tests/test_kalman.py`, `tests/test_a_diagnostics.py`,
-  `tests/test_b_pre_test.py`
+  `tests/test_curve_momentum.py`, `tests/test_backtest.py`,
+  `tests/test_continuous.py`, `tests/test_kalman.py`,
+  `tests/test_a_diagnostics.py`, `tests/test_b_pre_test.py`
 - `notebooks/02_carry.ipynb`, `notebooks/03_mean_reversion.ipynb`,
-  `notebooks/04_a_diagnose.ipynb`, `notebooks/05_b_pretest.ipynb`
+  `notebooks/04_a_diagnose.ipynb`, `notebooks/05_b_pretest.ipynb`,
+  `notebooks/06_curve_momentum.ipynb`
 - `docs/a_negative_result.md`, `docs/b_pretest.md`
 - `docs/backtest_framework.md`, `docs/data_dictionary.md` §10
 
@@ -272,12 +319,14 @@ jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=600 notebooks/04_a_diagnose.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=1800 notebooks/06_curve_momentum.ipynb
 ```
 
 Notebook 02 produces the `output/carry_*` tables; 03 produces
 `output/mean_reversion_*`; 04 loads `output/carry_full_*` and writes the
-diagnosis tables; 05 writes `output/b_pretest_summary.csv`. All outputs are
-gitignored.
+diagnosis tables; 05 writes `output/b_pretest_summary.csv`; 06 writes
+`output/curve_momentum_*`. All outputs are gitignored.
 
 ---
 
@@ -287,8 +336,25 @@ gitignored.
 2. C is merged and closed as mixed/negative; do not build a daily
    paper-replication branch. If revisited, daily CL/NG is a separate
    pre-registered project.
-3. D/H next. Robustness (liquidity buckets, tick-based cost, dollar P&L,
-   point-in-time D=10 proxy) only if needed for the final report; it is not
-   an attempt to rescue A/B/C.
-4. No report has been written yet; A/B/C are documented as negative or
+3. D is closed as documented negative/mixed; do not tune it on the test set.
+   `D-x` (cross-sectional basis-momentum) is a separate backlog item.
+4. H (holding-period scan) is next; monthly engine support is ready.
+   Robustness (liquidity buckets, tick-based cost, dollar P&L, point-in-time
+   D=10 proxy) only if needed for the final report; it is not an attempt to
+   rescue A/B/C/D.
+5. No report has been written yet; A/B/C/D are documented as negative or
    mixed-negative baselines.
+
+---
+
+## Local merge handoff (D)
+
+- Branch: `feat/idea-d-curve-momentum`, based on `main` at `cb755d0`.
+- Commits: `4db6849`, `cf94b1f`, `8a92198`, `c3e9fce`; all local, not pushed.
+- Working tree clean; `pytest -q` → 80 passed; notebook 06 executed.
+- `main` is checked out in
+  `/Users/tian/Library/Mobile Documents/com~apple~CloudDocs/Baruch/第三学期/Systematic Trading/Project-ab-merge`;
+  merge there with `git merge --no-ff feat/idea-d-curve-momentum`.
+- Done/not done and D results are in `docs/HANDOFF.md` §0b and
+  `docs/decisions.md` D-013. D is closed as documented negative/mixed;
+  H is next; D-x is a separate backlog; do not push unless asked.
