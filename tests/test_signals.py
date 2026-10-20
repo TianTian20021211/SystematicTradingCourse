@@ -140,6 +140,28 @@ def test_mean_reversion_signal_weekly_target_path() -> None:
     assert exit_row["target"] == 0.0
 
 
+def test_mean_reversion_signal_daily_target_path() -> None:
+    panel = _spread_panel()
+    params = signals.MeanReversionParams(window=10, evaluation="daily")
+    trading_days = pd.DatetimeIndex(panel["date"])
+    pair_grid = panel[["date", "root"]]
+    signal = signals.mean_reversion_signal(
+        panel, params, trading_days=trading_days, pair_grid=pair_grid
+    )
+
+    assert signal["is_evaluation"].all()
+    assert signal["evaluation_date"].eq(signal["date"]).all()
+
+    jump_date = trading_days[7]
+    jump_row = signal.loc[signal["date"].eq(jump_date)].iloc[0]
+    assert jump_row["target"] == -1.0
+    assert jump_row["z_valid"]
+
+    # Daily evaluation exits on the next day; weekly would still hold.
+    next_row = signal.loc[signal["date"].eq(trading_days[8])].iloc[0]
+    assert next_row["target"] == 0.0
+
+
 def test_mean_reversion_signal_no_pair_dates_have_zero_target() -> None:
     panel = _spread_panel()
     params = _params()
@@ -158,6 +180,28 @@ def test_mean_reversion_signal_no_pair_dates_have_zero_target() -> None:
 def test_mean_reversion_signal_truncation_does_not_change_past() -> None:
     panel = _spread_panel()
     params = _params()
+    trading_days = pd.DatetimeIndex(panel["date"])
+    pair_grid = panel[["date", "root"]]
+    full = signals.mean_reversion_signal(
+        panel, params, trading_days=trading_days, pair_grid=pair_grid
+    )
+    cutoff = trading_days[20]
+    truncated = signals.mean_reversion_signal(
+        panel.loc[panel["date"].le(cutoff)],
+        params,
+        trading_days=trading_days,
+        pair_grid=pair_grid,
+    )
+    past_full = full.loc[full["date"].le(cutoff), "target"].to_numpy()
+    past_truncated = truncated.loc[
+        truncated["date"].le(cutoff), "target"
+    ].to_numpy()
+    np.testing.assert_array_equal(past_full, past_truncated)
+
+
+def test_mean_reversion_signal_daily_truncation_does_not_change_past() -> None:
+    panel = _spread_panel()
+    params = signals.MeanReversionParams(window=10, evaluation="daily")
     trading_days = pd.DatetimeIndex(panel["date"])
     pair_grid = panel[["date", "root"]]
     full = signals.mean_reversion_signal(
@@ -223,13 +267,13 @@ def test_mean_reversion_signal_parameter_guards() -> None:
             trading_days=trading_days,
             pair_grid=pair_grid,
         )
-    with pytest.raises(NotImplementedError):
-        signals.mean_reversion_signal(
-            panel,
-            signals.MeanReversionParams(evaluation="daily"),
-            trading_days=trading_days,
-            pair_grid=pair_grid,
-        )
+    daily = signals.mean_reversion_signal(
+        panel,
+        signals.MeanReversionParams(evaluation="daily"),
+        trading_days=trading_days,
+        pair_grid=pair_grid,
+    )
+    assert daily["is_evaluation"].all()
     with pytest.raises(ValueError):
         signals.mean_reversion_signal(
             panel,

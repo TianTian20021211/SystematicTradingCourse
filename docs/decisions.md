@@ -863,3 +863,90 @@ Status values: `proposed`, `accepted`, `superseded`.
   `flip_legs`, two figure helpers, and synthetic tests. Notebook 11 is the
   B-flip record. Original B remains negative/closed. Reopening B as a
   strategy requires a new decision.
+
+---
+
+## D-027 · Idea C: daily information audit protocol
+
+- **Status:** accepted
+- **Date:** 2026-10-20
+- **Context:** C is closed as mixed/negative in the official weekly v2 results
+  (D-012, D-019). The user wants to re-open C as a **candidate alpha signal**,
+  not as a rescue of the old baseline: switch the signal layer to daily so it
+  matches the daily convention used by A/D/E and is easier to merge, measure
+  how much gross information it contains before considering costs, and decide
+  whether it is worth continuing to an alpha/cost phase. The official weekly
+  v2 results remain unchanged.
+- **Decision:**
+  1. **Purpose.** Treat daily C as a candidate signal; weekly is a reference.
+     The audit answers “how much information” and “is daily worth pursuing”,
+     not “can the old weekly C be rescued”.
+  2. **Sample split.** 1986–2005 train / exploration; 2006–2015 validation
+     (variant selection and gate); 2016–2026 test read once. No parameter is
+     chosen on the test sample.
+  3. **Variants and frequency.** C1 1:1, C2 rolling OLS hedge, C3 Kalman hedge
+     are all candidates. Daily version: the z-score and hedge ratio `h` update
+     every trading day; signal at the t settle, fill at t+1. Baseline
+     parameters stay `window=20`, `entry_z=2.0`, `exit_z=0.0`,
+     `min_obs_frac=0.8`. No grid search and no tuning in this phase.
+  4. **Conventions.** v2 D-018: 24 roots, `d=5`, `k=5`, `min_adv=100`,
+     USD 10m capital, equal 1/N budget, equal-notional legs. Gross only.
+     `same_settle` is a diagnostic, never a tradable result. The official
+     weekly v2 results and `output/v2_rerun/c_*` are not modified.
+  5. **Variant selection (sequential).** Start with C1. C2 is adopted only if,
+     on validation, (a) its gross Sharpe is at least 0.05 higher than C1’s,
+     (b) the paired daily gross-return difference (C2 − C1) has a 21-day
+     moving-block bootstrap 95% CI lower bound above zero, and (c) at least
+     60% of eligible roots improve. If C2 passes, select C2 and stop; the
+     C3-vs-C2 row is diagnostic only. If C2 fails, compare C3 directly with C1
+     under the same three conditions. The final selected variant is the
+     simplest one that passes.
+  6. **Alpha gate.** The final selected daily variant must have validation
+     gross Sharpe ≥ 0.4, at least 60% of eligible roots with positive
+     validation gross Sharpe, and test gross Sharpe > 0. “Eligible” means at
+     least 252 active days in the period and a finite per-root Sharpe. Pass →
+     proceed to alpha/cost; fail → C stays closed, but the daily results are
+     kept and reported. Gate and selection use the raw daily return series,
+     not the rounded performance table.
+  7. **Information diagnostics.** Event study (entry events, signed forward
+     spread returns at 1/5/10/20 days, long/short split); IC of −z against
+     forward returns with per-root block bootstrap; same-settle versus
+     tradable timing and execution-free returns; per-root gross Sharpe,
+     breadth and jackknife; AR(1) half-life; nested predictive regressions
+     (z vs z+carry vs z+momentum) with adjusted and out-of-sample R²;
+     placebo (circular shift or random entries). Weekly versus daily is
+     reported for all three variants; daily is kept regardless of the
+     comparison.
+  8. **Deliverables.** `src/signals.py` daily evaluation with weekly behaviour
+     unchanged; `src/c_daily.py` for the daily C runner and C-specific audit
+     statistics; `scripts/run_c_daily_audit.py` and
+     `output/c_daily_audit/`; a “Daily information audit” section in
+     `notebooks/12_idea_c_mean_reversion.ipynb` (D-020, no new idea
+     notebook); `docs/logs/AGENT_LOG.md` and `INDEX.md` entries. Reusable
+     generic helpers may later move to a shared diagnostics module, but this
+     audit keeps its code in `src/c_daily.py` to avoid colliding with parallel
+     work.
+  9. **Stage firewall / test read once.** Stage 1 uses marks truncated at
+     2015-12-31 for both the simulation and the forward-return diagnostics;
+     no stage-1 artifact may contain a date after 2015. Stage 2 runs only if
+     the validation gate passes, requires an explicit confirmation, and writes
+     a `test_readonce.json` marker; a second test read is refused unless
+     explicitly overridden and logged. The frozen validation signal path is
+     built from the full inputs (eligibility uses full contract history, as in
+     D-018); only the simulation and forward-return panels are truncated.
+ 10. **Out of scope.** No grid search; no tuning on test; no cost or capacity
+     optimisation before the gross gate; no raw-spread z signal; no use of
+     C2/C3 to rescue a failed C1 (only the final selected variant can pass
+     the gate).
+- **Consequences:** Daily C is a separate audit, not a replacement of the
+  D-019 weekly official results. C remains closed until the gate passes; a
+  passing result makes the alpha/cost phase a separate decision. The new
+  diagnostic helpers are reusable by other ideas and by the teammate’s E
+  framework.
+- **Stage-1 result (2026-10-20):** daily validation gross SR is C1 0.240,
+  C2 0.265, C3 −0.332; sequential selection keeps C1; the alpha gate fails
+  (0.240 < 0.4). Weekly validation SR is C1 0.046, C2 0.338, C3 −0.148, so
+  daily improves C1 but not C2/C3. IC is ≈0, same-settle SR (0.419) is much
+  stronger than tradable `[t+1,t+2]` (0.064), placebo p = 0.656, and nested
+  OOS R² is negative. Test was not read. **C stays closed; daily results are
+  retained** in notebook 12 §9–11.

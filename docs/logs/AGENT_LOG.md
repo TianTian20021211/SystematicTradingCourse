@@ -2460,3 +2460,66 @@ combination, not a standalone strategy and not a rescue of B.
 deferred tuning directions (k-smoothing, D=5/20, ADV=1000, rebalance
 frequency, liquidity weighting). Then test B-flip correlation/incremental
 value against A/C/D for combination.
+
+---
+
+## LOG-0057 · 2026-10-20 · Phase 12 · Claude Code
+
+**Goal:** Pre-register and run the D-027 daily C information audit, isolated
+from the parallel A/B/D worktrees.
+
+**Actions:**
+- Added D-027 (accepted) to `docs/decisions.md`: 1986–2005 train,
+  2006–2015 validation, 2016–2026 test once; daily C1/C2/C3; sequential
+  adoption with paired block bootstrap; alpha gate; stage firewall.
+- `src/signals.py`: `evaluation="daily"` support in
+  `mean_reversion_signal`; weekly default and behavior unchanged.
+- `src/c_daily.py`: daily C1/C2/C3 legs, gross-only simulation, stage-1
+  truncation, per-root metrics, paired bootstrap, sequential selection and
+  validation/test gates.
+- `src/c_audit.py`: event study, IC + block bootstrap, same-settle vs
+  tradable timing, AR(1) persistence, nested predictive regressions,
+  circular-shift placebo and jackknife.
+- `scripts/run_c_daily_audit.py`: stage-1 (truncated at 2015-12-31) and
+  stage-2 (one test read, marker file) runner; outputs under
+  `output/c_daily_audit/` (gitignored).
+- `notebooks/12_idea_c_mean_reversion.ipynb`: sections 9–11, separate from
+  the official weekly D-019 results.
+- Tests: `tests/test_c_daily.py`, `tests/test_c_audit.py`; updated
+  `tests/test_signals.py` for daily evaluation.
+
+**Files changed:**
+- `docs/decisions.md`, `docs/HANDOFF.md`, `docs/PROGRESS.md`, `README.md`
+- `src/signals.py`, `src/c_daily.py`, `src/c_audit.py`
+- `scripts/run_c_daily_audit.py`
+- `notebooks/12_idea_c_mean_reversion.ipynb`
+- `tests/test_signals.py`, `tests/test_c_daily.py`, `tests/test_c_audit.py`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 145 passed
+- `python scripts/run_c_daily_audit.py --stage stage1`
+
+**Why:** The user wants C treated as a candidate alpha signal and switched to
+daily for consistency with the other signals. The audit measures gross
+information before any cost work and fixes the selection/gate rules ex ante.
+
+**Validation:**
+- Weekly C1/C2/C3 gross performance matches the existing
+  `output/v2_rerun/c_*_performance.csv` within tolerance.
+- Stage-1 artifacts use marks truncated at 2015-12-31; test not read.
+- Daily validation gross SR: C1 0.240, C2 0.265, C3 −0.332; sequential
+  selection keeps C1; alpha gate fails (0.240 < 0.4); 15/24 roots positive.
+- Weekly validation gross SR: C1 0.046, C2 0.338, C3 −0.148; daily improves
+  C1 but not C2/C3, and C1 remains below the gate.
+- Diagnostics: ALL IC 0.0095/0.0027/−0.0009/0.0209 at 1/5/10/20 days;
+  same-settle SR 0.419 vs tradable `[t+1,t+2]` 0.064; execution-free
+  tradable SR 0.064 vs placebo mean −0.073, two-sided p 0.656; nested
+  OOS R² negative for all models; jackknife SR 0.119–0.448.
+- Diagnostics and weekly-vs-daily comparison are in notebook 12 §9–11 and
+  `output/c_daily_audit/stage1_train_validation/`.
+
+**Commit:** `feat(c-daily): add daily C information audit (D-027)` (`this commit`).
+
+**Next:** C remains closed; daily results are retained. Any new C variant is a
+separate pre-registered project; no grid search and no test tuning.
