@@ -9,6 +9,10 @@ mixed/negative 收尾。
 D-021–D-023。
 **D curve-momentum / basis-momentum：** 已实现并收尾为
 documented negative/mixed；monthly engine support 已加入。
+
+**D signal validity：** 已完成（D-025 / LOG-0055）；1m IC 0.049，但只有
+2/24 root FDR 显著，稳定性有限；结论是 detectable but unstable，
+且大部分与 static/carry 重叠。
 **Backtest v2（jiaheng/backtest-v2）：** 已合入 main（LOG-0039）；
 D-014–D-016。
 **v2 重跑 A/D/C/C-hedge/B：** 已完成（LOG-0044）；每个 idea 一个
@@ -107,15 +111,61 @@ merge 后保持本地，不要 push。
   monthly net Sharpe full −0.90 / test −1.66；bootstrap t full −5.87 /
   test −5.41。**D 作为 documented negative/mixed 收尾，不用 test 调参。**
 
-**D 未做（backlog）：**
+**D 未做（backlog；signal validity 已完成，见 §0c）：**
 
 - H（holding-period scan）。
 - D-x（cross-sectional basis-momentum）：按 BM 排序商品、long top /
   short bottom；是独立 idea，不混入 D。
-- D robustness：N=4、weekly、6-month formation、liquidity thresholds、
-  inverse-vol、exponential decay、D-vs-A correlation、carry-regime
-  conditioning。
+- D parameter robustness（phase 2）：N=4、weekly、6-month formation、
+  liquidity thresholds、inverse-vol、exponential decay、D-vs-A correlation、
+  carry-regime conditioning。等 D-025 validity 流程跑通后再由用户选参数。
 - Push / PR / merge 到 `origin`：故意只留本地。
+
+---
+
+## 0c. D signal validity（2026-10-20）
+
+**Branch：** `feat/d-signal-validity`（worktree；未 push）。**Decision：**
+D-025。**Log：** LOG-0055。
+
+D 现在有两层结论：trading result 仍是 v2 negative/mixed；另加一个
+**不看成本**的 signal-validity study，回答“score 里有没有信息、信息在哪、
+是否独立、是否稳定”。
+
+**实现：** `src/d_validity.py`、`tests/test_d_validity.py`、notebook 13
+§7（“D signal validity”）。主 spec 固定 D-013（12m / N=2 / monthly /
+sign / D=5 / 不筛流动性），不做参数扫描。
+
+**Headline（full 1986–2026，1-month forward，t+1）：**
+
+| 指标 | 结果 |
+|---|---:|
+| Mean per-root IC | 0.049 |
+| NW t（aggregate） | 3.48 |
+| Roots with IC > 0 | 79% |
+| FDR-significant roots | 2/24（LC, W） |
+| Nominal p<0.05 roots | 7/24 |
+| Hit rate | 52.5% |
+
+**Horizon：** IC 随 horizon 上升：3/6/12 个月 0.140 / 0.173 / 0.190；
+hit rate 56.3% / 57.7% / 58.9%；mean signed return 15.2 / 26.1 / 43.7 bp。
+
+**独立性：** incremental adjusted R²：+D 0.0069、+A 0.0143、+C 0.0158；
+这些增量的 bootstrap CI 都包含 0。Residual IC gain 0.0162；18/24 root
+为正，但只有 2/24 的 bootstrap p<0.05。Static always-long 约 11.1 bp/月；
+D 的 long-short timing spread 约 11.2 bp/月，增量不突出。
+
+**稳定性：** 1986–1999 IC 0.013、2000–2009 0.061、2010–2026 0.051；
+backwardation 0.022 vs contango 0.069；high-vol −0.007、low-vol 0.079；
+rolling 36 个月 IC 正收益比例 39%。
+
+**Placebo：** within-root 6-month block shuffle 的 null mean ≈ 0，actual
+0.049，p<0.001（1000 draws）；lag 1/3/6/12 个月 IC 0.016/0.014/0.018/0.012；
+future-score lead 24 个月 0.028。
+
+**Verdict：** D 含有**可检测但不稳定、且大部分与 static / carry 重叠**
+的信息；不是“完全无信息”，但达不到“稳定独立信息”的标准。D 的官方
+trading result 不变；参数扫描/主 spec 选择留到下一阶段，不在 test 上调参。
 
 ---
 
@@ -235,6 +285,7 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 | D-022 | E 结果：paper timing Sharpe 2.03，t+1 后消失；closed as not tradable |
 | D-023 | E follow-ups：fit significance、paper-timing costs、Kalman A/B not adopted |
 | D-024 | 云端 E 并入 D-020 布局；E 决策/日志重编号 |
+| D-025 | D signal-validity：D-013 固定、不扫参数；rank-index t+1 forward（1/3/6/12m）；per-root IC/hit/quantile/R²；incremental vs static/A/C；decades/carry/vol + rolling 36m；placebo；6m block bootstrap、FDR、max-\|IC\|；结果 detectable but unstable，not independent |
 
 完整内容见 `docs/decisions.md`。
 
@@ -278,6 +329,10 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
   static +1 gross +0.35% / net −0.84%，D 的 gross 略高但 turnover 更高、
   net 更差；monthly net Sharpe full −0.90 / test −1.66，bootstrap t
   full −5.87 / test −5.41。documented negative/mixed。
+- **D signal validity（D-025）**：`src/d_validity.py`、
+  `tests/test_d_validity.py`、notebook 13 §7；per-root IC/hit/quantile/R²、
+  1/3/6/12m horizon、incremental vs static/A/C、decades/carry/vol、
+  rolling 36m、placebo。结论：detectable but unstable，not independent。
 - **Backtest v2 framework**：holdings-based simulator、分层成本、
   horizon / k sweep / capacity；`docs/backtest_framework.md`、
   `src/specs.py`–`plotstyle.py`。
@@ -288,7 +343,7 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
   `src/v2_signals.py`、`src/v2_rerun.py`、`scripts/run_v2_rerun.py`、
   notebooks 10–14；D-017/D-018/D-021–D-023；full-sample 结果全部 negative/mixed。
   v1 数字保留在 docs 和 git history，仅作历史 baseline。
-- **136 tests**；`docs/backtest_framework.md`；`docs/v1_v2_comparison.md`；
+- **145 tests**；`docs/backtest_framework.md`；`docs/v1_v2_comparison.md`；
   `docs/notebook_history.md`；`docs/PROGRESS.md`。
 
 ---

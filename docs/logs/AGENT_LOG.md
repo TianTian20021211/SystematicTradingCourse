@@ -2335,3 +2335,64 @@ D-020 layout; the two histories collided on decision, log and notebook IDs.
 
 **Next:** Align A's information tests with `horizon.horizon_profile`,
 `ts_ic`/`block_bootstrap_ic`, and `block_bootstrap_mean`.
+
+## LOG-0055 · 2026-10-20 · Phase 12 · Claude Code
+
+**Goal:** Add a cost-free signal-validity study for idea D (D-025), keeping
+the D-013 trading baseline unchanged and doing the work in an isolated
+worktree because several agents share the repo.
+
+**Actions:**
+- Created worktree branch `feat/d-signal-validity` from `main` at
+  `f624dd2`; symlinked the gitignored processed parquet into
+  `data/processed/` (not committed).
+- Added `src/d_validity.py`: monthly panel builder, rank-index t+1 forward
+  returns at 1/3/6/12 months, same-close diagnostic, per-root IC/hit
+  rate/expanding quantiles, nested adjusted R² and residual IC, stability,
+  placebo, FDR, max-|IC| benchmark, and `save_tables`.
+- Added `tests/test_d_validity.py` (9 synthetic tests).
+- Added notebook 13 section 7 (“D signal validity”) and updated section 8
+  (“Reading”) with the validity verdict; executed notebook 13.
+- Added D-025 to `docs/decisions.md`; updated `docs/diagnostics_plan.md`
+  §3.5 and §8, `docs/HANDOFF.md` §0c, `docs/PROGRESS.md`.
+- Did not edit the main working tree; its uncommitted A/B peer work remains
+  untouched. Did not import or depend on the untracked
+  `src/diagnostics.py`/`src/b_flip.py`.
+
+**Files changed:**
+- `src/d_validity.py` (new)
+- `tests/test_d_validity.py` (new)
+- `notebooks/13_idea_d_curve_momentum.ipynb`
+- `docs/decisions.md`, `docs/diagnostics_plan.md`, `docs/HANDOFF.md`,
+  `docs/PROGRESS.md`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 145 passed
+- `jupyter nbconvert --execute --to notebook --inplace --ExecutePreprocessor.timeout=900 notebooks/13_idea_d_curve_momentum.ipynb` → OK
+- `python scripts/_run_d_validity.py` (temporary smoke driver, removed)
+
+**Why:** D is a negative/mixed trading baseline. The user wants to know
+whether the score contains valid information at all before deciding whether
+to spend effort on costs or parameter choices. The study uses default D-013
+params and no test-set tuning.
+
+**Validation:**
+- 1m mean per-root IC 0.049 (NW t 3.48); 79% of roots positive; only 2/24
+  survive FDR (LC, W), 7/24 nominal p<0.05.
+- IC rises with horizon: 0.140 / 0.173 / 0.190 at 3/6/12m.
+- Expanding quintiles are non-monotonic.
+- Incremental adjusted R²: +D 0.0069, +A 0.0143, +C 0.0158; all CIs include
+  zero. Residual IC gain 0.0162 (18/24 roots positive, 2/24 significant).
+- Static always-long 11.1 bp/month; D timing spread 11.2 bp/month.
+- Stability: 1986–1999 0.013, high-vol −0.007, rolling 36m positive share
+  39%.
+- Placebo: block-shuffle p<0.001; lag 1/6m 0.016/0.018; future lead 0.028.
+- Notebook 13 executes top-to-bottom; no errors.
+- Tests are synthetic and need no raw data.
+
+**Commit:** `feat(validity): add D signal-validity diagnostics`
+
+**Next:** leave `feat/d-signal-validity` for user review/merge. Parameter
+response curves and main-spec selection are a separate phase; do not tune on
+the 2016–2026 test sample.

@@ -298,6 +298,37 @@ part of D and has not been implemented.
 
 ---
 
+## D signal validity (D-025, 2026-10-20)
+
+D was reframed as an information study: no costs, no parameter grid, and no
+change to the D-013 trading spec. The implementation is
+`src/d_validity.py`, `tests/test_d_validity.py`, and notebook 13 section 7.
+
+| Check | Result |
+|---|---|
+| 1m per-root IC (mean) | 0.049 (NW t 3.48) |
+| Roots with positive IC | 79% |
+| FDR-significant roots | 2/24 (LC, W) |
+| Nominal p<0.05 roots | 7/24 |
+| 1m hit rate | 52.5% |
+| IC at 3/6/12m | 0.140 / 0.173 / 0.190 |
+| Signed return at 3/6/12m | 15.2 / 26.1 / 43.7 bp |
+| Incremental adjusted R² (+D) | 0.0069 (CI includes 0) |
+| Residual IC gain | 0.0162 (18/24 positive, 2/24 significant) |
+| Static always-long | 11.1 bp/month |
+| D timing spread | 11.2 bp/month |
+| Stability | 1986–1999 0.013; high-vol −0.007; rolling positive 39% |
+| Placebo | shuffle p<0.001; lag 1/6m 0.016/0.018; future lead 0.028 |
+
+**Verdict:** detectable but unstable information, largely overlapping with
+static/carry; not stable independent information. D's official trading
+result remains the v2 negative/mixed baseline. Parameter scans/response
+curves are deferred; do not use the test sample for selection.
+
+**Log IDs:** D-025 uses `LOG-0055`.
+
+---
+
 ## Decisions in force
 
 - Backtest eligibility is K=5 ex ante; D=10 research panels are kept.
@@ -327,6 +358,10 @@ part of D and has not been implemented.
   equal-notional, three-layer costs; calendar overrides).
 - Official results: D-019 (v2 is final; v1 notebooks/results are historical
   and must be labeled v1).
+- D signal validity: D-025 (D-013 fixed; rank-index t+1 forward returns;
+  per-root IC/hit/quantiles/R²; horizon 1/3/6/12; incremental vs static/A/C;
+  decades/carry/vol and 36m rolling; placebo; 6m block bootstrap, FDR,
+  max-|IC| benchmark; no parameter grid).
 
 ---
 

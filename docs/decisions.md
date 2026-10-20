@@ -750,3 +750,72 @@ Status values: `proposed`, `accepted`, `superseded`.
 - **Consequences:** Local `main` now contains the cloud E work and the D-020
   layout. E remains closed as not tradable (D-022). A future idea notebook
   slot is 15.
+
+---
+
+## D-025 · Idea D signal-validity protocol
+
+- **Status:** accepted
+- **Date:** 2026-10-20
+- **Context:** D is closed as a documented negative/mixed **trading**
+  baseline. The user wants a separate **information** study: no transaction
+  costs, no PnL rescue, only whether the D score predicts forward spread
+  returns, how stable that relation is, and whether it is independent of
+  static always-long, A carry and C mean reversion. The E validity tests
+  (nested adjusted R², per-root block bootstrap, paired A/B) provide the
+  template, but E's leave-one-contract-out R² does not transfer because D
+  has only two legs.
+- **Decision:**
+  1. **Spec.** Keep D-013 fixed: 12-month formation, N=2 main pair, monthly
+     root-specific month-end, `target = sign(score)`, D=5, no liquidity
+     filter, `min_obs_frac=0.80`. No parameter grid and no main-spec
+     selection in this phase. Formation 6/9/24, 12-1, weekly, N=4, liquidity,
+     D=10 and score transforms are phase 2.
+  2. **Returns.** Roll-adjusted rank-index near-minus-far forward return
+     from `t+1` to the root's month-end `h` months later, `h = 1/3/6/12`.
+     Same-close `t` to month-end is a timing diagnostic only. Fixed-pair
+     dollar spread is optional robustness. All returns are gross; no costs.
+  3. **Score.** Raw `score` is the primary predictor; `sign(score)` is the
+     strategy comparison.
+  4. **Controls.** At each D signal date, take month-end snapshots of A
+     carry `score` and C z-score (the `score` column of
+     `mean_reversion_signal`), plus static always-long. No look-ahead.
+  5. **Checks.** Per-root rank IC/hit rate/expanding quintiles/predictive
+     R²; horizon profile at 1/3/6/12 months; nested adjusted R² and
+     residual IC versus static/A/C; stability by decade, carry sign and
+     spread-volatility tercile plus rolling 36-month IC; placebo sign flip,
+     within-root 6-month block shuffle, lags 1/3/6/12 and a future-score
+     lead of 24 months.
+  6. **Inference.** Per-root moving-block bootstrap; block 6 months main,
+     12 months sensitivity; `n_boot=2000`; `min_obs=60` months; FDR within
+     each metric/horizon family; max-|IC| noise benchmark from the shuffle
+     null; roots are correlated and are never treated as independent trials.
+  7. **Samples.** Full 1986–2026; subperiods 1986–1999, 2000–2009,
+     2010–2026; validation 2006–2015; test 2016–2026 read once and never
+     used for selection. Period-specific statistics require the forward
+     endpoint to lie inside the period.
+  8. **Verdict rule.** D is “valid independent information” only if the
+     1-month raw-score IC is positive in a majority of roots, the aggregate
+     mean IC has a CI excluding zero with per-root FDR positives not
+     isolated to one or two roots, IC is stable across decades and
+     carry/vol regimes, and the incremental IC after A/C/static has a CI
+     excluding zero and is not economically trivial. Otherwise report “no
+     independent information” or “subset/regime only”; do not rescue with
+     parameter changes or costs.
+  9. **Implementation.** `src/d_validity.py`, tests in
+     `tests/test_d_validity.py`, and a validity section in
+     `notebooks/13_idea_d_curve_momentum.ipynb` (no separate notebook).
+- **Result (2026-10-20):** 1-month raw-score IC 0.049 (NW t 3.48; 79% of
+  roots positive), but only 2/24 roots survive FDR (LC, W). IC rises with
+  horizon (0.140 / 0.173 / 0.190 at 3/6/12 months). The expanding-quintile
+  relation is non-monotonic. Stability is limited: 1986–1999 IC 0.013,
+  high-volatility IC −0.007, rolling 36-month positive share 39%.
+  Incremental adjusted R² is 0.007 for D and its CI includes zero; the
+  residual-IC gain is 0.016 (18/24 roots positive, 2/24 significant).
+  Timing spread is about 11 bp/month, but static always-long is also about
+  11 bp/month. **Verdict: detectable but unstable information, largely
+  overlapping with static/carry; not stable independent information.**
+- **Consequences:** D's official trading result remains the negative/mixed
+  v2 baseline (D-019). This decision does not change D-013, the v2 engine or
+  the cost model. Parameter scans/response curves require a separate
+  decision and must not use the test sample for selection.
