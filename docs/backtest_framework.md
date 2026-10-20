@@ -88,7 +88,8 @@ BacktestConfig(
 )
 ```
 
-当前只支持 `execution_lag=1`、weekly rebalance、gross-notional return；
+`rebalance` 支持 `"last_trading_day_of_week"`（默认）和 `"daily"`（D-011）。
+当前只支持 `execution_lag=1`、gross-notional return；
 其他值会显式报错，不会静默忽略。
 
 ## Engine 的规则（必须知道）
@@ -115,3 +116,19 @@ BacktestConfig(
 
 A baseline 已跑通。结果见 `notebooks/02_carry.ipynb` 和
 `output/carry_summary.csv`。C/D/B 还没实现；加 C 时只加 signal function。
+
+## v2（holdings-based, layered costs）
+
+新框架见 `notebooks/03_backtest_framework.ipynb` 和 D-012。v1（本页）保留不动，作为 A
+的原始 benchmark。v2 的分层：`marks → sizing → simulate (+ costs) → report`，以及独立于执行的
+`horizon` 诊断。成本假设和文献见 `docs/transaction_costs.md`。
+
+```python
+mk = marks.build_marks(bt["contract"], specs.load_contract_specs())
+pairs = sizing.filter_liquid(sizing.attach_leg_liquidity(bt["spread"], mk), min_adv=100)
+legs = sizing.legs_from_signal(signals.carry_signal(pairs), pairs, k=1)
+res = simulate.simulate(legs, mk, simulate.SimConfig(capital=1e7))
+report.performance_table(res)
+```
+
+加一个新 idea：只写 signal function（输出 `date, root, target`，可选 `score`）。
