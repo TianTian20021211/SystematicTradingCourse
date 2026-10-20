@@ -3034,6 +3034,6 @@ rebalancing schemes, lumber diagnosis. D-032.
 **Validation / results:** see D-032. Deck compiles, no `;`, `—` or `|` in
 rendered text. `python -m pytest -q` passes.
 
-**Commit:** `feat(slides): alpha-combination section with ridge schemes and lumber diagnosis (D-032)` (`this commit`).
+**Commit:** `feat(slides): alpha-combination section with ridge schemes and lumber diagnosis (D-032)` (`dbf8958`).
 
 **Next:** E and combination rows in the roadmap and conclusion tables.
