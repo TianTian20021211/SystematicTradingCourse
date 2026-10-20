@@ -2786,7 +2786,7 @@ net Sharpe 1.38 but negative in test; post-hoc `[t+1,t+22]` every-22-day
 configuration +0.57%/yr net in test (Sharpe 0.45). All post-test runs are
 labelled descriptive.
 
-**Commit:** `feat(alpha): horizon term structure, low-frequency execution and post-test diagnostics (D-031)` (`this commit`).
+**Commit:** `feat(alpha): horizon term structure, low-frequency execution and post-test diagnostics (D-031)` (`f34c519`).
 
 **Next:** pre-register a walk-forward study of long-horizon forecasts with
 monthly rebalancing, rolled-return targets and liquidity/risk budgets.
