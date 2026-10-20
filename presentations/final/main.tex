@@ -277,9 +277,7 @@ Adjacent pairs      & 610{,}801 \\
   \item Costs: \key{half-spread, exchange and broker fees, square-root market impact}
   \item No position in a delivery month or in the 5 trading days before it.
         Equal capital per commodity and equal notional on the two legs
-  \item Rebalancing is weekly, monthly or daily depending on the idea. Capital is
-        \$10m for A to D and \$1m for E and the combination, and it matters only
-        through impact
+  \item Rebalancing is weekly, monthly or daily depending on the idea
   \item Choices are made before 2016, and \key{2016--2026 is read once as the test}
   \item We report gross and net annualized return, Sharpe, turnover and drawdown
 \end{itemize}
@@ -699,7 +697,7 @@ CL $-0.26$, NG $+0.31$.}
 \begin{figure}
 \centering
 \includegraphics[width=0.8\linewidth]{figures/c_mean_reversion_pnl.pdf}
-\caption{Gross P\&L, \$10m capital, dashed line at 2016.}
+\caption{Gross P\&L, dashed line at 2016.}
 \end{figure}
 \vspace{0.3ex}
 \footnotesize
@@ -782,7 +780,7 @@ Train 1986--2015 & $+0.37$ & $0.41$ & $2.60$ & $0.51$ \\
 Test 2016--2026 & $-0.21$ & $-0.26$ & $-0.83$ & $0.84$ \\
 \bottomrule
 \end{tabular}
-\caption{D by period, gross only, \$10m, equal notional. All-in net
+\caption{D by period, gross only, equal notional. All-in net
 $-1.42\%$/yr. Test is a post-hoc stability slice.}
 \end{table}
 \vspace{-1.2ex}
@@ -819,7 +817,7 @@ Placebo & block shuffle $p<0.001$, lag-1m IC $0.016$, future-score lead $0.028$ 
 \begin{figure}
 \centering
 \includegraphics[width=0.8\linewidth]{figures/d_gross_pnl.pdf}
-\caption{Gross P\&L, \$10m capital, dashed line at 2016.}
+\caption{Gross P\&L, dashed line at 2016.}
 \end{figure}
 \vspace{0.5ex}
 \footnotesize

@@ -3674,3 +3674,16 @@ trading day) instead of D=10. "v2 simulator", "official D-019", "Official v2",
 decision or log IDs, and no `;`, `—` or `|`.
 
 **Commit:** `style(slides): plain-language engine slide, no internal notation` (`04308b8`).
+
+---
+
+## LOG-0084 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Drop the A–D capital figure from the deck, since gross returns in
+percent of capital do not depend on it.
+
+**What changed:** `presentations/final/main.tex`: engine-slide capital
+sentence removed; "$10m" removed from the C and D gross P&L captions and the D
+period table caption.
+
+**Commit:** `style(slides): drop the A-D capital figure` (`this commit`).
