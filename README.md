@@ -196,6 +196,7 @@ data/metadata/             # 24 商品元数据 + checksum + contract_specs.csv�
 data/processed/            # 生成的 parquet（本地；gitignored）
 
 presentations/mid/         # mid-term slides source（LaTeX；build 不提交）
+presentations/final/       # final slides source（LaTeX；build 不提交）
 paper/README.md            # 论文引用；PDF 本地，不提交
 output/                    # 生成的图/报告（gitignored）
 ```

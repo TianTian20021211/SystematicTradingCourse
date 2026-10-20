@@ -2704,3 +2704,72 @@ while keeping C closed and the weekly official results untouched.
 any new C hypothesis is a separate pre-registered project. The next research
 step remains H (holding-period scan), and the 2016–2026 test slice must not be
 used for tuning.
+
+---
+
+## LOG-0063 · 2026-10-20 11:45 · Phase 15 · Claude Code
+
+**Goal:** Build a simple, compilable LaTeX framework for the 20-minute final
+presentation: setup and data first, then ideas A–D with robustness, a blank
+section for E, and a placeholder for the portfolio combination.
+
+**Actions:**
+- Created `presentations/final/main.tex` from the mid-term deck's preamble and
+  palette (metropolis, 16:9, navy/accent), with a title page for
+  "Systematic Trading / Project 7 / Jiaheng Han & Tian Tian".
+- Added a dedicated data section before the ideas: Bloomberg source, 1986–2026
+  sample, 24 commodities by sector, M1–M4 slots vs real contracts, eligibility,
+  and the common v2 engine.
+- Added a roadmap table (A–E, reference, verdict) and one A/B/C/D idea slide
+  plus one result/robustness slide per idea; C and D each get a paper slide and
+  a replication-choice slide before the result.
+- Rewrote A/B around the user's decision: the original assignment directions
+  get one line each (negative), then A-flip / B-flip become the main design.
+  Added related references (Koijen et al. 2018 for commodity carry; Masturzo &
+  Leung 2025 for intra-commodity calendar-spread pairs) and the flip results.
+- Used the official v2 numbers (D-019) in the original A/B/C/D result tables;
+  labeled A flip and B flip as candidate/post-hoc gross-only signals; labeled
+  the daily C audit as descriptive.
+- Left E (slide 17) blank with a checklist for the teammate. Added a portfolio
+  slide with a placeholder for the combined NAV/Sharpe/correlation figure.
+- Added backup slides (data QA, cost model/definitions, references) and a
+  `README.md` with build instructions, timing, and open questions.
+- Copied `refs.bib` from the mid-term deck.
+
+**Files changed:**
+- `presentations/final/main.tex`
+- `presentations/final/refs.bib`
+- `presentations/final/README.md`
+- `README.md` (repo map)
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `tectonic -X compile --outdir build main.tex` → 23 pages, PDF written to
+  `presentations/final/build/main.pdf`
+- Rendered pages with `pdftoppm` and checked title, data, roadmap, A–D,
+  portfolio and appendix slides visually.
+
+**Why:** The user asked for a framework first, not a finished deck. The deck
+needs to establish the calendar-spread setting and the data before walking
+through A–D, leave E to the teammate, and reserve the final section for the
+portfolio combination. User decisions: English slides; the original A/B get one
+line each and the flips are the main design; the portfolio section stays a
+placeholder; the 20 minutes are talk time and Q&A is separate.
+
+**Validation:**
+- The deck compiles with Tectonic 0.17.0 (XeTeX) and BibTeX; no overfull hbox
+  remains. The title page still reports a harmless 13.8pt overfull vbox from
+  the metropolis title template; the rendered page is not clipped.
+- All result numbers match `output/v2_rerun/comparison.csv`:
+  A −0.48/−2.61, B −1.13/−4.47, C 1:1 +0.61/−3.70, C OLS +0.12/−3.06,
+  C Kalman +0.61/−6.10, D +0.22/−1.42.
+- A-flip numbers match D-025 (full +0.63%, Sharpe 0.63, NW t 4.29; test
+  +0.46%, t 1.58). B-flip numbers match D-026 (full +0.50%, Sharpe 1.06,
+  NW t 7.14; half-spread 84 bps vs 50 bps gross; all-in about −2.0%).
+- The E and portfolio sections are visibly marked as placeholders, so the draft
+  cannot be mistaken for a completed result.
+
+**Commit:** `feat(presentation): add final deck framework with data setup and A/B flips` (`this commit`).
+
+**Next:** Merge `origin/main` (D-030/D-031 alpha combination) into local main;
+then fill figures, E and the portfolio section after the user's review.
