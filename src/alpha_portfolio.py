@@ -95,11 +95,13 @@ def hold_between_rebalances(sig: pd.DataFrame, every: int) -> pd.DataFrame:
 
 def run_rule(fc: pd.DataFrame, rule: str, pairs: pd.DataFrame, marks: pd.DataFrame, k: int,
              capital: float = 1e6, scale: float = 1.0, round_lots: bool = False,
-             every: int = 1) -> simulate.SimResult:
-    """Build legs for one rule and run the v2 simulator (equal 1/N budget).
+             every: int = 1, scheme: str = "equal") -> simulate.SimResult:
+    """Build legs for one rule and run the v2 simulator.
 
     ``k`` is the number of overlapping sleeves (daily 1/k rebalancing);
     ``every`` > 1 instead updates targets only every ``every`` days.
+    ``scheme`` is the per-root budget: ``"equal"`` (1/N, default) or
+    ``"inverse_vol"`` (proportional to 1 / lagged spread vol, same total).
     """
 
     cost = None
@@ -108,7 +110,9 @@ def run_rule(fc: pd.DataFrame, rule: str, pairs: pd.DataFrame, marks: pd.DataFra
         c.index = pd.MultiIndex.from_frame(pairs[["date", "root"]])
         cost = pd.Series(c.reindex(pd.MultiIndex.from_frame(fc[["date", "root"]])).to_numpy(), index=fc.index)
     sig = hold_between_rebalances(make_signal(fc, rule, scale=scale, cost=cost), every)
-    legs = sizing.legs_from_signal(sig, pairs, scheme="equal", n_mode="active", k=1 if rule == "band" else k)
+    if scheme == "inverse_vol" and "spread_vol" not in pairs.columns:
+        pairs = pairs.assign(spread_vol=sizing.spread_return_vol(pairs, marks))
+    legs = sizing.legs_from_signal(sig, pairs, scheme=scheme, n_mode="active", k=1 if rule == "band" else k)
     cfg = simulate.SimConfig(capital=capital, round_lots=round_lots)
     return simulate.simulate(legs, marks, cfg)
 

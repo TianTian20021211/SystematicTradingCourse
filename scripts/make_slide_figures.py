@@ -324,6 +324,208 @@ def e_root_discussion(table: pd.DataFrame, draws: dict, width_cm: float = 14.0, 
     return path
 
 
+ALPHA_DIR = config.OUTPUT_DIR / "alpha"
+FACTOR_ORDER = ["a_carry", "a_carry_dev", "b_curve_carry", "b_rel_carry", "c_z20", "c_z60", "c_rev5",
+                "d_mom21", "d_mom63", "d_mom252", "e_dslope", "e_dcurv"]
+TARGET_ORDER = ["fwd_0_1", "fwd_1_2", "fwd_1_3", "fwd_1_6", "fwd_1_11", "fwd_1_22"]
+
+
+def _hlabel(target: str) -> str:
+    a, b = (int(x) for x in target.split("_")[1:])
+    return rf"$[{'t' if a == 0 else f't+{a}'},\,t+{b}]$"
+
+
+def f_block_length(chosen: int = 10, width_cm: float = 6.4, height_cm: float = 4.8) -> Path:
+    """Bootstrap SE of the cross-commodity mean IC against the block length (train, [t+1, t+6])."""
+
+    sens = pd.read_parquet(ALPHA_DIR / "block_sensitivity.parquet")
+    allr = sens.loc[sens["root"].eq("ALL")]
+    fig, ax = plt.subplots(figsize=(width_cm * CM, height_cm * CM))
+    for _, g in allr.groupby("score"):
+        ax.plot(g["block"], g["se"] * 1e3, color="#b9b8b3", lw=0.6)
+    med = allr.groupby("block")["se"].median() * 1e3
+    ax.plot(med.index, med, color=ps.BLUE, lw=1.5, marker="o", ms=3.2, mec=ps.SURFACE, mew=0.5,
+            label=ps.tex("Median"))
+    ax.plot([], [], color="#b9b8b3", lw=0.6, label=ps.tex("One alpha"))
+    ax.axvline(chosen, color=ps.ORANGE, lw=1.0, ls=(0, (3, 2)), label=ps.tex(rf"Chosen, {chosen} days"))
+    ax.set_xscale("log")
+    blocks = sorted(allr["block"].unique())
+    ax.set_xticks(blocks, [str(b) for b in blocks])
+    ax.xaxis.set_minor_locator(plt.NullLocator())
+    ax.set_ylim(bottom=0)
+    ax.set_xlabel(ps.tex("Block length (trading days)"))
+    ax.set_ylabel(ps.tex(r"S.e. of mean IC ($\times 10^{-3}$)"))
+    ax.legend(loc="upper center", bbox_to_anchor=(0.45, -0.24), ncol=3, handlelength=1.4, columnspacing=0.9)
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / "f_block_length.pdf"
+    fig.savefig(path)
+    plt.close(fig)
+    return path
+
+
+def f_screen_heatmap(width_cm: float = 13.6, height_cm: float = 6.9) -> Path:
+    """Mean IC, p-value and significant-commodity count per alpha and horizon, with the screen outcome."""
+
+    from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
+    from matplotlib.patches import Rectangle
+
+    scr = pd.read_parquet(ALPHA_DIR / "screen.parquet")
+    piv = {c: scr.pivot(index="score", columns="target", values=c).reindex(index=FACTOR_ORDER, columns=TARGET_ORDER)
+           for c in ("mean_ic", "p_all", "n_sig", "rule")}
+    ic = piv["mean_ic"].to_numpy(float)
+    lim = np.nanmax(np.abs(ic))
+    cmap = LinearSegmentedColormap.from_list("ic", [ps.ORANGE, "#f7f6f2", ps.BLUE])
+    fig, ax = plt.subplots(figsize=(width_cm * CM, height_cm * CM))
+    im = ax.imshow(ic, cmap=cmap, norm=TwoSlopeNorm(0, -lim, lim), aspect="auto")
+    for i in range(ic.shape[0]):
+        for j in range(ic.shape[1]):
+            p = piv["p_all"].iat[i, j]
+            ptxt = r"p<0.001" if p < 0.001 else rf"p={p:.3f}"
+            ax.text(j, i - 0.12, ps.tex(rf"${ic[i, j]:+.3f}$"), ha="center", va="center", fontsize=5.4, color=ps.INK)
+            ax.text(j, i + 0.2, ps.tex(rf"${ptxt}$, {int(piv['n_sig'].iat[i, j])}/24"), ha="center",
+                    va="center", fontsize=4.0, color=ps.INK_2)
+            rule = piv["rule"].iat[i, j]
+            if rule:
+                ax.add_patch(Rectangle((j - 0.48, i - 0.48), 0.96, 0.96, fill=False, lw=0.8, ec=ps.INK,
+                                       ls="-" if rule == "primary" else (0, (2, 1.5))))
+    ax.set_xticks(range(len(TARGET_ORDER)), [ps.tex(_hlabel(t)) for t in TARGET_ORDER])
+    ax.set_yticks(range(len(FACTOR_ORDER)), [ps.tex(f.replace("_", r"\_")) for f in FACTOR_ORDER], fontsize=6.0)
+    ax.tick_params(length=0)
+    ax.grid(False)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    cb = fig.colorbar(im, ax=ax, fraction=0.025, pad=0.015)
+    cb.set_label(ps.tex("Mean time-series IC"), fontsize=6.0)
+    cb.ax.tick_params(labelsize=5.5)
+    ax.set_xlabel(ps.tex(r"Forecast window (signal at the $t$ settle)"))
+    from matplotlib.lines import Line2D
+    handles = [Line2D([], [], color=ps.INK, lw=0.9, label=ps.tex(r"Selected, primary rule")),
+               Line2D([], [], color=ps.INK, lw=0.9, ls=(0, (2, 1.5)), label=ps.tex(r"Selected, fallback rule"))]
+    ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=2, fontsize=5.8)
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / "f_screen_heatmap.pdf"
+    fig.savefig(path)
+    plt.close(fig)
+    return path
+
+
+MODEL_ORDER = ["ols", "ridge_1e3", "ridge_1e5", "lasso_1e-3", "lasso_1e-2", "enet", "rf", "xgb"]
+MODEL_LABEL = {"ols": "OLS", "ridge_1e3": "R3", "ridge_1e5": "R5", "lasso_1e-3": "L3", "lasso_1e-2": "L2",
+               "enet": "EN", "rf": "RF", "xgb": "XGB"}
+
+
+def f_model_ic(width_cm: float = 13.6, height_cm: float = 3.9) -> Path:
+    """Validation mean IC with 95% bootstrap CI for every model and horizon; ridge highlighted."""
+
+    summ = pd.read_parquet(ALPHA_DIR / "model_summary.parquet")
+    fig, axes = plt.subplots(1, len(TARGET_ORDER), figsize=(width_cm * CM, height_cm * CM), sharey=True)
+    x = np.arange(len(MODEL_ORDER))
+    for ax, tgt in zip(axes, TARGET_ORDER):
+        s = summ.loc[summ["target"].eq(tgt)].set_index("model").reindex(MODEL_ORDER)
+        colors = [ps.ORANGE if m == "ridge_1e3" else ("#9a9893" if m in ("rf", "xgb") else ps.BLUE)
+                  for m in MODEL_ORDER]
+        ax.bar(x, s["mean_ic"], 0.72, color=colors, edgecolor=ps.SURFACE, lw=0.3)
+        ax.errorbar(x, s["mean_ic"], yerr=1.96 * s["se"], fmt="none", ecolor=ps.INK, elinewidth=0.5, capsize=1.0)
+        ax.set_xticks(x, [ps.tex(MODEL_LABEL[m]) for m in MODEL_ORDER], rotation=90, fontsize=5.2)
+        ax.tick_params(axis="x", length=0)
+        ax.set_title(ps.tex(_hlabel(tgt)), fontsize=6.6)
+        ps.zero_line(ax)
+    axes[0].set_ylabel(ps.tex("Validation mean IC"))
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / "f_model_ic.pdf"
+    fig.savefig(path)
+    plt.close(fig)
+    return path
+
+
+RIDGE_LABELS = {"daily": "Daily", "every 5 days": "Every 5 days", "every 22 days": "Every 22 days",
+                "XS, every 5 days": "Cross-section, every 5 days"}
+
+
+def _cum(daily: pd.DataFrame, run: str, col: str) -> pd.Series:
+    d = daily.loc[daily["run"].eq(run)].sort_values("date").set_index("date")[col]
+    return d.cumsum() * 100
+
+
+def _shade(ax) -> None:
+    ax.axvspan(pd.Timestamp("2006-01-01"), pd.Timestamp("2015-12-31"), color="#e9f1fb", lw=0)
+    ax.axvspan(pd.Timestamp("2016-01-01"), pd.Timestamp("2026-10-13"), color="#f3f2ee", lw=0)
+    ax.xaxis.set_major_locator(mpl.dates.YearLocator(10))
+    ax.xaxis.set_major_formatter(mpl.dates.DateFormatter("%Y"))
+
+
+def f_ridge_nav(width_cm: float = 6.6, height_cm: float = 4.9) -> Path:
+    """Cumulative return net of all costs for the four ridge rebalancing schemes."""
+
+    daily = pd.read_parquet(ALPHA_DIR / "daily_ridge.parquet")
+    fig, ax = plt.subplots(figsize=(width_cm * CM, height_cm * CM))
+    _shade(ax)
+    for color, run in zip((ps.ORDINAL_BLUE[0], ps.BLUE, ps.ORDINAL_BLUE[-1], ps.ORANGE), RIDGE_LABELS):
+        ax.plot(*zip(*_cum(daily, run, "ret_net_all").items()), color=color, lw=0.9, label=ps.tex(RIDGE_LABELS[run]))
+    ps.zero_line(ax)
+    ax.set_ylabel(ps.tex(r"Cumulative return (\%)"))
+    ax.legend(loc="upper center", bbox_to_anchor=(0.45, -0.12), ncol=2, fontsize=5.8, handlelength=1.6)
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / "f_ridge_nav.pdf"
+    fig.savefig(path)
+    plt.close(fig)
+    return path
+
+
+def f_ridge_layers(run: str = "every 22 days", width_cm: float = 6.6, height_cm: float = 4.9) -> Path:
+    """Cumulative return of one ridge scheme after each successive cost layer."""
+
+    daily = pd.read_parquet(ALPHA_DIR / "daily_ridge.parquet")
+    fig, ax = plt.subplots(figsize=(width_cm * CM, height_cm * CM))
+    _shade(ax)
+    layers = {"ret_gross": "Gross", "ret_net_spread": r"$-$ half-spread", "ret_net_fee": r"$-$ fees",
+              "ret_net_all": r"$-$ impact"}
+    for color, (col, lab) in zip(ps.ORDINAL_BLUE, layers.items()):
+        ax.plot(*zip(*_cum(daily, run, col).items()), color=color, lw=0.9, label=ps.tex(lab))
+    ps.zero_line(ax)
+    ax.set_ylabel(ps.tex(r"Cumulative return (\%)"))
+    ax.legend(loc="upper center", bbox_to_anchor=(0.45, -0.12), ncol=4, fontsize=5.8, handlelength=1.4,
+              columnspacing=0.8)
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / "f_ridge_layers.pdf"
+    fig.savefig(path)
+    plt.close(fig)
+    return path
+
+
+def f_lumber(width_cm: float = 6.6, height_cm: float = 4.9) -> tuple[Path, Path]:
+    """(1) LB vs the other 23 roots, cumulative gross P&L; (2) net NAV of the three fixes, every 5 days."""
+
+    roots = pd.read_parquet(ALPHA_DIR / "by_root_lbfix.parquet")
+    daily = pd.read_parquet(ALPHA_DIR / "daily_lbfix.parquet")
+    b = roots.loc[roots["run"].eq("every 5 days | equal")].assign(date=lambda d: pd.to_datetime(d["date"]))
+    g = b.groupby([b["date"], b["root"].eq("LB")])["pnl_gross"].sum().unstack(fill_value=0.0) / 1e6 * 100
+    fig, ax = plt.subplots(figsize=(width_cm * CM, height_cm * CM))
+    _shade(ax)
+    ax.plot(g.index, g[False].cumsum(), color=ps.BLUE, lw=0.9, label=ps.tex("Other 23 commodities"))
+    ax.plot(g.index, g[True].cumsum(), color=ps.ORANGE, lw=0.9, label=ps.tex("Lumber (LB)"))
+    ps.zero_line(ax)
+    ax.set_ylabel(ps.tex(r"Cumulative gross P\&L (\%)"))
+    ax.legend(loc="upper left", fontsize=5.8)
+    p1 = OUT / "f_lumber_contrib.pdf"
+    fig.savefig(p1)
+    plt.close(fig)
+    fig, ax = plt.subplots(figsize=(width_cm * CM, height_cm * CM))
+    _shade(ax)
+    for color, scheme in zip((ps.ORANGE, ps.BLUE, "#9a9893"), ("equal", "equal, ex LB", "inverse vol")):
+        lab = {"equal": "Equal 1/N (before)", "equal, ex LB": "Equal 1/N, LB removed (after)",
+               "inverse vol": "Inverse-vol sizing"}[scheme]
+        ax.plot(*zip(*_cum(daily, f"every 5 days | {scheme}", "ret_net_all").items()), color=color, lw=0.9,
+                label=ps.tex(lab))
+    ps.zero_line(ax)
+    ax.set_ylabel(ps.tex(r"Cumulative return, all costs (\%)"))
+    ax.legend(loc="upper center", bbox_to_anchor=(0.45, -0.12), ncol=2, fontsize=5.6, handlelength=1.4)
+    p2 = OUT / "f_lumber_fix.pdf"
+    fig.savefig(p2)
+    plt.close(fig)
+    return p1, p2
+
+
 def main() -> None:
     ps.use()
     mpl.rcParams.update(SLIDE_FONT)

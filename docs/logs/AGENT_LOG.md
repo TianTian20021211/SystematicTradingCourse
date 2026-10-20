@@ -3008,3 +3008,32 @@ no `;`, `—` or `|` in rendered text.
 **Commit:** `feat(slides): starred idea-E slide on the Kalman dynamic NS` (`3e611fb`).
 
 **Next:** E rows in the roadmap and conclusion tables, portfolio slide.
+
+---
+
+## LOG-0068 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Final deck, combination section (Jiaheng's second part): from
+strategies to alphas, block-bootstrap screen, model comparison, ridge
+rebalancing schemes, lumber diagnosis. D-032.
+
+**What changed:**
+- `presentations/final/main.tex`: replaces the portfolio placeholder with
+  seven slides (alpha definitions as formulas, metric and bootstrap pseudocode
+  with the block-length figure, screen heatmap, model comparison, ridge table,
+  cumulative-return figures, lumber before/after).
+- `scripts/make_slide_figures.py` (`f_block_length`, `f_screen_heatmap`,
+  `f_model_ic`, `f_ridge_nav`, `f_ridge_layers`, `f_lumber`) and
+  `scripts/make_slide_tables.py --ridge`.
+- `scripts/run_alpha.py` stages `ridge`, `lbfix`, `model_notes`;
+  `src/alpha_portfolio.run_rule(scheme=...)` (default unchanged).
+- D-032 in `docs/decisions.md`.
+
+**Why:** user request for the final presentation.
+
+**Validation / results:** see D-032. Deck compiles, no `;`, `—` or `|` in
+rendered text. `python -m pytest -q` passes.
+
+**Commit:** `feat(slides): alpha-combination section with ridge schemes and lumber diagnosis (D-032)` (`this commit`).
+
+**Next:** E and combination rows in the roadmap and conclusion tables.

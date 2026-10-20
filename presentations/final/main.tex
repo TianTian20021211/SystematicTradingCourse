@@ -1009,35 +1009,191 @@ forecast and trade worse. We keep the daily OLS fit.}
 \end{frame}
 
 % =====================================================================
-\section{Portfolio}
+\section{Combining the alphas}
 
-\begin{frame}{Putting the alphas together}
-\begin{columns}[T, onlytextwidth]
-\begin{column}{0.55\textwidth}
+\begin{frame}{Combining the ideas: from strategies to alphas}
 \footnotesize
 \begin{itemize}
-  \item Candidate inputs: \key{A flip}, \key{B flip}, C variants, D (weak),
-        E (if tradable)
-  \item Combination model: equal-weight, inverse-vol or shrinkage, with
-        correlation and turnover constraints
-  \item Same v2 engine, same all-in costs, same train/test split
-  \item Key question: does diversification across weak signals survive costs?
-  \item Required output: combined net Sharpe, turnover, drawdown and the
-        correlation matrix
+  \item Each idea makes economic sense, but each is \key{weak and works only in
+        some regimes}: the A and B flips are gross only, C is eaten by costs,
+        D is unstable, E works only at the paper's timing
+  \item So we \key{distil every paper's strategy into continuous alphas} on the
+        same main pair, combine them with a model, and trade the forecast
+\end{itemize}
+\vspace{-0.4ex}
+{\scriptsize
+With $r_t$ the main-pair spread return, $C_t$ its annualized carry, $c^{(k)}_t$
+the carry of the $k$-th eligible adjacent spread, and $S_t$ the roll-chained
+spread index:
+\begin{align*}
+\text{A:}\quad & a^{\text{carry}}_t=C_t, &
+                 & a^{\text{carry,dev}}_t=C_t-\overline{C}_{t,252}\\
+\text{B:}\quad & b^{\text{curve}}_t=c^{(\text{front})}_t-c^{(\text{back})}_t, &
+                 & b^{\text{rel}}_t=C_t-\tfrac{1}{K}\textstyle\sum_k c^{(k)}_t\\
+\text{C:}\quad & c^{z,L}_t=-\dfrac{S_t-\overline{S}_{t,L}}{\operatorname{sd}_{t,L}(S)},\ L\in\{20,60\}, &
+                 & c^{\text{rev}}_t=-\textstyle\sum_{s=t-4}^{t}r_s\\
+\text{D:}\quad & d^{\text{mom},L}_t=\textstyle\sum_{s=t-L+1}^{t}r_s,\ L\in\{21,63,252\} & & \\
+\text{E:}\quad & e^{S}_t=\Delta\beta_{S,t}/\overline{F}_t, &
+                 & e^{C}_t=\Delta\beta_{C,t}/\overline{F}_t
+\end{align*}}
+\vspace{-0.6ex}
+{\scriptsize\color{slate}Each alpha uses settles up to $t$, is scaled per commodity by its
+expanding root mean square and clipped at $\pm4$. Signs are kept, the model learns
+the direction.}
+\end{frame}
+
+\begin{frame}{Is an alpha informative? Time-series IC with a day-block bootstrap}
+\footnotesize
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.55\textwidth}
+\textbf{Metric}: rank IC of alpha $a$ with the spread return over the next
+$h$ days, per commodity $r$ over time, then averaged
+{\scriptsize
+\[
+\mathrm{IC}_r(h)=\operatorname{corr}_t\bigl(\operatorname{rank}a_{r,t},\,
+\operatorname{rank}R_{r,[t+1,\,t+1+h]}\bigr),\quad
+\overline{\mathrm{IC}}(h)=\tfrac{1}{N}\textstyle\sum_r\mathrm{IC}_r(h)
+\]}
+\vspace{-1.4ex}
+\begin{block}{Joint day-block bootstrap, train 1986--2005}
+\scriptsize
+\textbf{for} $b=1,\dots,B$ ($B=1000$ replications)\textbf{:}\\
+\quad draw $\lceil T/L\rceil$ blocks of $L$ consecutive dates, $T$ dates in total,\\
+\quad the same dates for every commodity and every alpha\\
+\quad $\mathrm{IC}^{*}_{r}\leftarrow$ rank correlation on the resampled dates\\
+\quad $\overline{\mathrm{IC}}^{*}\leftarrow$ mean of $\mathrm{IC}^{*}_{r}$ over commodities\\
+s.e.\ $=\operatorname{sd}(\overline{\mathrm{IC}}^{*})$,\quad
+$p_r=2\min\{\Pr(\mathrm{IC}^{*}_r\le0),\,\Pr(\mathrm{IC}^{*}_r\ge0)\}$
+\end{block}
+\vspace{-0.4ex}
+\begin{itemize}
+  \item \key{Keep} an alpha if $p_r<0.05$ with the mean's sign on half of the
+        commodities, else if the CI of $\overline{\mathrm{IC}}$ excludes 0 and
+        two thirds share its sign
 \end{itemize}
 \end{column}
-\begin{column}{0.42\textwidth}
+\begin{column}{0.43\textwidth}
 \begin{figure}
 \centering
-\figph[4.2cm]{Placeholder: combined NAV, net Sharpe and
-correlation matrix.\\[2pt]
-This is the remaining step, not a finished result.}
-\caption{Placeholder for the combined portfolio.}
+\includegraphics[width=\linewidth]{figures/f_block_length.pdf}
+\caption{S.e.\ of $\overline{\mathrm{IC}}$ against $L$, $[t+1,\,t+6]$. It
+plateaus at 10 days, and at horizon $h$ we use $\max(10,h)$.}
 \end{figure}
 \end{column}
 \end{columns}
-\takeaway{Individual signals are weak. The portfolio is the only place where
-their information could still add up.}
+\end{frame}
+
+\begin{frame}{Which alphas carry information, and at which horizon?}
+\vspace{-0.8ex}
+\begin{figure}
+\centering
+\includegraphics[height=6.3cm]{figures/f_screen_heatmap.pdf}
+\caption{Screen on train 1986--2005: mean IC, bootstrap $p$-value of the mean, and
+commodities with $p<0.05$ and the mean's sign. A (the flip sign) is strongest and
+grows with $h$, C and E peak at $[t,\,t+1]$, B helps only at long $h$, D never passes.}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Which model? Eight forecasters compared out of sample}
+\footnotesize
+\begin{itemize}
+  \item Pooled, vol-scaled target, screened alphas. Fit 1986--2005, compare
+        2006--2015, no tuning
+  \item \key{Linear models are equivalent} (IC gaps below 0.005, forecasts
+        correlated above 0.99), \key{trees never beat them}
+  \item Lasso keeps \texttt{a\_carry\_dev} everywhere, \texttt{b\_rel\_carry} for
+        $h\geq10$, and zeroes the E alpha. \key{We use ridge}
+\end{itemize}
+\vspace{-1.6ex}
+\begin{figure}
+\centering
+\includegraphics[width=0.86\linewidth]{figures/f_model_ic.pdf}
+\caption{Validation mean IC, 95\% bootstrap CI. Blue linear, grey trees, orange
+ridge. R: ridge, L: lasso ($\alpha=10^{3},10^{5},10^{-3},10^{-2}$), EN: elastic net.}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Trading the ridge forecast: four rebalancing schemes}
+\footnotesize
+\begin{itemize}
+  \item Daily trades the $[t+1,\,t+2]$ forecast, every 5 and 22 days trade the
+        $[t+1,\,t+6]$ and $[t+1,\,t+22]$ forecasts, the cross-section is long the
+        top 5 and short the bottom 5 commodities. \$1m, $1/N$
+  \item \key{Slower is better after costs}: the forecast decays over one to two
+        months, while turnover falls from $38\times$ to $14\times$ a year.
+        \key{Every 22 days is positive in all three periods}
+\end{itemize}
+\vspace{-1ex}
+\begin{table}
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{0.92}
+\setlength{\tabcolsep}{3.5pt}
+\input{tables/f_ridge.tex}
+\caption{\label{tab:ridge}Ridge strategies. Annualized return in percent, annualized Sharpe in
+parentheses. The test period was read once before the ridge choice, so its
+column is descriptive.}
+\end{table}
+\end{frame}
+
+\begin{frame}{Trading the ridge forecast: cumulative returns}
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=4.6cm]{figures/f_ridge_nav.pdf}
+\caption{Net of all costs, four schemes.}
+\end{figure}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=4.6cm]{figures/f_ridge_layers.pdf}
+\caption{Every 22 days, after each cost layer.}
+\end{figure}
+\end{column}
+\end{columns}
+\takeaway{Blue shading is validation, grey is test. Annual returns and Sharpe
+ratios for every cost layer are in Table~\ref{tab:ridge}. Only the 22-day scheme
+keeps rising through the test period after all costs.}
+\end{frame}
+
+\begin{frame}{What went wrong in lumber, and the fix}
+\footnotesize
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.49\textwidth}
+\begin{itemize}
+  \item 2021--22: LB lost about 3\% of capital in one year
+  \item \key{Not the model}: large alphas, a spread \key{4.7 times as volatile},
+        1\% of the dollar volume. \key{The sizing}: equal $1/N$ gave LB about
+        five times the typical risk
+\end{itemize}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{itemize}
+  \item Inverse-vol sizing loads low-return metals, costs dominate
+  \item \key{Removing LB} (thin, delisted in 2023, an ex-ante rule) turns the
+        5-day test from $-0.30\%$ to $+0.02\%$ a year
+\end{itemize}
+\end{column}
+\end{columns}
+\vspace{-1ex}
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=3.6cm]{figures/f_lumber_contrib.pdf}
+\caption{Gross P\&L, every 5 days, equal $1/N$.}
+\end{figure}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=3.6cm]{figures/f_lumber_fix.pdf}
+\caption{Net of all costs, before and after.}
+\end{figure}
+\end{column}
+\end{columns}
 \end{frame}
 
 % =====================================================================

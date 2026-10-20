@@ -95,7 +95,44 @@ def e_backtest_tex(grid: pd.DataFrame) -> Path:
     return path
 
 
+RIDGE_ORDER = [("daily", "Daily"), ("every 5 days", "Every 5 days"), ("every 22 days", "Every 22 days"),
+               ("XS, every 5 days", "Cross-section, 5 days")]
+
+
+def f_ridge_tex() -> Path:
+    """Ridge rebalancing schemes: full-sample cost layers and net-of-all-cost by period."""
+
+    perf = pd.read_parquet(config.OUTPUT_DIR / "alpha" / "perf_ridge.parquet")
+    get = lambda run, per, layer, col: perf.loc[perf["run"].eq(run) & perf["period"].eq(per)
+                                                & perf["layer"].eq(layer), col].iat[0]
+    layers = ["gross", "- half-spread", "- fees", "- impact (all)"]
+    lines = [
+        r"\begin{tabular}{@{}l r r r r r r r r@{}}",
+        r"\toprule",
+        r" & & \multicolumn{4}{c}{Full sample 1986--2026} & \multicolumn{3}{c}{All costs, by period} \\",
+        r"\cmidrule(lr){3-6}\cmidrule(l){7-9}",
+        r"Rebalance & Turnover & Gross & Half-spread & $+$ fees & $+$ impact & Train & Valid & Test \\",
+        r"\midrule",
+    ]
+    for i, (run, label) in enumerate(RIDGE_ORDER):
+        cells = [(get(run, "full", l, "ann_ret_pct"), get(run, "full", l, "sharpe")) for l in layers]
+        cells += [(get(run, p, "- impact (all)", "ann_ret_pct"), get(run, p, "- impact (all)", "sharpe"))
+                  for p in ("train", "valid", "test")]
+        turn = get(run, "full", "gross", "turnover_x")
+        if i:
+            lines.append(r"\addlinespace[2pt]")
+        lines.append(" & ".join([label, rf"${turn:.0f}\times$"] + [rf"${_signed(r)}$" for r, _ in cells]) + r" \\")
+        lines.append(" & ".join(["", ""] + [rf"$({_signed(sr)})$" for _, sr in cells]) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    path = OUT_TEX / "f_ridge.tex"
+    path.write_text("\n".join(lines) + "\n")
+    return path
+
+
 def main() -> None:
+    if "--ridge" in sys.argv:
+        print(f_ridge_tex())
+        return
     cached = OUT_CSV / "e_backtest_grid.csv"
     grid = pd.read_csv(cached) if "--cached" in sys.argv and cached.exists() else e_backtest_grid()
     OUT_CSV.mkdir(parents=True, exist_ok=True)

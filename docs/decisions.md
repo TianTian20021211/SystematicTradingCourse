@@ -1235,3 +1235,37 @@ Status values: `proposed`, `accepted`, `superseded`.
   new pre-registered walk-forward study (with rolled-return targets and
   liquidity/risk budgets), not out-of-sample evidence. New stages
   `horizons`, `exlb`, `lowfreq`, `lowfreq_desc` in `scripts/run_alpha.py`.
+
+---
+
+## D-032 · Alpha combination for the final deck: ridge forecasts, rebalancing schemes, lumber
+
+- **Status:** accepted
+- **Date:** 2026-10-20
+- **Context:** For the final presentation the user chose one simple model
+  (ridge) instead of the per-horizon D-030 selection, asked to compare
+  rebalancing schemes, and asked why lumber (LB) dominated the D-030 test
+  loss. The 2016–2026 test was already read once under D-030, so every test
+  number here is descriptive.
+- **Decision:**
+  1. **Model.** `ridge_1e3` (α = 10³) on the D-030 screened features for every
+     horizon. On validation its forecasts correlate ≥ 0.997 with each D-030
+     selected model (OLS, lasso 1e-3, lasso 1e-2) and ≈ 1.0 with OLS, so the
+     choice does not change any conclusion; ridge is kept for stability under
+     the collinear C alphas.
+  2. **Schemes** (`scripts/run_alpha.py --stage ridge`), $1m, equal 1/N,
+     linear rule: daily on `[t+1,t+2]`, every 5 days on `[t+1,t+6]`, every 22
+     days on `[t+1,t+22]`, cross-section top/bottom 5 every 5 days.
+  3. **Lumber** (`--stage lbfix`): compare equal 1/N, equal 1/N without LB,
+     and inverse-vol sizing (`alpha_portfolio.run_rule(scheme=...)`).
+- **Results:** all-in net, $1m: every 22 days train +0.09%/yr (Sharpe 0.08),
+  validation +0.42% (0.64), test +0.32% (0.30), turnover 14×; every 5 days
+  validation +0.60% (1.28) but test −0.30%; daily and cross-section negative
+  in train and test. LB: 2021–22 gross loss ≈ 3% of capital; spread vol 4.7×
+  the typical root, carry alphas ≈ 4× typical, ~1% of the dollar volume; the
+  problem is equal-notional sizing, not the model. Removing LB: 5-day test
+  −0.30% → +0.02%, 22-day +0.32% → +0.36%. Inverse-vol sizing raises gross
+  Sharpe but is worse net (loads low-return metals).
+- **Consequences:** D-030's verdict is unchanged. The 22-day ridge scheme and
+  an ex-ante delisting/liquidity exclusion are the hypotheses for any further
+  walk-forward study; they are not out-of-sample evidence.

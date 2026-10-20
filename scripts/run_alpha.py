@@ -32,7 +32,7 @@ sys.path.insert(0, str(ROOT))
 
 from src import (  # noqa: E402
     alpha_factors as af, alpha_models as M, alpha_portfolio as P, alpha_screen as S,
-    c_daily, config, report, v2_signals,
+    c_daily, config, report, sizing, v2_signals,
 )
 
 OUT = config.OUTPUT_DIR / "alpha"
@@ -375,9 +375,89 @@ def stage_lowfreq_desc() -> None:
     pd.concat(daily, ignore_index=True).to_parquet(OUT / "daily_lowfreq_desc.parquet")
 
 
+RIDGE_MODEL = "ridge_1e3"
+RIDGE_RUNS = (("daily", "fwd_1_2", "linear", 1), ("every 5 days", "fwd_1_6", "linear", 5),
+              ("every 22 days", "fwd_1_22", "linear", 22), ("XS, every 5 days", "fwd_1_6", "xs", 5))
+
+
+def stage_ridge() -> None:
+    """Ridge forecasts and four rebalancing schemes on the full sample (D-032, test descriptive)."""
+
+    sel = json.loads((OUT / "selection.json").read_text())
+    rank, inputs = load_inputs()
+    panel = pd.read_parquet(OUT / "panel_full.parquet")
+    psel = pd.read_parquet(OUT / "panel_select.parquet")
+    preds, perf, daily, info = {}, [], [], []
+    for tgt in sorted({r[1] for r in RIDGE_RUNS} | {"fwd_1_11"}):
+        preds[tgt] = M.oos_predictions(panel, sel["features"][tgt], tgt, RIDGE_MODEL)
+    for name, tgt, rule, every in RIDGE_RUNS:
+        fc = P.forecast_frame(panel, preds[tgt].to_numpy(), tgt)
+        scale = fc.loc[fc["date"] <= S.PERIODS["train"][1], "pred"].std()
+        res = P.run_rule(fc, rule, inputs.pairs, inputs.marks, k=1, every=every, capital=CAPITAL, scale=scale)
+        for per in ("full", "train", "valid", "test"):
+            rng = (None, None) if per == "full" else S.PERIODS[per]
+            perf.append(report.performance_table(res, *rng).assign(run=name, period=per))
+        daily.append(res.daily.assign(run=name))
+        log.info("ridge run %s done", name)
+    pd.concat(perf, ignore_index=True).to_parquet(OUT / "perf_ridge.parquet")
+    pd.concat(daily, ignore_index=True).to_parquet(OUT / "daily_ridge.parquet")
+
+
+LBFIX_SCHEMES = (("equal", ()), ("equal, ex LB", ("LB",)), ("inverse vol", ()))
+
+
+def stage_lbfix() -> None:
+    """Lumber diagnosis: equal 1/N vs dropping LB vs inverse-vol sizing, ridge forecasts (D-032)."""
+
+    sel = json.loads((OUT / "selection.json").read_text())
+    rank, inputs = load_inputs()
+    panel = pd.read_parquet(OUT / "panel_full.parquet")
+    pairs_all = inputs.pairs.assign(spread_vol=sizing.spread_return_vol(inputs.pairs, inputs.marks))
+    perf, daily, roots = [], [], []
+    for name, tgt, rule, every in RIDGE_RUNS[1:3]:
+        pred = M.oos_predictions(panel, sel["features"][tgt], tgt, RIDGE_MODEL)
+        fc0 = P.forecast_frame(panel, pred.to_numpy(), tgt)
+        scale = fc0.loc[fc0["date"] <= S.PERIODS["train"][1], "pred"].std()
+        for scheme_name, drop in LBFIX_SCHEMES:
+            fc = fc0.loc[~fc0["root"].isin(drop)]
+            pairs = pairs_all.loc[~pairs_all["root"].isin(drop)]
+            scheme = "inverse_vol" if scheme_name == "inverse vol" else "equal"
+            res = P.run_rule(fc, rule, pairs, inputs.marks, k=1, every=every, capital=CAPITAL, scale=scale,
+                             scheme=scheme)
+            run = f"{name} | {scheme_name}"
+            for per in ("full", "train", "valid", "test"):
+                rng = (None, None) if per == "full" else S.PERIODS[per]
+                perf.append(report.performance_table(res, *rng).assign(run=run, period=per))
+            daily.append(res.daily.assign(run=run))
+            b = res.by_root.assign(run=run)
+            roots.append(b)
+            log.info("lbfix %s done", run)
+    pd.concat(perf, ignore_index=True).to_parquet(OUT / "perf_lbfix.parquet")
+    pd.concat(daily, ignore_index=True).to_parquet(OUT / "daily_lbfix.parquet")
+    pd.concat(roots, ignore_index=True).to_parquet(OUT / "by_root_lbfix.parquet")
+
+
+def stage_model_notes() -> None:
+    """Features kept by each shrinkage model and forecast correlation with ridge (validation)."""
+
+    sel = json.loads((OUT / "selection.json").read_text())
+    panel = pd.read_parquet(OUT / "panel_select.parquet")
+    coefs, corr = [], []
+    for tgt in af.TARGETS:
+        feats = sel["features"][tgt]
+        for m in ("ols", "ridge_1e3", "ridge_1e5", "lasso_1e-3", "lasso_1e-2", "enet"):
+            c = M.coefficients(panel, feats, tgt, m)
+            coefs.append(c.rename("value").reset_index().rename(columns={"index": "factor"}).assign(target=tgt, model=m))
+        pr = pd.read_parquet(OUT / f"preds_select_{tgt}.parquet")
+        v = pr.loc[panel["usable"] & panel["date"].between(*S.PERIODS["valid"])]
+        corr.append(v[list(M.MODEL_ZOO)].corr().loc["ridge_1e3"].rename(tgt))
+    pd.concat(coefs, ignore_index=True).to_parquet(OUT / "coefficients_all.parquet")
+    pd.concat(corr, axis=1).to_parquet(OUT / "ridge_corr.parquet")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", choices=("select", "test", "horizons", "exlb", "lowfreq", "lowfreq_desc"), required=True)
+    ap.add_argument("--stage", choices=("select", "test", "horizons", "exlb", "lowfreq", "lowfreq_desc", "ridge", "model_notes", "lbfix"), required=True)
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument("--confirm-read-once", action="store_true")
     ap.add_argument("--force", action="store_true")
@@ -395,6 +475,12 @@ def main() -> None:
         stage_lowfreq()
     elif args.stage == "lowfreq_desc":
         stage_lowfreq_desc()
+    elif args.stage == "ridge":
+        stage_ridge()
+    elif args.stage == "model_notes":
+        stage_model_notes()
+    elif args.stage == "lbfix":
+        stage_lbfix()
     else:
         if not args.confirm_read_once:
             raise SystemExit("stage test reads 2016-2026 once; pass --confirm-read-once")
