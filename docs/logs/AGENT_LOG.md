@@ -3752,4 +3752,4 @@ engine gross is +0.48% against +0.63% at signal level, because of the band, and
 the caption says so. All-in net at USD 1m: A −0.30, B −0.72, C −1.03, D −0.39,
 E −9.77, combined +0.23.
 
-**Commit:** `feat(slides): one-engine USD 1m summary table` (this commit).
+**Commit:** `feat(slides): one-engine USD 1m summary table` (`82c7d77`).
