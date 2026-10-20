@@ -1,4 +1,4 @@
-% Final presentation — Project 7
+% Final presentation, Project 7
 % Compile with XeLaTeX:
 %   latexmk -xelatex -outdir=build main.tex
 % or, without a local TeX Live install:
@@ -21,6 +21,7 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usepackage{array}
+\usepackage{multirow}
 
 % ---- Bibliography (author-year) ----
 \usepackage[style=authoryear, maxcitenames=2, maxbibnames=10, giveninits=true,
@@ -80,6 +81,8 @@
 \setbeamerfont{caption}{size=\scriptsize}
 \setbeamerfont{caption name}{size=\scriptsize, series=\bfseries}
 \setbeamercolor{caption name}{fg=navy}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{0pt}
 
 % ---- Helpers ----
 \newcommand{\E}{\mathbb{E}}
@@ -136,9 +139,9 @@
   \[
     C_t = F(t,T_1) - F(t,T_2), \qquad T_1 < T_2
   \]
-  \item Long the spread: long the near contract, short the far one; P\&L is
-        $q\,M\,\Delta C_{t+h}$
-  \item The flat price largely cancels; what remains is the \key{shape of the curve},
+  \item Long the spread means long the near contract and short the far one,
+        with P\&L $q\,M\,\Delta C_{t+h}$
+  \item The flat price largely cancels, and what remains is the \key{shape of the curve},
         roll and convergence
   \item Research question: does term-structure information predict the spread
         change, \key{net of rolls and costs}?
@@ -147,28 +150,7 @@
 \begin{column}{0.42\textwidth}
 \begin{figure}
 \centering
-\begin{tikzpicture}
-\begin{axis}[
-  width=6.4cm, height=4.8cm,
-  xlabel={\scriptsize Maturity}, ylabel={\scriptsize Futures price},
-  xmin=0.5, xmax=6.5, ymin=57, ymax=84, clip=false,
-  xtick={1,2,3,4,5,6}, xticklabels={$T_1$,$T_2$,$T_3$,$T_4$,$T_5$,$T_6$},
-  ytick=\empty, tick label style={font=\scriptsize},
-  axis lines=left, legend columns=1,
-  legend style={font=\scriptsize, draw=none, at={(0.98,0.02)}, anchor=south east},
-  every axis plot/.append style={line width=0.9pt, mark size=1.5pt}]
-\addplot[color=navy, mark=*] coordinates {(1,62) (2,67) (3,69.8) (4,71.5) (5,72.6) (6,73.3)};
-\addlegendentry{Contango}
-\addplot[color=accent, mark=square*] coordinates {(1,80) (2,75.5) (3,73.4) (4,72.1) (5,71.3) (6,70.8)};
-\addlegendentry{Backwardation}
-\draw[dashed, color=navy, line width=0.5pt] (axis cs:0.5,62) -- (axis cs:1,62);
-\draw[dashed, color=navy, line width=0.5pt] (axis cs:0.5,67) -- (axis cs:2,67);
-\draw[<->, color=black!70, line width=0.6pt] (axis cs:0.72,62) -- (axis cs:0.72,67);
-\node[font=\scriptsize, color=black!70, anchor=north west, inner sep=1pt] at (axis cs:0.76,61.5) {$C_t<0$};
-\draw[<->, color=black!70, line width=0.6pt] (axis cs:0.72,75.5) -- (axis cs:0.72,80);
-\node[font=\scriptsize, color=black!70, anchor=south west, inner sep=1pt] at (axis cs:0.76,80.5) {$C_t>0$};
-\end{axis}
-\end{tikzpicture}
+\includegraphics[width=\linewidth]{figures/stylized_curves.pdf}
 \caption{Stylized futures curves. The arrow is the calendar spread.}
 \end{figure}
 \end{column}
@@ -176,44 +158,71 @@
 \end{frame}
 
 % =====================================================================
-\begin{frame}{Data: Bloomberg bulk export, 1986--2026}
-\begin{columns}[T, onlytextwidth]
-\begin{column}{0.55\textwidth}
-\footnotesize
-\begin{itemize}
-  \item Source: \key{Bloomberg bulk export} of generic futures ranks
-  \item 24 commodities $\times$ four nearby ranks (M1--M4), daily
-  \item Sample: \key{1986-01-01 to 2026-10-13}, 10{,}640 trading days
-  \item Four fields: settlement, volume, open interest, current generic ticker
-  \item M1--M4 are \key{slots, not contracts}; the ticker identifies the real contract
-  \item Known edges: XB starts in 2005, LB ends in 2023; CL on 2020-04-20 is
-        $-37.63$ and is kept
-\end{itemize}
-\end{column}
-\begin{column}{0.42\textwidth}
+\begin{frame}[t]{Data: Bloomberg bulk export, 1986--2026}
+\vspace{-1.2ex}
+\begin{table}
+\scriptsize
+\renewcommand{\arraystretch}{0.9}
+\setlength{\tabcolsep}{4pt}
+\begin{minipage}[t]{0.485\textwidth}
+\vspace{0pt}
 \centering
-{\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}l l@{}}
+\begin{tabular}{@{}l L{2.85cm} l c@{}}
 \toprule
-Sector & Roots \\
+Code & Underlying & Exchange & Sample \\
 \midrule
-Energy (5)      & CL, CO, HO, NG, XB \\
-Grains (4)      & C, O, RR, W \\
-Oilseeds (3)    & BO, S, SM \\
-Softs (4)       & CC, JO, KC, SB \\
-Industrials (2) & CT, LB \\
-Livestock (3)   & FC, LC, LH \\
-Metals (3)      & GC, HG, SI \\
+\multicolumn{4}{@{}l}{\color{navy}\textbf{Energy}} \\
+CL & WTI crude oil & NYMEX & 1986--2026 \\
+CO & Brent crude oil & ICE & 1988--2026 \\
+HO & Heating oil (ULSD) & NYMEX & 1986--2026 \\
+NG & Natural gas (Henry Hub) & NYMEX & 1990--2026 \\
+XB & RBOB gasoline & NYMEX & 2005--2026 \\
 \midrule
-Total           & 24 \\
+\multicolumn{4}{@{}l}{\color{navy}\textbf{Grains}} \\
+C & Corn & CBOT & 1986--2026 \\
+O & Oats & CBOT & 1986--2026 \\
+RR & Rough rice & CBOT & 1988--2026 \\
+W & Wheat (Chicago SRW) & CBOT & 1986--2026 \\
+\midrule
+\multicolumn{4}{@{}l}{\color{navy}\textbf{Oilseeds}} \\
+BO & Soybean oil & CBOT & 1986--2026 \\
+S & Soybeans & CBOT & 1986--2026 \\
+SM & Soybean meal & CBOT & 1986--2026 \\
 \bottomrule
 \end{tabular}
-\par}
-\vspace{1ex}
-{\scriptsize\color{slate}CME, CBOT, NYMEX, COMEX and ICE contracts.}
-\end{column}
-\end{columns}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\textwidth}
+\vspace{0pt}
+\centering
+\begin{tabular}{@{}l L{2.85cm} l c@{}}
+\toprule
+Code & Underlying & Exchange & Sample \\
+\midrule
+\multicolumn{4}{@{}l}{\color{navy}\textbf{Softs}} \\
+CC & Cocoa & ICE US & 1986--2026 \\
+JO & Orange juice (FCOJ) & ICE US & 1986--2026 \\
+KC & Coffee C (arabica) & ICE US & 1986--2026 \\
+SB & Sugar No.~11 & ICE US & 1986--2026 \\
+\midrule
+\multicolumn{4}{@{}l}{\color{navy}\textbf{Industrials}} \\
+CT & Cotton No.~2 & ICE US & 1986--2026 \\
+LB & Random-length lumber & CME & 1986--2023 \\
+\midrule
+\multicolumn{4}{@{}l}{\color{navy}\textbf{Livestock}} \\
+FC & Feeder cattle & CME & 1986--2026 \\
+LC & Live cattle & CME & 1986--2026 \\
+LH & Lean hogs & CME & 1986--2026 \\
+\midrule
+\multicolumn{4}{@{}l}{\color{navy}\textbf{Metals}} \\
+GC & Gold & COMEX & 1986--2026 \\
+HG & Copper & COMEX & 1988--2026 \\
+SI & Silver & COMEX & 1986--2026 \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{The 24 commodities. Daily settlement, volume, open interest and generic
+ticker for ranks M1--M4 (slots, not contracts), 1986-01-02 to 2026-10-13.}
+\end{table}
 \end{frame}
 
 % =====================================================================
@@ -223,18 +232,20 @@ Total           & 24 \\
 \footnotesize
 \begin{itemize}
   \item Rank panel $\rightarrow$ contract panel: each row is a date $\times$
-        \key{real contract}; 6{,}735 contracts, 950{,}626 contract-days
-  \item Returns are computed on contract codes; on a roll the new M1 inherits
+        \key{real contract}, with 6{,}735 contracts and 950{,}626 contract-days
+  \item Returns are computed on contract codes. On a roll the new M1 inherits
         the old M2's previous price
   \item \key{Never difference generic prices across a roll}: that jump is a
         spread, not a return
-  \item Eligibility: no delivery month; exit at least 5 trading days before;
-        days to last trading $> D=10$ \smallnote{(D=5/20 are robustness only)}
+  \item Eligibility: no delivery month, exit at least 5 trading days before,
+        and days to last trading $> D=10$ \smallnote{(D=5/20 are robustness only)}
+  \item Main pair: the two nearest eligible contracts, K=5 ex-ante liquid roots
 \end{itemize}
 \end{column}
 \begin{column}{0.42\textwidth}
+\begin{table}
 \centering
-{\scriptsize
+\scriptsize
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}l r@{}}
 \toprule
@@ -249,9 +260,8 @@ Universe            & 236{,}186 \\
 Adjacent pairs      & 610{,}801 \\
 \bottomrule
 \end{tabular}
-\par}
-\vspace{1ex}
-{\scriptsize\color{slate}All panels are rebuilt from the raw CSV.}
+\caption{Rows in each panel. All panels are rebuilt from the raw CSV.}
+\end{table}
 \end{column}
 \end{columns}
 \end{frame}
@@ -262,17 +272,16 @@ Adjacent pairs      & 610{,}801 \\
 \begin{itemize}
   \item v2 is holdings-based: \texttt{marks $\rightarrow$ sizing $\rightarrow$
         simulate $\rightarrow$ report}
-  \item Signal at $t$ close; \key{fill at $t+1$ close}; existing positions are
-        marked before orders
+  \item Signal at the $t$ close and \key{fill at the $t+1$ close}, with existing
+        positions marked before orders
   \item All-in cost: \key{half-spread + exchange fee + square-root impact}
-  \item Eligibility: at least 5 sessions before the delivery month; more than
-        5 days to last trading; thinner-leg lagged average daily volume at
-        least 100 contracts
-  \item USD 10m book, equal notional; weekly, monthly or daily rebalance by idea
-  \item Full 1986--2026; train 1986--2015; \key{test 2016--2026 read once, no tuning}
+  \item K=5 ex-ante, USD 10m book, equal notional, and weekly, monthly or daily
+        rebalance by idea
+  \item Full 1986--2026, train 1986--2015, \key{test 2016--2026 read once, no tuning}
   \item Report gross and all-in net: annualized return, Sharpe, turnover, drawdown
 \end{itemize}
-\begin{center}
+\begin{figure}
+\centering
 \begin{tikzpicture}[node distance=0.38cm]
 \node[box] (sig) {Signal at $t$\\close};
 \node[box, right=of sig] (tgt) {Target\\legs};
@@ -284,9 +293,63 @@ Adjacent pairs      & 610{,}801 \\
 \draw[arr] (fill) -- (mark);
 \draw[arr] (mark) -- (pnl);
 \end{tikzpicture}
-\end{center}
+\caption{Order of operations in the v2 holdings-based backtest engine.}
+\end{figure}
 \end{frame}
 
+% =====================================================================
+\begin{frame}{The simulated trading environment}
+\footnotesize
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.49\textwidth}
+\textbf{Fill at the settlement price}
+\begin{itemize}
+  \item Signal at the $t$ settle, \key{fill at the $t+1$ settle}
+  \item Trade at Settlement orders allow this fill in the front 2 to 4 months:
+        energy since 2006, softs 2009, metals 2011, grains and livestock 2015
+  \item Not before these dates, nor in oats, rough rice and lumber, where the
+        half-spread charge proxies the gap to the settle
+\end{itemize}
+\end{column}
+\begin{column}{0.49\textwidth}
+\textbf{Portfolio size}
+\begin{itemize}
+  \item Default \key{\$1m, equal $1/N$} across commodities, equal-notional
+        legs. We test \$100k to \$30m
+  \item Too small: at \$100k one commodity's budget is below one contract
+  \item Too large: square-root impact grows from 1.4 bp/yr at \$1m to
+        63 bp/yr at \$30m and needs better execution
+\end{itemize}
+\end{column}
+\end{columns}
+\vspace{-0.8ex}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}L{1.4cm} L{5.6cm} L{6.0cm}@{}}
+\toprule
+Cost & Model, per traded leg & Calibration \\
+\midrule
+Half-spread
+  & $0.5$ tick $\times\,(10^4/\mathrm{ADV})^{0.18}$, at most $10\times$.
+    One half-spread per listed spread order
+  & One-tick quoted spread \parencite{szakmary2010trend}, volume elasticity
+    $-0.18$ \parencite{wang2014behavior} \\
+Fees
+  & \$1.5 per contract per side on every leg
+  & Exchange, clearing and broker fees \parencite{gao2018market}, close to
+    current CME and ICE schedules \\
+Impact
+  & $Y\sigma\sqrt{Q/\mathrm{ADV}}$ per unit of traded notional, $Y=0.5$,
+    first contract free
+  & Square-root law \parencite{toth2011anomalous, bouchaud2018trades} \\
+\bottomrule
+\end{tabular}
+\caption{Costs charged on top of the settlement price. $\sigma$ and ADV are
+the leg's lagged 60-day volatility and 20-day volume.}
+\end{table}
+\end{frame}
 % =====================================================================
 \begin{frame}{Roadmap: five ideas, one pipeline}
 \centering
@@ -307,16 +370,15 @@ Adjacent pairs      & 610{,}801 \\
 \textbf{D} & Curve momentum
           & \textcite{paschke2020curve} & weak / negative \\
 \textbf{E} & Nelson--Siegel dynamics
-          & \textcite{bianchi2023exploiting} & teammate \\
+          & \textcite{bianchi2023exploiting} & not tradable \\
 \bottomrule
 \end{tabular}
 \par}
 \vspace{1.5ex}
 {\footnotesize\color{slate}Same data, same eligibility, same engine, same
 all-in costs. \key{Only the signal changes.}\\[2pt]
-A/B are convergence designs; C/D/E are paper-based.}
+A/B are convergence designs; C/D/E are paper-based. The final section combines the alphas.}
 \end{frame}
-
 % =====================================================================
 \section{A: Spread convergence}
 
@@ -732,60 +794,397 @@ Placebo & block shuffle $p<0.001$; lag-1m IC $0.016$; future-score lead $0.028$ 
 \end{column}
 \end{columns}
 \end{frame}
-
 % =====================================================================
-
 \section{E: Nelson--Siegel dynamics}
 
-\begin{frame}{E \textperiodcentered\ Nelson--Siegel curve dynamics}
-\begin{center}
-\begin{minipage}{0.82\linewidth}
-\begin{block}{Reserved for teammate}
-\footnotesize
-\begin{itemize}
-  \item Paper: \textcite{bianchi2023exploiting}
-  \item Cover: the paper's idea, its method, our replication or alternative,
-        results and robustness
-  \item This section is intentionally blank in the draft
-\end{itemize}
-\vspace{0.5ex}
-{\scriptsize\color{slate}
-$\square$~Paper setup \quad
-$\square$~Method \quad
-$\square$~Replication \quad
-$\square$~Results \quad
-$\square$~Robustness}
-\end{block}
-\end{minipage}
-\end{center}
-\end{frame}
-
-% =====================================================================
-\section{Portfolio}
-
-\begin{frame}{Putting the alphas together}
+\begin{frame}{E \textperiodcentered\ Term-structure trading with Nelson--Siegel factors}
+\paperref{bianchi2023exploiting}
+\vspace{-0.8ex}
 \begin{columns}[T, onlytextwidth]
-\begin{column}{0.55\textwidth}
+\begin{column}{0.57\textwidth}
 \footnotesize
 \begin{itemize}
-  \item Candidate inputs: \key{A flip}, \key{B flip}, C variants, D (weak),
-        E (if tradable)
-  \item Combination model: equal-weight, inverse-vol or shrinkage; correlation
-        and turnover constraints
-  \item Same v2 engine, same all-in costs, same train/test split
-  \item Key question: does diversification across weak signals survive costs?
-  \item Required output: combined net Sharpe, turnover, drawdown and the
-        correlation matrix
+  \item \key{Data}: settlement prices of the four nearest eligible contracts,
+        maturity $M$ in months to the last trading day
+  \item \key{Model} from fixed income
+        \parencite{nelson1987parsimonious, diebold2006forecasting}, OLS on each
+        commodity-day, $\lambda$ chosen causally from a rolling 252-day fit
+\end{itemize}
+\vspace{-0.4ex}
+{\scriptsize
+\begin{equation}\label{eq:ns}
+F_t(M)=\beta_{L,t}
++\beta_{S,t}\,\frac{1-e^{-\lambda M}}{\lambda M}
++\beta_{C,t}\Bigl(\frac{1-e^{-\lambda M}}{\lambda M}-e^{-\lambda M}\Bigr)
+\end{equation}}
+\vspace{-1.6ex}
+\begin{itemize}
+  \item \key{Three factors}
+  \begin{itemize}\scriptsize
+    \item Level $\beta_L$: the long-end price
+    \item Slope $\beta_S=F_t(0)-\beta_L$: $>0$ backwardation (scarce inventory),
+          $<0$ contango
+    \item Curvature $\beta_C$: a hump or dip in the middle of the curve
+  \end{itemize}
+  \item \key{Trade, time series per commodity}: \hl{if $\Delta\beta_{S,t}>0$,
+        long the 1st and short the 4th contract, else the reverse}. Fill at
+        $t+1$, hold one day, $1/N$ budget, equal-notional legs
 \end{itemize}
 \end{column}
-\begin{column}{0.42\textwidth}
-\figph[4.6cm]{Placeholder: combined NAV, net Sharpe and
-correlation matrix.\\[2pt]
-This is the remaining step, not a finished result.}
+\begin{column}{0.41\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.94\linewidth]{figures/e_curve_snapshots.pdf}
+\caption{WTI crude oil curves on three dates. Dots are the four contracts.}
+\end{figure}
 \end{column}
 \end{columns}
-\takeaway{Individual signals are weak. The portfolio is the only place where
-their information could still add up.}
+\end{frame}
+
+\begin{frame}{E \textperiodcentered\ Does Eq.~(\ref{eq:ns}) describe futures curves?}
+\footnotesize
+\begin{itemize}
+  \item \textcite{nelson1987parsimonious} model the fixed-income forward curve,
+        Eq.~(\ref{eq:nsfwd}), and Eq.~(\ref{eq:ns}) is its average over $[0,M]$.
+        A futures price is not such an average, so \key{Eq.~(\ref{eq:ns}) need
+        not hold}
+        {\scriptsize
+        \begin{equation}\label{eq:nsfwd}
+        f(M)=\beta_L+\beta_S\,e^{-\lambda M}+\beta_C\,\lambda M\,e^{-\lambda M}
+        \end{equation}}
+        \vspace{-2.6ex}
+  \item Only futures data can tell whether \key{each added factor} describes
+        the term structure \key{significantly better}
+  \item Nested fits $\beta_L$, then $\beta_L+\beta_S$, then Eq.~(\ref{eq:ns}),
+        scored by the \key{out-of-sample $R^2$ of the held-out 2nd or 3rd
+        contract}. Holding out the 1st or 4th is extrapolation, where $\beta_C$
+        helps 10 commodities and hurts 10
+\end{itemize}
+\vspace{-1.4ex}
+\begin{figure}
+\centering
+\includegraphics[width=0.85\linewidth]{figures/e_r2_gains.pdf}
+\caption{Median daily gain in interior leave-one-contract-out $R^2$, 1986--2026,
+21-day block bootstrap. Adding $\beta_S$ helps all 24 commodities, adding
+$\beta_C$ helps 23.}
+\end{figure}
+\end{frame}
+
+\begin{frame}{E \textperiodcentered\ Replicating the paper's backtest, then making it tradable}
+\footnotesize
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.49\textwidth}
+\textbf{From today's curve to a position}
+\begin{itemize}
+  \item Fit Eq.~(\ref{eq:ns}) at the $t$ settle. \hl{If $\Delta\beta_{S,t}>0$,
+        long the 1st and short the 4th contract, else the reverse}
+  \item Paper $\lambda_t=1.7933/\bar M_t$ with $\bar M_t$ the mean maturity:
+        the curvature peak sits at $\bar M_t$, so $\lambda_t$ moves daily
+\end{itemize}
+\end{column}
+\begin{column}{0.49\textwidth}
+\textbf{Timing: the paper versus a tradable fill}
+\begin{itemize}
+  \item Paper: fill at the signal's own settle and earn $[t,\,t+1]$.
+        \key{Not tradable}, the settle is published after the close
+  \item Tradable: \key{fill at $t+1$} and earn $[t+1,\,t+2]$, or hold $k$
+        overlapping sleeves
+\end{itemize}
+\end{column}
+\end{columns}
+\vspace{-1.2ex}
+\begin{table}
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{0.86}
+\setlength{\tabcolsep}{3.5pt}
+\input{tables/e_backtest.tex}
+\caption{Slope strategy, 21 commodities, 1992--2019, \$1m. Annualized return in
+percent, annualized Sharpe ($\times\sqrt{252}$) in parentheses. Paper costs per
+side: TC1 \$0.75 per contract, TC2 0.835 bp of notional, TC3 TC1 plus 1/8 tick.}
+\end{table}
+\end{frame}
+
+\begin{frame}{E \textperiodcentered\ Where the paper's return comes from}
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=4.1cm]{figures/e_horizon_decay.pdf}
+\caption{Mean signed spread return of the slope signal in each one-day window
+after the signal, 95\% Newey--West CI.}
+\end{figure}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=4.1cm]{figures/e_nav_timing.pdf}
+\caption{Cumulative return at the paper timing and at the tradable $t+1$
+fill, gross and net of the paper's TC1.}
+\end{figure}
+\end{column}
+\end{columns}
+\takeaway{The whole effect sits in $[t,\,t+1]$, the window that starts at the
+settle that produced the signal. One day of execution delay removes it, so the
+replication succeeds but the strategy cannot be traded.}
+\end{frame}
+
+\begin{frame}{E \textperiodcentered\ Which commodities, and does a good fit help?}
+\footnotesize
+\begin{itemize}
+  \item \key{Fit quality does not predict the edge}: rank correlation of
+        paper-timing Sharpe with LOO $R^2$ is $-0.16$
+  \item Livestock fits worst yet is among the strongest: $\Delta\beta_{S,t}$
+        picks up settlement noise that reverses the next day
+  \item The effect \key{depends on $\lambda$}: Sharpe 1.88 (paper rule), 0.64
+        ($\lambda=4$), $-0.25$ (rolling fit), 1992--2019
+\end{itemize}
+\vspace{-1.6ex}
+\begin{figure}
+\centering
+\includegraphics[width=0.84\linewidth]{figures/e_root_discussion.pdf}
+\caption{Gross Sharpe at both timings (top) and bootstrap of the median interior
+LOO $R^2$ (bottom), paper $\lambda$, 1986--2026.}
+\end{figure}
+\end{frame}
+
+\begin{frame}{E$^{*}$ \textperiodcentered\ Can a Kalman filter stabilize the betas?}
+\footnotesize
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.47\textwidth}
+\begin{itemize}
+  \item Four prices pin down three betas, and $\lambda$ is chosen too, so the
+        daily OLS estimate is \key{noisy}
+  \item Dynamic Nelson--Siegel: let the betas follow a random walk and filter
+        them \parencite{diebold2006forecasting}
+\end{itemize}
+\vspace{-1.2ex}
+{\scriptsize
+\begin{align}
+\beta_t &= \beta_{t-1}+\eta_t, & \eta_t &\sim N\bigl(0,\,q\,s_{t-1}^2 I\bigr) \label{eq:kfstate}\\
+F_t &= X_t(\lambda_t)\,\beta_t+\varepsilon_t, & \varepsilon_t &\sim N\bigl(0,\,r\,s_{t-1}^2 I\bigr) \label{eq:kfobs}
+\end{align}}
+\vspace{-2ex}
+\begin{itemize}
+  \item $s_{t-1}$ is yesterday's mean price, and $(r,q)$ maximize the one-step
+        likelihood per commodity on 1986--2005
+  \item A/B against daily OLS on 2006--2026, paired 21-day block bootstrap
+\end{itemize}
+\end{column}
+\begin{column}{0.51\textwidth}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}l r r r@{}}
+\toprule
+Metric & OLS & Kalman & Better / worse \\
+\midrule
+Leave-one-out $R^2$ & $0.72$ & $0.95$ & 24 / 0 \\
+One-step forecast $R^2$ & $0.53$ & $0.45$ & 1 / 20 \\
+\addlinespace[2pt]
+$[t,\,t+1]$ return (bp) & $+2.66$ & $+2.44$ & \\
+$[t+1,\,t+2]$ return (bp) & $-0.04$ & $-0.57$ & \\
+Tradable gross (\%/yr) & $+0.18$ & $-0.31$ & \\
+\bottomrule
+\end{tabular}
+\caption{Kalman versus daily OLS, 24 commodities. Fit rows are medians on
+2006--2026, with the number of commodities where Kalman is significantly better
+or worse ($p<0.05$). Signal rows are 1986--2026, \$1m.}
+\end{table}
+\end{column}
+\end{columns}
+\takeaway{The signal lives for one day. Shrinking toward yesterday's betas
+lowers the variance but removes the daily change that carries the signal, so
+Eqs.~(\ref{eq:kfstate}) and (\ref{eq:kfobs}) fit today's curve better yet
+forecast and trade worse. We keep the daily OLS fit.}
+\end{frame}
+% =====================================================================
+\section{Combining the alphas}
+
+\begin{frame}{Combining the ideas: from strategies to alphas}
+\footnotesize
+\begin{itemize}
+  \item Each idea makes economic sense, but each is \key{weak and works only in
+        some regimes}: the A and B flips are gross only, C is eaten by costs,
+        D is unstable, E works only at the paper's timing
+  \item So we \key{distil every paper's strategy into continuous alphas} on the
+        same main pair, combine them with a model, and trade the forecast
+\end{itemize}
+\vspace{-0.4ex}
+{\scriptsize
+With $r_t$ the main-pair spread return, $C_t$ its annualized carry, $c^{(k)}_t$
+the carry of the $k$-th eligible adjacent spread, and $S_t$ the roll-chained
+spread index:
+\begin{align*}
+\text{A:}\quad & a^{\text{carry}}_t=C_t, &
+                 & a^{\text{carry,dev}}_t=C_t-\overline{C}_{t,252}\\
+\text{B:}\quad & b^{\text{curve}}_t=c^{(\text{front})}_t-c^{(\text{back})}_t, &
+                 & b^{\text{rel}}_t=C_t-\tfrac{1}{K}\textstyle\sum_k c^{(k)}_t\\
+\text{C:}\quad & c^{z,L}_t=-\dfrac{S_t-\overline{S}_{t,L}}{\operatorname{sd}_{t,L}(S)},\ L\in\{20,60\}, &
+                 & c^{\text{rev}}_t=-\textstyle\sum_{s=t-4}^{t}r_s\\
+\text{D:}\quad & d^{\text{mom},L}_t=\textstyle\sum_{s=t-L+1}^{t}r_s,\ L\in\{21,63,252\} & & \\
+\text{E:}\quad & e^{S}_t=\Delta\beta_{S,t}/\overline{F}_t, &
+                 & e^{C}_t=\Delta\beta_{C,t}/\overline{F}_t
+\end{align*}}
+\vspace{-0.6ex}
+{\scriptsize\color{slate}Each alpha uses settles up to $t$, is scaled per commodity by its
+expanding root mean square and clipped at $\pm4$. Signs are kept, the model learns
+the direction.}
+\end{frame}
+
+\begin{frame}{Is an alpha informative? Time-series IC with a day-block bootstrap}
+\footnotesize
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.55\textwidth}
+\textbf{Metric}: rank IC of alpha $a$ with the spread return over the next
+$h$ days, per commodity $r$ over time, then averaged
+{\scriptsize
+\[
+\mathrm{IC}_r(h)=\operatorname{corr}_t\bigl(\operatorname{rank}a_{r,t},\,
+\operatorname{rank}R_{r,[t+1,\,t+1+h]}\bigr),\quad
+\overline{\mathrm{IC}}(h)=\tfrac{1}{N}\textstyle\sum_r\mathrm{IC}_r(h)
+\]}
+\vspace{-1.4ex}
+\begin{block}{Joint day-block bootstrap, train 1986--2005}
+\scriptsize
+\textbf{for} $b=1,\dots,B$ ($B=1000$ replications)\textbf{:}\\
+\quad draw $\lceil T/L\rceil$ blocks of $L$ consecutive dates, $T$ dates in total,\\
+\quad the same dates for every commodity and every alpha\\
+\quad $\mathrm{IC}^{*}_{r}\leftarrow$ rank correlation on the resampled dates\\
+\quad $\overline{\mathrm{IC}}^{*}\leftarrow$ mean of $\mathrm{IC}^{*}_{r}$ over commodities\\
+s.e.\ $=\operatorname{sd}(\overline{\mathrm{IC}}^{*})$,\quad
+$p_r=2\min\{\Pr(\mathrm{IC}^{*}_r\le0),\,\Pr(\mathrm{IC}^{*}_r\ge0)\}$
+\end{block}
+\vspace{-0.4ex}
+\begin{itemize}
+  \item \key{Keep} an alpha if $p_r<0.05$ with the mean's sign on half of the
+        commodities, else if the CI of $\overline{\mathrm{IC}}$ excludes 0 and
+        two thirds share its sign
+\end{itemize}
+\end{column}
+\begin{column}{0.43\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{figures/f_block_length.pdf}
+\caption{S.e.\ of $\overline{\mathrm{IC}}$ against $L$, $[t+1,\,t+6]$. It
+plateaus at 10 days, and at horizon $h$ we use $\max(10,h)$.}
+\end{figure}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Which alphas carry information, and at which horizon?}
+\vspace{-0.8ex}
+\begin{figure}
+\centering
+\includegraphics[height=6.3cm]{figures/f_screen_heatmap.pdf}
+\caption{Screen on train 1986--2005: mean IC, bootstrap $p$-value of the mean, and
+commodities with $p<0.05$ and the mean's sign. A (the flip sign) is strongest and
+grows with $h$, C and E peak at $[t,\,t+1]$, B helps only at long $h$, D never passes.}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Which model? Eight forecasters compared out of sample}
+\footnotesize
+\begin{itemize}
+  \item Pooled, vol-scaled target, screened alphas. Fit 1986--2005, compare
+        2006--2015, no tuning
+  \item \key{Linear models are equivalent} (IC gaps below 0.005, forecasts
+        correlated above 0.99), \key{trees never beat them}
+  \item Lasso keeps \texttt{a\_carry\_dev} everywhere, \texttt{b\_rel\_carry} for
+        $h\geq10$, and zeroes the E alpha. \key{We use ridge}
+\end{itemize}
+\vspace{-1.6ex}
+\begin{figure}
+\centering
+\includegraphics[width=0.86\linewidth]{figures/f_model_ic.pdf}
+\caption{Validation mean IC, 95\% bootstrap CI. Blue linear, grey trees, orange
+ridge. R: ridge, L: lasso ($\alpha=10^{3},10^{5},10^{-3},10^{-2}$), EN: elastic net.}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Trading the ridge forecast: four rebalancing schemes}
+\footnotesize
+\begin{itemize}
+  \item Daily trades the $[t+1,\,t+2]$ forecast, every 5 and 22 days trade the
+        $[t+1,\,t+6]$ and $[t+1,\,t+22]$ forecasts, the cross-section is long the
+        top 5 and short the bottom 5 commodities. \$1m, $1/N$
+  \item \key{Slower is better after costs}: the forecast decays over one to two
+        months, while turnover falls from $38\times$ to $14\times$ a year.
+        \key{Every 22 days is positive in all three periods}
+\end{itemize}
+\vspace{-1ex}
+\begin{table}
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{0.92}
+\setlength{\tabcolsep}{3.5pt}
+\input{tables/f_ridge.tex}
+\caption{\label{tab:ridge}Ridge strategies. Annualized return in percent, annualized Sharpe in
+parentheses. The test period was read once before the ridge choice, so its
+column is descriptive.}
+\end{table}
+\end{frame}
+
+\begin{frame}{Trading the ridge forecast: cumulative returns}
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=4.6cm]{figures/f_ridge_nav.pdf}
+\caption{Net of all costs, four schemes.}
+\end{figure}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=4.6cm]{figures/f_ridge_layers.pdf}
+\caption{Every 22 days, after each cost layer.}
+\end{figure}
+\end{column}
+\end{columns}
+\takeaway{Blue shading is validation, grey is test. Annual returns and Sharpe
+ratios for every cost layer are in Table~\ref{tab:ridge}. Only the 22-day scheme
+keeps rising through the test period after all costs.}
+\end{frame}
+
+\begin{frame}{What went wrong in lumber, and the fix}
+\footnotesize
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.49\textwidth}
+\begin{itemize}
+  \item 2021--22: LB lost about 3\% of capital in one year
+  \item \key{Not the model}: large alphas, a spread \key{4.7 times as volatile},
+        1\% of the dollar volume. \key{The sizing}: equal $1/N$ gave LB about
+        five times the typical risk
+\end{itemize}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{itemize}
+  \item Inverse-vol sizing loads low-return metals, costs dominate
+  \item \key{Removing LB} (thin, delisted in 2023, an ex-ante rule) turns the
+        5-day test from $-0.30\%$ to $+0.02\%$ a year
+\end{itemize}
+\end{column}
+\end{columns}
+\vspace{-1ex}
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=3.6cm]{figures/f_lumber_contrib.pdf}
+\caption{Gross P\&L, every 5 days, equal $1/N$.}
+\end{figure}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=3.6cm]{figures/f_lumber_fix.pdf}
+\caption{Net of all costs, before and after.}
+\end{figure}
+\end{column}
+\end{columns}
 \end{frame}
 
 % =====================================================================
@@ -795,15 +1194,15 @@ their information could still add up.}
 \centering
 {\scriptsize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}L{3.0cm} r r r L{2.2cm}@{}}
+\begin{tabular}{@{}L{3.2cm} r r L{2.5cm}@{}}
 \toprule
-Idea & Gross (\%/yr) & All-in net (\%/yr) & Gross Sharpe & Verdict \\
+Idea & Gross (\%/yr) & Gross Sharpe & Verdict \\
 \midrule
-A spread convergence & $+0.63$ & --- & $0.63$ & candidate (gross) \\
-B relative value & $+0.50$ & --- & $1.06$ & candidate (gross) \\
-C mean reversion & $+0.61$ & --- & $0.38$ & weak gross \\
-D curve momentum & $+0.22$ & $-1.42$ & $0.25$ & weak / unstable \\
-E Nelson--Siegel & --- & --- & --- & teammate \\
+A spread convergence & $+0.63$ & $0.63$ & candidate (gross) \\
+B relative value & $+0.50$ & $1.06$ & candidate (gross) \\
+C mean reversion & $+0.61$ & $0.38$ & weak gross \\
+D curve momentum & $+0.22$ & $0.25$ & weak / unstable \\
+E Nelson--Siegel & --- & --- & not tradable \\
 \bottomrule
 \end{tabular}
 \par}
@@ -812,8 +1211,8 @@ E Nelson--Siegel & --- & --- & --- & teammate \\
 \begin{column}{0.48\textwidth}
 \footnotesize
 \begin{itemize}
-  \item A/B convergence carry gross information; costs decide whether they
-        survive the portfolio
+  \item A/B convergence carry gross information; the combination section
+        tests whether it survives
   \item C/D contain some gross signal, but it is weak and unstable
   \item Contract-level alignment is the foundation; generic slot returns would
         be wrong
@@ -824,13 +1223,12 @@ E Nelson--Siegel & --- & --- & --- & teammate \\
 \begin{itemize}
   \item A/B are \key{portfolio candidates}, not standalone strategies; the
         test evidence is suggestive
-  \item Next: E, portfolio combination, H holding-period scan
+  \item The A--E combination is implemented; next is risk-budget sizing and a walk-forward test
   \item No single idea is a standalone strategy, but the pipeline is reusable
 \end{itemize}
 \end{column}
 \end{columns}
 \end{frame}
-
 % =====================================================================
 \begin{frame}[standout]
   Thank you

@@ -312,29 +312,32 @@ def build_slope_strategy(contract_panel: pd.DataFrame, marks_: pd.DataFrame, rul
 MODELS = {"L": [0], "LS": [0, 1], "LC": [0, 2], "LSC": [0, 1, 2]}
 
 
-def _loo_press(X: np.ndarray, F: np.ndarray) -> np.ndarray:
+def _loo_press(X: np.ndarray, F: np.ndarray, holdout: tuple[int, ...] | None = None) -> np.ndarray:
     """Leave-one-contract-out prediction SSE (PRESS) per row.
 
-    Each of the n contracts is predicted from a fit on the other n-1; NaN if
+    Each held-out contract is predicted from a fit on the other n-1; NaN if
     a fold is singular (e.g. 3 parameters cannot be fitted on 2 points).
+    ``holdout`` restricts the folds (e.g. ``(1, 2)``: interior contracts only,
+    so every prediction is an interpolation); ``None`` uses all n contracts.
     """
 
     n = F.shape[1]
     press = np.zeros(len(F))
-    for k in range(n):
+    for k in (range(n) if holdout is None else holdout):
         keep = [j for j in range(n) if j != k]
         beta, _ = _ols(X[:, keep, :], F[:, keep])
         press += (F[:, k] - np.einsum("bj,bj->b", X[:, k, :], beta)) ** 2
     return press
 
 
-def fit_quality(wide: pd.DataFrame, lam: pd.Series) -> pd.DataFrame:
+def fit_quality(wide: pd.DataFrame, lam: pd.Series, holdout: tuple[int, ...] | None = None) -> pd.DataFrame:
     """In-sample, adjusted and leave-one-out R² of nested NS models per root-day.
 
     Models: L (level only), LS, LC, LSC (full). With n = 4 contracts and p
     slope regressors, adjusted R² = 1 - (1 - R²)(n - 1)/(n - p - 1); the
     level-only model has R² = adjusted R² = 0 by construction. The LOO
-    ("predictive") R² is 1 - PRESS / SST.
+    ("predictive") R² is 1 - (n / |H|) PRESS_H / SST over the held-out set H
+    (``holdout``; all contracts by default, which is the usual PRESS R²).
 
     Returns:
         ``date, root`` plus ``r2_<m>``, ``adj_<m>``, ``loo_<m>`` for each model.
@@ -352,5 +355,7 @@ def fit_quality(wide: pd.DataFrame, lam: pd.Series) -> pd.DataFrame:
             p = len(cols) - 1
             out[f"r2_{name}"] = r2
             out[f"adj_{name}"] = 1.0 - (1.0 - r2) * (n - 1) / (n - p - 1)
-            out[f"loo_{name}"] = np.where(sst > 0, 1.0 - _loo_press(X[..., cols], F) / sst, np.nan)
+            scale = n / (n if holdout is None else len(holdout))
+            press = _loo_press(X[..., cols], F, holdout) * scale
+            out[f"loo_{name}"] = np.where(sst > 0, 1.0 - press / sst, np.nan)
     return out

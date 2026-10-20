@@ -2914,6 +2914,131 @@ result figures.
 
 ## LOG-0065 · 2026-10-20 · Phase 15 · Claude Code
 
+**Task:** Final deck edits (user request): academic punctuation, numbered
+captions, data-table slide, white closing slide, and the first three idea-E
+slides with journal-style vector figures.
+
+**What changed:**
+- `presentations/final/main.tex`: no visible semicolons, em dashes or vertical
+  bars in any slide (Tian's and Jiaheng's parts); every table and figure in a
+  numbered `table`/`figure` with a caption below; slide 3 lists all 24 codes
+  with underlying, exchange and sample; Figure 1 redrawn; closing slide is
+  white with "Questions and comments are welcomed."; E slides 1–3 (method with
+  numbered Eq. (1), fit-significance test with Eq. (2) and Figure 4,
+  replication/transfer table).
+- `scripts/make_slide_figures.py` (vector PDFs in `presentations/final/figures/`)
+  and `scripts/make_slide_tables.py` (bare tabulars in
+  `presentations/final/tables/`, raw CSV in `output/slides/`).
+- `src/nelson_siegel.fit_quality` / `_loo_press`: optional `holdout` (e.g.
+  interior contracts only); default behaviour unchanged; new test.
+
+**Why:** the user is preparing the final presentation; the interior
+leave-one-contract-out R² separates interpolation (what a curve model is for)
+from end-point extrapolation, which drove the earlier "curvature hurts"
+reading.
+
+**Validation / results:** deck compiles with XeLaTeX; rendered text has no
+`;`, `—` or `|`. Interior LOO: adding β_S helps 24/24 commodities, adding β_C
+23/24 (none worse); all-contract LOO: β_C helps 10, hurts 10. Replication grid
+(paper universe, 1992–2019, $1m): paper timing gross +3.11%/yr (Sharpe 1.95),
+tradable t+1 gross −0.18% (−0.11); k = 5/20 do not turn it positive.
+`python -m pytest -q` passes.
+
+**Commit:** `feat(slides): final-deck formatting and idea-E slides with vector figures` (`cb0822e`).
+
+**Next:** E evaluation-figure slide and per-commodity discussion slide;
+notebook 14 should add the interior-LOO result.
+
+---
+
+## LOG-0066 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Final deck, continued: trading-environment slide and idea-E slides
+4–5 (evaluation figures, per-commodity discussion), highlights, TC1–TC3 note.
+
+**What changed:**
+- `presentations/final/main.tex`: new slide "The simulated trading
+  environment" after the engine slide (fill at the t+1 settle with TAS
+  availability by exchange and year, cost table with calibration sources,
+  portfolio size $100k–$30m, default $1m equal 1/N); E slide 4 (horizon
+  decay and cumulative return at both timings); E slide 5 (per-commodity
+  Sharpe vs interior LOO R², λ dependence); paper λ explained; TC1–TC3 in the
+  Table 14 caption; key phrases highlighted; "E · Results" placeholder removed.
+- `presentations/final/refs.bib`: Szakmary et al. (2010), Wang, Garcia and
+  Irwin (2014), Gao et al. (2018), Tóth et al. (2011), Bouchaud et al. (2018).
+- `scripts/make_slide_figures.py`: `e_horizon_decay`, `e_nav_timing`,
+  `e_root_data`, `e_root_discussion`.
+
+**Why:** user request while preparing the final presentation.
+
+**Validation / results:** deck compiles. TAS (CME/ICE notices): energy 2006,
+ICE softs 2008–09, metals ~2010–11, grains and livestock June 2015; none found
+for oats, rough rice, lumber. Paper-timing gross Sharpe by λ rule
+(1992–2019): paper 1.88, fixed 4 0.64, rolling SSR −0.25. Rank correlation of
+per-commodity paper-timing Sharpe with interior LOO R²: −0.16; livestock fits
+worst but is strongest. `python -m pytest -q` passes.
+
+**Commit:** `feat(slides): trading-environment slide and idea-E evaluation and discussion slides` (`540b009`).
+
+**Next:** fill the E rows in the roadmap and conclusion tables; portfolio
+slide; notebook 14 should record the interior-LOO and λ-dependence findings.
+
+---
+
+## LOG-0067 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Final deck: starred idea-E slide on the Kalman dynamic Nelson–Siegel
+attempt.
+
+**What changed:** `presentations/final/main.tex` adds "E* · Can a Kalman filter
+stabilize the betas?" after the per-commodity slide: motivation (four prices,
+three betas and λ), state and observation equations (3)–(4), how (r, q) were
+chosen (one-step likelihood on 1986–2005) and the A/B design (2006–2026,
+paired 21-day block bootstrap), Table 15 with the D-023 numbers, and the
+reason it is not adopted (the signal lives one day, so shrinking toward
+yesterday's betas removes it).
+
+**Why:** user request.
+
+**Validation / results:** numbers copied from notebook 14 §11 (D-023): LOO R²
+0.72 → 0.95 (24/24 better), one-step forecast R² 0.53 → 0.45 (20/24 worse),
+[t+1, t+2] −0.04 → −0.57 bp, tradable gross +0.18 → −0.31 %/yr. Deck compiles,
+no `;`, `—` or `|` in rendered text.
+
+**Commit:** `feat(slides): starred idea-E slide on the Kalman dynamic NS` (`3e611fb`).
+
+**Next:** E rows in the roadmap and conclusion tables, portfolio slide.
+
+---
+
+## LOG-0068 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Final deck, combination section (Jiaheng's second part): from
+strategies to alphas, block-bootstrap screen, model comparison, ridge
+rebalancing schemes, lumber diagnosis. D-032.
+
+**What changed:**
+- `presentations/final/main.tex`: replaces the portfolio placeholder with
+  seven slides (alpha definitions as formulas, metric and bootstrap pseudocode
+  with the block-length figure, screen heatmap, model comparison, ridge table,
+  cumulative-return figures, lumber before/after).
+- `scripts/make_slide_figures.py` (`f_block_length`, `f_screen_heatmap`,
+  `f_model_ic`, `f_ridge_nav`, `f_ridge_layers`, `f_lumber`) and
+  `scripts/make_slide_tables.py --ridge`.
+- `scripts/run_alpha.py` stages `ridge`, `lbfix`, `model_notes`;
+  `src/alpha_portfolio.run_rule(scheme=...)` (default unchanged).
+- D-032 in `docs/decisions.md`.
+
+**Why:** user request for the final presentation.
+
+**Validation / results:** see D-032. Deck compiles, no `;`, `—` or `|` in
+rendered text. `python -m pytest -q` passes.
+
+**Commit:** `feat(slides): alpha-combination section with ridge schemes and lumber diagnosis (D-032)` (`dbf8958`).
+
+**Next:** E and combination rows in the roadmap and conclusion tables.
+## LOG-0069 · 2026-10-20 · Phase 15 · Claude Code
+
 **Goal:** Finalize the A section of the final deck for the 20-minute talk:
 copy the A-flip diagnostics into the deck, keep the three-page-per-idea
 structure, and make the robustness slide easy to narrate.
@@ -2955,7 +3080,7 @@ the teammate's material is ready.
 
 ---
 
-## LOG-0066 · 2026-10-20 · Phase 15 · Claude Code
+## LOG-0070 · 2026-10-20 · Phase 15 · Claude Code
 
 **Goal:** Restructure the final deck's Idea C section into the same three-page
 pattern as A/B — idea, backtest + robustness, position/P&L — keeping the
@@ -3018,7 +3143,7 @@ optionally add a D position/P&L page.
 
 ---
 
-## LOG-0067 · 2026-10-20 · Phase 15 · Claude Code
+## LOG-0071 · 2026-10-20 · Phase 15 · Claude Code
 
 **Goal:** Reframe the final deck's Idea D section as an information study:
 merge the paper and replication frames, replace the cost-layer result table
@@ -3086,7 +3211,7 @@ column; fill E and the portfolio placeholder.
 
 ---
 
-## LOG-0068 · 2026-10-20 · Phase 15 · Claude Code
+## LOG-0072 · 2026-10-20 · Phase 15 · Claude Code
 
 **Goal:** Remove the "Raw exact version" row from the B backtest table so the
 B section stays easy to explain in the 20-minute talk.
@@ -3117,7 +3242,7 @@ questions that do not help the talk.
 
 ---
 
-## LOG-0069 · 2026-10-20 · Phase 15 · Claude Code
+## LOG-0073 · 2026-10-20 · Phase 15 · Claude Code
 
 **Goal:** Change B's related paper from Masturzo & Leung (2025) to
 Lubnau & Todorova (2015), framed as supporting the convergence premise, and
@@ -3172,7 +3297,7 @@ is the direct replication.
 
 ---
 
-## LOG-0070 · 2026-10-20 · Phase 15 · Claude Code
+## LOG-0074 · 2026-10-20 · Phase 15 · Claude Code
 
 **Goal:** Make the C position/P&L page (slide 15) use the same simple
 two-figure style as A/B/D: one year-end signed-position heatmap and one
@@ -3232,7 +3357,7 @@ over year-end, change `freq="YE"` to `"ME"` in the script and the caption.
 
 ---
 
-## LOG-0071 · 2026-10-20 · Phase 15 · Claude Code
+## LOG-0075 · 2026-10-20 · Phase 15 · Claude Code
 
 **Goal:** Remove the B idea page's "Related paper" block. Lubnau & Todorova
 (2015) is C's related paper, not B's.
@@ -3279,7 +3404,7 @@ block.
 
 ---
 
-## LOG-0072 · 2026-10-20 · Phase 15 · Claude Code
+## LOG-0076 · 2026-10-20 · Phase 15 · Claude Code
 
 **Goal:** Simplify the final deck's D section into three pages: trade idea
 and parameters, backtest and robustness, and the unchanged position/P&L
@@ -3329,7 +3454,7 @@ does not need the ADV/liquidity row, remove it to keep the page lighter.
 
 ---
 
-## LOG-0073 · 2026-10-20 · Phase 15 · Claude Code
+## LOG-0077 · 2026-10-20 · Phase 15 · Claude Code
 
 **Goal:** Revise the C section to evaluate the signal **gross-only**. Remove
 transaction-cost and all-in net results from the C slides, and base C's
@@ -3386,3 +3511,52 @@ validation gate, execution lag/placebo, IC/OOS R²), not by the cost ladder.
 
 **Next:** Decide whether C should still appear as a portfolio input on page
 20, or be labeled clearly as closed/weak-gross there as well.
+
+---
+
+## LOG-0078 · 2026-10-20 · Phase 15 · Claude Code
+
+**Goal:** Merge `origin/main` (final-deck formatting, idea-E and
+alpha-combination slides) with the local A–D sections, keep C gross-only, and
+push the combined deck to `origin/main`.
+
+**Actions:**
+- Merged `origin/main` into local `main`; resolved conflicts in `main.tex`,
+  `AGENT_LOG.md` and `INDEX.md`.
+- Kept the remote setup/formatting, trading-environment slide, idea-E section
+  and combining-alphas section; kept the local A–D sections, including the
+  C gross-only revision and the A/B/D position pages.
+- Reconstructed `main.tex` as remote preamble/setup, the local roadmap (E
+  marked not tradable), local A–D, remote E and alpha sections, and the local
+  gross-only conclusion/backup.
+- Renumbered the local presentation log entries from LOG-0065–0073 to
+  LOG-0069–0077 to avoid collision with the remote LOG-0065–0068.
+- Updated `presentations/final/README.md` for the merged structure and page
+  count.
+
+**Files changed:**
+- presentations/final/main.tex
+- presentations/final/README.md
+- docs/logs/AGENT_LOG.md, docs/logs/INDEX.md
+- merged presentation figures/tables and slide scripts from both sides
+
+**Commands:**
+- `tectonic -X compile --outdir build main.tex` → 38 pages
+- `/Users/tian/miniconda3/envs/mfe/bin/python -m pytest -q` → 187 passed
+
+**Why:** The user asked to upload all local progress on `main`. The remote
+branch already had the E/alpha/formatting work, so the merge keeps both sides
+instead of dropping either.
+
+**Validation:**
+- Deck compiles to 38 pages: 33 main frames + 5 backup pages.
+- C pages 14–16 remain gross-only; C1 gross +0.61%/yr, gross Sharpe 0.38.
+- The remote E section (6 pages) and combining-alphas section (6 pages) are
+  included.
+- Tests pass: 187.
+- Log IDs are unique: remote 0065–0068, local work 0069–0077, merge 0078.
+
+**Commit:** this merge commit.
+
+**Next:** Review the merged deck timing and decide which A–D position pages to
+keep in the 20-minute talk; then push.
