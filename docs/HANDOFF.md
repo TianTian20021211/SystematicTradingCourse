@@ -361,3 +361,14 @@ B 的 adjacent-carry rank 在成本前就为负；C 的 1:1、rolling-OLS 和 Ka
 4. 做 H（holding-period scan）；monthly engine support 已就绪；
 5. D-x（cross-sectional basis-momentum）作为独立 backlog，等 H 之后决定；
 6. 不要用 test 调参；A/B 已收尾，C/D 不再做 rescue 变体。
+
+---
+
+## 9. Failure diagnostics plan（2026-10-19）
+
+`docs/diagnostics_plan.md` 记录了 A/B/D 的诊断协议：v2 rerun 为主，per-root
+Sharpe bootstrap CI + 3 年窗口正收益比例，A 的 days-to-expiry / beta-neutral /
+seasonality，B 的一段话，D 的机制检验待下一次对话确认。**尚未实现。**
+
+下一步：新对话先确认 D 的机制检验和是否需要 A 的 v1 对齐 robustness，再写
+`src/diagnostics.py` + `notebooks/09_failure_diagnostics.ipynb`。

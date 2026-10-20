@@ -2021,3 +2021,39 @@ comparison reference.
 **Commit:** `docs(v2): record v1/v2 comparison and close out reruns`
 
 **Next:** E (Nelson–Siegel); H; no push.
+
+---
+
+## LOG-0046 · 2026-10-19 23:15 · Phase 9f · Claude Code
+
+**Goal:** Record the agreed failure-diagnostics plan for A/B/D on top of the
+v2 reruns before implementation.
+
+**Actions:**
+- Added `docs/diagnostics_plan.md`: scope, agreed decisions, per-idea cards,
+  statistical rules, existing v2 diagnostics, caveats, proposed deliverables.
+- Added a pointer in `docs/HANDOFF.md` §9.
+- No code or result changes.
+
+**Files changed:** `docs/diagnostics_plan.md`, `docs/HANDOFF.md`,
+`docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `git diff --check` → clean
+- No tests run; docs-only change.
+
+**Why:** Preserve the discussion decisions so the next conversation can
+confirm D-specific tests and implement without re-deriving the plan. The plan
+uses the v2 reruns (`output/v2_rerun/`, `docs/v1_v2_comparison.md`) as input
+and does not mix v1/v2 numbers.
+
+**Validation:**
+- Headline numbers match `output/v2_rerun/comparison.csv`.
+- Scope follows D-014 (Tian: A/D; C/E cited) and D-016 (per-root time-series,
+  no cross-sectional ranking).
+- No locked convention changed.
+
+**Commit:** `docs(diagnostics): record failure-diagnostics plan for A/B/D`
+
+**Next:** Next conversation confirms D mechanism tests and whether to add the
+A v1-aligned robustness; then implement `src/diagnostics.py` and notebook 09.
