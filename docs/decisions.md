@@ -753,7 +753,7 @@ Status values: `proposed`, `accepted`, `superseded`.
 
 ---
 
-## D-025 · Idea C: daily information audit protocol
+## D-027 · Idea C: daily information audit protocol
 
 - **Status:** accepted
 - **Date:** 2026-10-20

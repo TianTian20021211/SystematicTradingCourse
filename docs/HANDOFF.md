@@ -14,7 +14,7 @@ D-014–D-016。
 **v2 重跑 A/D/C/C-hedge/B：** 已完成（LOG-0044）；每个 idea 一个
 notebook（10–14，D-020/D-024）；结论仍是 negative/mixed；详见
 `docs/v1_v2_comparison.md`。
-**D-025 daily C audit（2026-10-20）：** daily C1/C2/C3 validation gross SR
+**D-027 daily C audit（2026-10-20）：** daily C1/C2/C3 validation gross SR
 0.240 / 0.265 / −0.332；顺序选择保留 C1；alpha gate 未通过
 （0.240 < 0.4）；test 未读。C 保持 closed，daily 结果保留在
 notebook 12 §9–11。

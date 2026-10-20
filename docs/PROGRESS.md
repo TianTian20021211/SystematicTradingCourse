@@ -59,7 +59,7 @@ notebooks 10–14; framework comparison:
 | C baseline (v1 historical) | done / merged | 1:1 weekly; v2 official in notebook 12 |
 | C hedge-ratio variant (v1 historical) | done / merged | 60-day rolling OLS; v2 official in notebook 12 |
 | C Kalman variant (v1 historical) | done / merged | rolling-likelihood DLM; v2 official in notebook 12 |
-| C daily audit (D-025) | done / failed gate | C1/C2/C3 validation gross SR 0.240 / 0.265 / −0.332; test not read; C stays closed |
+| C daily audit (D-027) | done / failed gate | C1/C2/C3 validation gross SR 0.240 / 0.265 / −0.332; test not read; C stays closed |
 | D curve-momentum signal | done | N=2 main pair; 12-month formation; monthly |
 | D baseline (v1 historical) | done | v1 full gross +0.55%, net −0.99%; v2 official in notebook 13 |
 | Monthly rebalance engine | done | `last_trading_day_of_month`; weekly default unchanged |

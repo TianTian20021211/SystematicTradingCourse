@@ -35,7 +35,7 @@ test 是 2016–2026 的 post-hoc slice。
 E（Nelson–Siegel）不在这个 v2 表中：它是 paper replication，paper timing
 可复现（Sharpe 2.03），t+1 fill 后消失；见
 `notebooks/14_idea_e_nelson_siegel.ipynb` 和 D-021–D-023。
-D-025 的 daily C information audit 是另一条线：daily C1/C2/C3 的
+D-027 的 daily C information audit 是另一条线：daily C1/C2/C3 的
 validation gross SR 为 0.240 / 0.265 / −0.332，alpha gate 未通过
 （<0.4），test 未读；C 保持 closed；结果在 notebook 12 §9–11。
 原始 CSV 在 `output/v2_rerun/comparison.csv`（本地，gitignored）。v1 历史口径
@@ -116,7 +116,7 @@ validation gross SR 为 0.240 / 0.265 / −0.332，alpha gate 未通过
    PnL、持仓和 overall Sharpe；结果写到 `output/`（不提交）。如果想刷新
    跨策略汇总表，再跑 `python scripts/run_v2_rerun.py --force`。
 
-   Daily C information audit（D-025）是独立的一步：在 notebook 12 之前跑
+   Daily C information audit（D-027）是独立的一步：在 notebook 12 之前跑
    `python scripts/run_c_daily_audit.py --stage stage1` 生成 §9–11 的缓存结果。
    Stage 1 只看 2015 年以前；只有 validation gate 通过后，才用
    `--stage stage2 --confirm-read-once` 读一次 test。

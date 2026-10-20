@@ -1,4 +1,4 @@
-"""Run the D-025 daily C information audit.
+"""Run the D-027 daily C information audit.
 
 Stage 1 uses marks truncated at 2015-12-31, so it cannot read test P&L. It
 selects the variant on validation and writes a gate. Stage 2 reads the test

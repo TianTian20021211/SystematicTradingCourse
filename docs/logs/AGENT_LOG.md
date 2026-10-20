@@ -2338,13 +2338,13 @@ D-020 layout; the two histories collided on decision, log and notebook IDs.
 
 ---
 
-## LOG-0055 · 2026-10-20 · Phase 12 · Claude Code
+## LOG-0057 · 2026-10-20 · Phase 12 · Claude Code
 
-**Goal:** Pre-register and run the D-025 daily C information audit, isolated
+**Goal:** Pre-register and run the D-027 daily C information audit, isolated
 from the parallel A/B/D worktrees.
 
 **Actions:**
-- Added D-025 (accepted) to `docs/decisions.md`: 1986–2005 train,
+- Added D-027 (accepted) to `docs/decisions.md`: 1986–2005 train,
   2006–2015 validation, 2016–2026 test once; daily C1/C2/C3; sequential
   adoption with paired block bootstrap; alpha gate; stage firewall.
 - `src/signals.py`: `evaluation="daily"` support in
@@ -2394,7 +2394,7 @@ information before any cost work and fixes the selection/gate rules ex ante.
 - Diagnostics and weekly-vs-daily comparison are in notebook 12 §9–11 and
   `output/c_daily_audit/stage1_train_validation/`.
 
-**Commit:** `feat(c-daily): add daily C information audit (D-025)` (`this commit`).
+**Commit:** `feat(c-daily): add daily C information audit (D-027)` (`this commit`).
 
 **Next:** C remains closed; daily results are retained. Any new C variant is a
 separate pre-registered project; no grid search and no test tuning.

@@ -1,4 +1,4 @@
-"""Information diagnostics for the daily C audit (D-025).
+"""Information diagnostics for the daily C audit (D-027).
 
 The functions here are execution-independent where possible: event studies,
 time-series IC, same-settle vs tradable timing, persistence, nested predictive

@@ -1,7 +1,7 @@
 """Daily C mean-reversion audit runners.
 
 The official weekly C results stay in ``src/v2_signals.py`` and
-``src/v2_rerun.py``. This module builds the daily version used by the D-025
+``src/v2_rerun.py``. This module builds the daily version used by the D-027
 information audit: the z-score and hedge ratio update every trading day, the
 signal is dated at t and filled at t+1, and costs are switched off because the
 audit is gross-only.
