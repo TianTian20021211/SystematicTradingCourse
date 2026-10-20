@@ -2978,7 +2978,7 @@ for oats, rough rice, lumber. Paper-timing gross Sharpe by λ rule
 per-commodity paper-timing Sharpe with interior LOO R²: −0.16; livestock fits
 worst but is strongest. `python -m pytest -q` passes.
 
-**Commit:** `feat(slides): trading-environment slide and idea-E evaluation and discussion slides` (`this commit`).
+**Commit:** `feat(slides): trading-environment slide and idea-E evaluation and discussion slides` (`540b009`).
 
 **Next:** fill the E rows in the roadmap and conclusion tables; portfolio
 slide; notebook 14 should record the interior-LOO and λ-dependence findings.
