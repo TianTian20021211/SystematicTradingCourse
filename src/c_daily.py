@@ -16,6 +16,8 @@ The three variants match the weekly ones:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -34,6 +36,18 @@ from . import (
 )
 
 METHODS = ("1:1", "ols", "kalman")
+METHOD_TO_NAME = {"1:1": "c1", "ols": "c2", "kalman": "c3"}
+NAME_TO_METHOD = {name: method for method, name in METHOD_TO_NAME.items()}
+
+SIGNAL_COLUMNS = [
+    "date", "root", "score", "target", "is_evaluation", "has_pair",
+    "spread_index",
+]
+HEDGE_SIGNAL_COLUMNS = [
+    "date", "root", "score", "target", "hedge_ratio", "is_evaluation",
+    "has_pair", "spread_index",
+]
+ARTIFACT_SUBDIRS = ("signals", "legs", "daily", "positions", "performance", "root")
 
 TRAIN_PERIOD = (None, "2005-12-31")
 VALIDATION_PERIOD = ("2006-01-01", "2015-12-31")
@@ -140,10 +154,18 @@ def daily_signal(inputs: v2_signals.V2Inputs, method: str = "1:1") -> pd.DataFra
     return sig
 
 
-def daily_legs(inputs: v2_signals.V2Inputs, method: str = "1:1") -> pd.DataFrame:
-    """Daily C target path mapped to ``sizing.LEG_COLUMNS`` via the v2 adapter."""
+def daily_legs(
+    inputs: v2_signals.V2Inputs,
+    method: str = "1:1",
+    signal: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+    """Daily C target path mapped to ``sizing.LEG_COLUMNS`` via the v2 adapter.
 
-    sig = daily_signal(inputs, method)
+    ``signal`` lets a caller that already built the (expensive, especially for
+    C3) daily path reuse it instead of recomputing the hedge ratio.
+    """
+
+    sig = daily_signal(inputs, method) if signal is None else signal
     legs = sizing.legs_from_signal(
         sig, inputs.pairs, scheme="equal", n_mode="active"
     )
@@ -191,7 +213,8 @@ def run_variant(
 
     settings = settings or DailyCSettings()
     periods = periods or PERIODS
-    legs = daily_legs(inputs, method)
+    signal = daily_signal(inputs, method)
+    legs = daily_legs(inputs, method, signal=signal)
     result = simulate.simulate(
         legs, marks if marks is not None else inputs.marks, _sim_config(settings)
     )
@@ -204,6 +227,7 @@ def run_variant(
     )
     return {
         "method": method,
+        "signal": signal,
         "legs": legs,
         "result": result,
         "performance": performance,
@@ -226,6 +250,138 @@ def run_stage1(
         )
         for method in methods
     }
+
+
+def _require_columns(frame: pd.DataFrame, columns: list[str], label: str) -> None:
+    missing = [column for column in columns if column not in frame.columns]
+    if missing:
+        raise ValueError(f"{label} missing columns: {missing}")
+
+
+def _reset_table(frame: pd.DataFrame) -> pd.DataFrame:
+    """Reset a named/MultiIndex index for CSV, leaving a plain frame intact."""
+
+    if isinstance(frame.index, pd.MultiIndex) or frame.index.name is not None:
+        return frame.reset_index()
+    return frame.reset_index(drop=True)
+
+
+def save_variant_artifacts(item: dict, out_dir: str | Path) -> dict[str, Path]:
+    """Persist one daily C variant as the full-sample artifact set (D-029).
+
+    Writes ``signals/{name}.parquet``, ``legs/{name}.parquet``,
+    ``daily/{name}_pnl.csv``, ``positions/{name}_positions.parquet``,
+    ``performance/{name}.csv`` and ``root/{name}.csv`` under ``out_dir``.
+    The daily C P&L is gross-only because the D-027/D-029 runner uses zero
+    costs; the artifact schema is identical to the weekly v2 re-runs.
+
+    Returns the written paths keyed by artifact type.
+    """
+
+    method = item["method"]
+    if method not in METHOD_TO_NAME:
+        raise ValueError(f"method must be one of {METHODS}, got {method!r}")
+    name = METHOD_TO_NAME[method]
+    out = Path(out_dir)
+    directories = {key: out / key for key in ARTIFACT_SUBDIRS}
+    for directory in directories.values():
+        directory.mkdir(parents=True, exist_ok=True)
+
+    signal = item.get("signal")
+    if signal is None:
+        raise ValueError("item is missing the daily signal path")
+    hedge = method in ("ols", "kalman")
+    signal_columns = HEDGE_SIGNAL_COLUMNS if hedge else SIGNAL_COLUMNS
+    _require_columns(signal, signal_columns, f"{name} signal")
+
+    legs = item["legs"]
+    _require_columns(legs, sizing.LEG_COLUMNS, f"{name} legs")
+
+    result = item["result"]
+    positions = result.positions
+    if positions is None:
+        raise ValueError("SimResult.positions is missing; rerun simulate()")
+    _require_columns(positions, simulate.POSITION_COLUMNS, f"{name} positions")
+
+    paths = {
+        "signal": directories["signals"] / f"{name}.parquet",
+        "legs": directories["legs"] / f"{name}.parquet",
+        "daily": directories["daily"] / f"{name}_pnl.csv",
+        "positions": directories["positions"] / f"{name}_positions.parquet",
+        "performance": directories["performance"] / f"{name}.csv",
+        "root": directories["root"] / f"{name}.csv",
+    }
+    signal.loc[:, signal_columns].to_parquet(paths["signal"], index=False)
+    legs.loc[:, sizing.LEG_COLUMNS].to_parquet(paths["legs"], index=False)
+    result.daily.to_csv(paths["daily"], index=False)
+    positions.loc[:, simulate.POSITION_COLUMNS].to_parquet(
+        paths["positions"], index=False
+    )
+    _reset_table(item["performance"]).to_csv(paths["performance"], index=False)
+    _reset_table(item["root"]).to_csv(paths["root"], index=False)
+    return paths
+
+
+def load_variant_artifacts(
+    name: str,
+    out_dir: str | Path,
+    capital: float = 10_000_000.0,
+) -> dict:
+    """Load one persisted variant and rebuild the figure-facing result object.
+
+    The returned ``result`` is a light namespace with ``daily``, ``positions``,
+    ``config.capital`` and ``calendar``, which is enough for
+    ``figures.positions`` / ``figures.position_panel``. It is not a full
+    ``SimResult``: the engine-only tables (``holdings``, ``trades``,
+    ``by_root``) are not persisted.
+    """
+
+    if name not in NAME_TO_METHOD:
+        raise ValueError(f"name must be one of {sorted(NAME_TO_METHOD)}, got {name!r}")
+    base = Path(out_dir)
+    daily = pd.read_csv(
+        base / "daily" / f"{name}_pnl.csv", parse_dates=["date"]
+    )
+    positions = pd.read_parquet(base / "positions" / f"{name}_positions.parquet")
+    result = SimpleNamespace(
+        daily=daily,
+        positions=positions,
+        config=SimpleNamespace(capital=float(capital)),
+        calendar=pd.DatetimeIndex(pd.to_datetime(daily["date"]).unique()).sort_values(),
+    )
+    return {
+        "name": name,
+        "method": NAME_TO_METHOD[name],
+        "signal": pd.read_parquet(base / "signals" / f"{name}.parquet"),
+        "legs": pd.read_parquet(base / "legs" / f"{name}.parquet"),
+        "daily": daily,
+        "positions": positions,
+        "performance": pd.read_csv(base / "performance" / f"{name}.csv"),
+        "root": pd.read_csv(base / "root" / f"{name}.csv"),
+        "result": result,
+    }
+
+
+def check_full_read_allowed(
+    marker: str | Path,
+    confirm_read_once: bool,
+    force: bool = False,
+) -> None:
+    """Guard the descriptive full-sample test read (D-029).
+
+    The full stage reads 2016–2026 exactly once, for presentation only. The
+    marker is shared with D-027 stage 2, so a marker written by either path
+    blocks a second read unless ``force`` is explicit.
+    """
+
+    marker = Path(marker)
+    if not confirm_read_once:
+        raise ValueError("pass --confirm-read-once to read the test sample")
+    if marker.exists() and not force:
+        raise ValueError(
+            f"test already read; marker exists at {marker}; "
+            "pass --force-test-read to override"
+        )
 
 
 def forward_panel(

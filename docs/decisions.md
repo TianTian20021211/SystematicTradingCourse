@@ -1019,3 +1019,54 @@ Status values: `proposed`, `accepted`, `superseded`.
   v2 baseline (D-019). This decision does not change D-013, the v2 engine or
   the cost model. Parameter scans/response curves require a separate
   decision and must not use the test sample for selection.
+
+---
+
+## D-029 · Idea C: daily signal artifacts and descriptive full-sample test read
+
+- **Status:** accepted
+- **Date:** 2026-10-20
+- **Context:** D-027 built the daily C1/C2/C3 signal and gross P&L but saved
+  only summary tables. The daily signal path, legs, daily P&L and positions
+  were not persisted, and notebook 12 had no daily NAV or position figures.
+  The D-027 validation gate failed (C1 validation gross SR 0.240 < 0.4), so C
+  remains a candidate rather than a validated alpha.
+- **Decision:**
+  1. **Artifacts.** Persist C1/C2/C3 daily artifacts under
+     `output/c_daily_audit/full/`: `signals/{c1,c2,c3}.parquet` (`date, root,
+     score, target, hedge_ratio` for C2/C3, `is_evaluation, has_pair,
+     spread_index`), `legs/*.parquet` (`sizing.LEG_COLUMNS`),
+     `daily/*_pnl.csv` (`result.daily`), `positions/*_positions.parquet`
+     (`result.positions`), and the `performance/` and `root/` tables.
+     `src/c_daily.save_variant_artifacts` is the single writer;
+     `load_variant_artifacts` rebuilds the figure-facing object. These files
+     are gitignored.
+  2. **Full stage.** `scripts/run_c_daily_audit.py --stage full
+     --confirm-read-once` runs C1/C2/C3 on the full 1986–2026 marks with zero
+     costs and USD 10m capital. It writes `manifest_full.json` and leaves
+     `stage1_train_validation/` and `output/v2_rerun/` untouched.
+  3. **Test read once.** The full stage writes
+     `output/c_daily_audit/test_readonce.json` with
+     `reason="descriptive full-sample presentation"`, the D-027 selected
+     variant, the validation-gate result, the commit and a UTC timestamp. A
+     second read is refused unless `--force-test-read` is passed explicitly.
+     The marker is shared with D-027 stage 2; a marker from either path blocks
+     the other.
+  4. **No gate change.** The full stage recomputes selection and the
+     validation gate from the full-sample results and verifies that they match
+     the frozen D-027 stage-1 gate when that artifact is present. The
+     selection, gate and test direction rule are unchanged. C stays closed.
+  5. **Descriptive only.** The 2016–2026 test slice is reported only for
+     descriptive presentation and visualization. It is not used for
+     selection, tuning, or reopening C, and it does not change the official
+     weekly v2 results (D-019).
+  6. **Notebook.** Notebook 12 section 12 (“Daily signal artifacts (full
+     sample)”) loads the cached artifacts and shows gross NAV, positions with
+     `ROOT_ORDER`, exposure/turnover and a summary table with full/train/
+     validation/test gross SR, turnover and active roots. No new idea
+     notebook is created.
+- **Consequences:** Daily C is now reproducible and inspectable at the
+  signal, leg, P&L and position level. The D-027 verdict remains: C1 was kept
+  by the sequential selection but failed the 0.4 validation gross-SR gate;
+  the descriptive test read does not promote C or change the weekly official
+  results.

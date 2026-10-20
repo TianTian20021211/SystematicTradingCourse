@@ -2625,3 +2625,82 @@ individual agents and were not re-run during this merge. Nothing was pushed;
 **Next:** review the four merged sections; choose the next research step
 (H holding-period scan, or the A-flip cost/sizing layer). Worktrees and their
 branches are intentionally left in place.
+
+---
+
+## LOG-0060 · 2026-10-20 · Phase 13 · Claude Code
+
+**Goal:** Persist the daily C artifacts that D-027 did not save and add a
+descriptive full-sample presentation to notebook 12 (D-029), without changing
+the D-027 gate/selection or the official weekly D-019 results.
+
+**Actions:**
+- Added `save_variant_artifacts`, `load_variant_artifacts` and
+  `check_full_read_allowed` to `src/c_daily.py`. `run_variant` now retains the
+  daily signal path and reuses it for leg construction (avoiding a second C3
+  Kalman build). Artifacts: `signals/{c1,c2,c3}.parquet`,
+  `legs/*.parquet`, `daily/*_pnl.csv`, `positions/*_positions.parquet`,
+  `performance/*.csv` and `root/*.csv`.
+- Added `--stage full --confirm-read-once` to
+  `scripts/run_c_daily_audit.py`: full 1986–2026 marks, zero costs, USD 10m,
+  `output/c_daily_audit/full/`, `manifest_full.json`, and the shared
+  `test_readonce.json` marker. The full stage recomputes the validation
+  selection/gate and verifies it against the frozen stage-1 gate; a second
+  full read is refused unless `--force-test-read` is passed.
+- Added notebook 12 section 12: gross NAV, `F.positions` with `ROOT_ORDER`
+  (positions, exposure and turnover), and a full/train/validation/test
+  summary (gross SR, turnover, active roots). The 2016–2026 slice is labeled
+  descriptive; §10/§11 now explain that the marker may come from the
+  descriptive full read and that this does not mean the gate passed.
+- Added D-029 to `docs/decisions.md`; updated README, HANDOFF and PROGRESS.
+- Copied the existing D-027 stage-1 artifacts from the `c-daily-audit`
+  worktree into the main checkout's gitignored `output/c_daily_audit/` so
+  notebook 12 §9–11 stays reproducible. Stage 1 was not rerun or overwritten.
+
+**Files changed:**
+- `src/c_daily.py`, `scripts/run_c_daily_audit.py`
+- `tests/test_c_daily.py`
+- `notebooks/12_idea_c_mean_reversion.ipynb`
+- `docs/decisions.md`, `docs/HANDOFF.md`, `docs/PROGRESS.md`, `README.md`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `python -m pytest -q` → 175 passed
+- `python scripts/run_c_daily_audit.py --stage full --confirm-read-once`
+- `python scripts/run_c_daily_audit.py --stage full --confirm-read-once`
+  again → refused because the marker exists
+- `jupyter nbconvert --execute --to notebook --inplace
+  notebooks/12_idea_c_mean_reversion.ipynb`
+- `python scripts/clean_notebook_metadata.py
+  notebooks/12_idea_c_mean_reversion.ipynb`
+
+**Why:** D-027 built the daily C signal and gross P&L but left only summary
+tables, so the notebook could not show daily NAV or positions and the signal,
+legs, P&L and holdings were not auditable. D-029 fixes that presentation gap
+while keeping C closed and the weekly official results untouched.
+
+**Validation:**
+- Full stage wrote all expected artifacts under
+  `output/c_daily_audit/full/`: 3 signals, 3 legs, 3 daily P&L files, 3
+  position files, 3 performance tables, 3 root tables, plus selection/gate.
+  Signal row counts are 252,168 each; daily P&L covers 1986-01-02 to
+  2026-10-13.
+- The recomputed gate exactly matches D-027 stage 1
+  (`stage1_gate_consistent: true`): C1 selected; validation gross SR 0.2398
+  (<0.4); 15/24 roots positive; gate failed.
+- Descriptive test gross SR: C1 −0.196, C2 +0.060, C3 +0.465. C3's test
+  result is positive but its validation SR is −0.332, so the frozen
+  selection remains C1; no reselection or tuning was done.
+- The marker records `reason="descriptive full-sample presentation"`, the
+  selected variant, gate result, commit and UTC timestamp; a second read was
+  refused.
+- Weekly D-019 regression: `output/v2_rerun/c_performance.csv` matched the
+  pre-change checksum after notebook 12 re-ran the weekly strategies.
+- Notebook 12 executed top-to-bottom and its volatile metadata was cleaned.
+
+**Commit:** `feat(c-daily): persist daily signal artifacts and add descriptive full-sample view (D-029)` (`this commit`).
+
+**Next:** C stays closed. The daily artifacts are available for inspection;
+any new C hypothesis is a separate pre-registered project. The next research
+step remains H (holding-period scan), and the 2016–2026 test slice must not be
+used for tuning.

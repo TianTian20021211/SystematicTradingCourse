@@ -23,8 +23,18 @@ notebook（10–14，D-020/D-024）；结论仍是 negative/mixed；详见
 `docs/v1_v2_comparison.md`。
 **D-027 daily C audit（2026-10-20）：** daily C1/C2/C3 validation gross SR
 0.240 / 0.265 / −0.332；顺序选择保留 C1；alpha gate 未通过
-（0.240 < 0.4）；test 未读。C 保持 closed，daily 结果保留在
-notebook 12 §9–11。
+（0.240 < 0.4）；D-027 stage 1 结束时 test 未读。C 保持 closed，daily 结果
+保留在 notebook 12 §9–11。
+
+**D-029 daily artifacts（2026-10-20）：** full-sample C1/C2/C3 的 daily
+signal / legs / P&L / positions 已保存到
+`output/c_daily_audit/full/`（gitignored）；2016–2026 test 作为
+**descriptive presentation 只读一次**，marker 在
+`output/c_daily_audit/test_readonce.json`。Selected C1 的 descriptive test
+gross SR 为 **−0.196**（C2 +0.060、C3 +0.465；C3 的 test 为正但
+validation 为负，所以没有被选中）。Gate 仍是 failed，C 仍 closed，
+official weekly D-019 不变；图在 notebook 12 §12。复现：
+`python scripts/run_c_daily_audit.py --stage full --confirm-read-once`。
 
 **正式结果：** v2 重跑（D-019）；v1 数字仅作历史 baseline。旧 notebook
 02–08 已 retired（D-020），见 `docs/notebook_history.md`。
@@ -323,6 +333,7 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 | D-026 | B-flip：within-root carry 反转（long lowest、short highest）；D=10、min_adv=100、weekly、k=1；post-hoc gross-only，原 B 仍 closed，不进 official comparison |
 | D-027 | Daily C information audit：1986–2005 train / 2006–2015 validation / 2016–2026 test once；daily C1/C2/C3 + selection/gate；validation gate 失败，test 未读，C stays closed |
 | D-028 | D signal-validity：D-013 固定、不扫参数；rank-index t+1 forward（1/3/6/12m）；per-root IC/hit/quantile/R²；incremental vs static/A/C；decades/carry/vol + rolling 36m；placebo；6m block bootstrap、FDR、max-\|IC\|；结果 detectable but unstable，not independent |
+| D-029 | C daily artifacts：full-sample C1/C2/C3 signal/legs/P&L/positions 持久化；`--stage full --confirm-read-once`；test descriptive read once；gate/selection 与 official weekly 不变 |
 
 完整内容见 `docs/decisions.md`。
 
@@ -370,6 +381,10 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
   `tests/test_d_validity.py`、notebook 13 §7；per-root IC/hit/quantile/R²、
   1/3/6/12m horizon、incremental vs static/A/C、decades/carry/vol、
   rolling 36m、placebo。结论：detectable but unstable，not independent。
+- **C daily artifacts（D-029）**：`src/c_daily.save_variant_artifacts`、
+  `scripts/run_c_daily_audit.py --stage full --confirm-read-once`、
+  notebook 12 §12；full-sample signals/legs/P&L/positions 持久化，
+  test descriptive read once；gate/selection 与 official weekly 不变。
 - **Backtest v2 framework**：holdings-based simulator、分层成本、
   horizon / k sweep / capacity；`docs/backtest_framework.md`、
   `src/specs.py`–`plotstyle.py`。
@@ -380,7 +395,7 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
   `src/v2_signals.py`、`src/v2_rerun.py`、`scripts/run_v2_rerun.py`、
   notebooks 10–14；D-017/D-018/D-021–D-023；full-sample 结果全部 negative/mixed。
   v1 数字保留在 docs 和 git history，仅作历史 baseline。
-- **145 tests**；`docs/backtest_framework.md`；`docs/v1_v2_comparison.md`；
+- **175 tests**；`docs/backtest_framework.md`；`docs/v1_v2_comparison.md`；
   `docs/notebook_history.md`；`docs/PROGRESS.md`。
 
 ---

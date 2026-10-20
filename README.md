@@ -44,8 +44,11 @@ E（Nelson–Siegel）不在这个 v2 表中：它是 paper replication，paper 
 另含 **B-flip** 的 post-hoc、gross-only signal research（D-026）；上表的 B
 仍是原 B 的 negative 结果，B-flip 不进这张 official net 表。D-027 的 daily C
 information audit 是另一条线：daily C1/C2/C3 的 validation gross SR 为
-0.240 / 0.265 / −0.332，alpha gate 未通过（<0.4），test 未读；C 保持 closed；
-结果在 notebook 12 §9–11。v1 历史口径
+0.240 / 0.265 / −0.332，alpha gate 未通过（<0.4）；C 保持 closed，结果在
+notebook 12 §9–11。D-029 进一步把 full-sample daily signal / legs / P&L /
+positions 保存为 artifacts，并把 2016–2026 test 作为 **descriptive
+presentation 只读一次**（notebook 12 §12）；这不改变 gate，也不改变
+official weekly 结果。v1 历史口径
 （5 bps/leg、`d=None`、1:1 contracts）见 `docs/v1_v2_comparison.md`；
 旧 notebook 已 retired，恢复方式见 `docs/notebook_history.md`。
 
@@ -135,7 +138,11 @@ information audit 是另一条线：daily C1/C2/C3 的 validation gross SR 为
    Daily C information audit（D-027）是独立的一步：在 notebook 12 之前跑
    `python scripts/run_c_daily_audit.py --stage stage1` 生成 §9–11 的缓存结果。
    Stage 1 只看 2015 年以前；只有 validation gate 通过后，才用
-   `--stage stage2 --confirm-read-once` 读一次 test。
+   `--stage stage2 --confirm-read-once` 读一次 test。D-029 的 full-sample
+   artifacts 用 `python scripts/run_c_daily_audit.py --stage full
+   --confirm-read-once` 生成（写到 `output/c_daily_audit/full/`），
+   test read marker 在 `output/c_daily_audit/test_readonce.json`；第二次读取
+   需要显式 `--force-test-read`。
 
 ---
 

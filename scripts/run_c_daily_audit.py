@@ -1,12 +1,15 @@
-"""Run the D-027 daily C information audit.
+"""Run the D-027 daily C information audit and the D-029 full-sample view.
 
 Stage 1 uses marks truncated at 2015-12-31, so it cannot read test P&L. It
 selects the variant on validation and writes a gate. Stage 2 reads the test
-sample once, only if the validation gate passed, and writes a marker.
+sample once, only if the validation gate passed, and writes a marker. Stage
+``full`` (D-029) reads the test once as a descriptive presentation, persists
+the daily artifacts and writes the same one-read marker.
 
 Usage:
     python scripts/run_c_daily_audit.py --stage stage1
     python scripts/run_c_daily_audit.py --stage stage2 --selected c1 --confirm-read-once
+    python scripts/run_c_daily_audit.py --stage full --confirm-read-once
 """
 
 from __future__ import annotations
@@ -29,11 +32,13 @@ from src import c_audit, c_daily, config, signals, v2_rerun, v2_signals  # noqa:
 OUT = config.OUTPUT_DIR / "c_daily_audit"
 STAGE1 = OUT / "stage1_train_validation"
 STAGE2 = OUT / "stage2_test"
+FULL = OUT / "full"
 GATE_FILE = STAGE1 / "gate.json"
 MARKER = OUT / "test_readonce.json"
+FULL_REASON = "descriptive full-sample presentation"
 
-NAME_TO_METHOD = {"c1": "1:1", "c2": "ols", "c3": "kalman"}
-METHOD_TO_NAME = {v: k for k, v in NAME_TO_METHOD.items()}
+NAME_TO_METHOD = c_daily.NAME_TO_METHOD
+METHOD_TO_NAME = c_daily.METHOD_TO_NAME
 WEEKLY_NAMES = {"1:1": "c", "ols": "c_ols", "kalman": "c_kalman"}
 
 
@@ -263,9 +268,131 @@ def run_stage2(args: argparse.Namespace) -> None:
     print(json.dumps(test, indent=2, default=str))
 
 
+def _stage1_gate_check(gate: dict) -> bool | None:
+    """Verify that the full-sample validation gate matches D-027 stage 1.
+
+    The full run rebuilds the frozen validation signal path and simulates it on
+    the full marks; validation P&L must therefore be identical to stage 1.
+    Returns ``None`` when the stage-1 artifacts are not present (for example a
+    fresh checkout with gitignored outputs).
+    """
+
+    if not GATE_FILE.exists():
+        return None
+    frozen = json.loads(GATE_FILE.read_text())
+    mismatches = []
+    for key in ("selected", "pass_validation"):
+        if frozen.get(key) != gate.get(key):
+            mismatches.append(
+                f"{key}: stage1={frozen.get(key)!r} full={gate.get(key)!r}"
+            )
+    for key in ("validation_sr", "validation_breadth"):
+        left, right = frozen.get(key), gate.get(key)
+        if left is None or right is None or not np.isclose(
+            float(left), float(right), rtol=1e-9, atol=1e-12
+        ):
+            mismatches.append(f"{key}: stage1={left!r} full={right!r}")
+    if mismatches:
+        raise SystemExit(
+            "full-sample validation gate disagrees with D-027 stage 1: "
+            + "; ".join(mismatches)
+        )
+    return True
+
+
+def run_full(args: argparse.Namespace) -> None:
+    """Descriptive full-sample run (D-029).
+
+    Runs C1/C2/C3 on the full 1986–2026 marks with zero costs and USD 10m
+    capital, saves the daily signal/leg/P&L/position artifacts, and writes the
+    shared one-read marker. This does not change the D-027 gate/selection or
+    the official weekly D-019 results; the 2016–2026 slice is descriptive only.
+    """
+
+    try:
+        c_daily.check_full_read_allowed(
+            MARKER, args.confirm_read_once, args.force_test_read
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc))
+
+    previous = json.loads(MARKER.read_text()) if MARKER.exists() else None
+
+    rank = pd.read_parquet(config.PROCESSED_DIR / "rank.parquet")
+    settings = v2_rerun.RerunSettings()
+    inputs = v2_signals.load_v2_inputs(
+        rank, d=settings.d, k=settings.k, min_adv=settings.min_adv
+    )
+    audit_settings = c_daily.DailyCSettings(
+        block=args.block,
+        n_boot=args.n_boot,
+        seed=args.seed,
+    )
+
+    print("full: running daily C1/C2/C3 on 1986-2026 marks (zero cost, USD 10m)")
+    results = {
+        method: c_daily.run_variant(inputs, method, audit_settings)
+        for method in c_daily.METHODS
+    }
+    selection, selected = c_daily.selection_steps(results, audit_settings)
+    gate = c_daily.validation_gate(results, selected, audit_settings)
+    if args.selected is not None and args.selected != selected:
+        raise SystemExit(
+            f"--selected {args.selected!r} does not match the D-027 selection "
+            f"{selected!r}"
+        )
+    stage1_consistent = _stage1_gate_check(gate)
+
+    FULL.mkdir(parents=True, exist_ok=True)
+    for method, item in results.items():
+        c_daily.save_variant_artifacts(item, FULL)
+    _write(selection, FULL / "selection.csv")
+    (FULL / "gate.json").write_text(json.dumps(gate, indent=2, default=str))
+
+    manifest = {
+        "created_utc": datetime.now(timezone.utc).isoformat(),
+        "commit": _git_commit(),
+        "stage": "full",
+        "reason": FULL_REASON,
+        "test_read": True,
+        "sample": "1986-01-01..2026-10-13",
+        "settings": audit_settings.__dict__,
+        "selected": selected,
+        "gate": gate,
+        "stage1_gate_consistent": stage1_consistent,
+        "artifacts": sorted(
+            str(path.relative_to(OUT)) for path in FULL.rglob("*") if path.is_file()
+        ),
+    }
+    (OUT / "manifest_full.json").write_text(
+        json.dumps(manifest, indent=2, default=str)
+    )
+
+    mark = {
+        "read_at_utc": datetime.now(timezone.utc).isoformat(),
+        "reason": FULL_REASON,
+        "stage": "full",
+        "selected": selected,
+        "gate": gate,
+        "test_read": True,
+        "commit": _git_commit(),
+    }
+    if previous is not None:
+        mark["previous_read"] = {
+            key: previous.get(key)
+            for key in ("read_at_utc", "reason", "stage", "selected", "commit")
+        }
+    MARKER.write_text(json.dumps(mark, indent=2, default=str))
+
+    print(selection.round(3).to_string(index=False))
+    print(json.dumps(gate, indent=2, default=str))
+    print(f"full artifacts written to {FULL}")
+    print(f"test read marker written to {MARKER}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--stage", choices=["stage1", "stage2"], default="stage1")
+    parser.add_argument("--stage", choices=["stage1", "stage2", "full"], default="stage1")
     parser.add_argument("--selected", choices=sorted(NAME_TO_METHOD), default=None)
     parser.add_argument("--confirm-read-once", action="store_true")
     parser.add_argument("--force-test-read", action="store_true")
@@ -276,8 +403,10 @@ def main() -> None:
     args = parser.parse_args()
     if args.stage == "stage1":
         run_stage1(args)
-    else:
+    elif args.stage == "stage2":
         run_stage2(args)
+    else:
+        run_full(args)
 
 
 if __name__ == "__main__":
