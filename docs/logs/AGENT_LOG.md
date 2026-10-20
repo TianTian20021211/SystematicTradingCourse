@@ -1346,3 +1346,47 @@ rebalancing; the monthly calendar is reusable for H.
 **Commit:** `feat(curve-momentum): add monthly engine and basis-momentum signal`
 
 **Next:** Add the D baseline notebook and run the full-sample diagnostics.
+
+---
+
+## LOG-0029 · 2026-10-19 20:35 · Phase 8b · Claude Code
+
+**Goal:** Add the idea D baseline notebook and reproduce the full
+diagnostics.
+
+**Actions:**
+- Added `notebooks/06_curve_momentum.ipynb`: K=5 panel, rank return index,
+  monthly signal, targets, full/test backtests, summary, sector, static
+  benchmarks, monthly Sharpe, block bootstrap, and cumulative plot.
+- Added notebook 06 to `scripts/run_all.sh` and the metadata-clean list.
+- Wrote `output/curve_momentum_*` (gitignored).
+
+**Files changed:**
+- `notebooks/06_curve_momentum.ipynb`
+- `scripts/run_all.sh`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `~/miniconda3/envs/mfe/bin/jupyter nbconvert --execute --to notebook \
+  --inplace --ExecutePreprocessor.timeout=1800 \
+  notebooks/06_curve_momentum.ipynb` → OK
+
+**Why:** The project needs an honest first read on D before deciding whether
+to add robustness or move to H.
+
+**Validation:**
+- Notebook executes top-to-bottom.
+- Full gross +0.55%/yr, net −0.99%/yr; train gross +0.85%, net −0.65%;
+  test gross −0.28%, net −1.89%.
+- Static +1: gross +0.35%, net −0.84%, turnover 11.4×; static −1: gross
+  −0.37%, net −1.56%.
+- Monthly net Sharpe: full −0.90, train −0.61, test −1.66; block-bootstrap
+  t-stat full −5.87, test −5.41.
+- Sector gross: Energy +1.51%, Oilseeds +0.65%, Grains +0.48%, Softs
+  +0.19%, Livestock +0.12%, Metals +0.03%, Industrials −0.76%.
+- CL 2020-04-20 signal is NaN for the affected 12-month windows; no stale
+  target.
+
+**Commit:** `feat(curve-momentum): add idea D baseline notebook`
+
+**Next:** Record the D decision and close-out docs; then H.
