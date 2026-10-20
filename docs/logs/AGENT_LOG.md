@@ -1549,3 +1549,37 @@ signal's own settle; each needs an explicit test.
 **Commit:** `docs(decisions): add D-016 idea E replication protocol`
 
 **Next:** `src/nelson_siegel.py` and tests.
+
+## LOG-0035 · 2026-10-19 · Phase 8b · Claude Code
+
+**Goal:** Implement and run idea E (D-016) with λ as a causal
+hyperparameter; resize the framework to a USD 1m book.
+
+**Actions:**
+- New `src/nelson_siegel.py`: last trading days (censored contracts by root
+  median offset), eligible curve, four-contract wide panel, NS loadings,
+  batched OLS with sub-model R², λ rules (`paper`, `fixed_m`,
+  `rolling_ssr`), ΔβS/ΔβC and ΔS signals without differencing across gaps,
+  S pair panel with explicit flats, C butterfly legs, coverage and Table 3
+  summaries, strategy builder.
+- `src/simulate.py`: `round_lots`; typed empty trade/status tables (a book
+  that rounds to zero lots no longer crashes). `src/costs.py`:
+  `proportional_bps`, `paper_scenarios()`. `src/report.py`:
+  `execution_free_returns`, `return_summary`. `src/figures.py`: `ns_betas`,
+  `lambda_validation`, `timing_comparison`; `[t, t+1]` tick label.
+- `notebooks/07_nelson_siegel.ipynb` (Chinese narrative); notebook 06 moved to
+  USD 1m with a USD 100k–100m capacity grid; D-017; cost doc updated.
+
+**Commands:**
+- `python -m pytest -q` → 95 passed
+- notebooks 06 and 07 executed top to bottom, no errors
+
+**Validation:** NS R² 96.6% / 81.5% / 43.3% (paper 96.5 / 82.7 / 37.5).
+Paper timing on the paper sample: 3.55%/yr, Sharpe 2.03; tradable: −0.18%/yr
+(t = −0.6). Validation selects `rolling_ssr` (Sharpe 0.017); test gross
++0.15%/yr (t = 0.2). Whole lots at USD 100k: 2,957 root-days held vs
+137,288 fractional.
+
+**Commit:** `feat(nelson-siegel): replicate idea E; lambda selection; $1m book`
+
+**Next:** D (curve momentum) on v2.

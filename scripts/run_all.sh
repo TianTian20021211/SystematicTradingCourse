@@ -32,13 +32,15 @@ jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=900 notebooks/05_b_pretest.ipynb
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=1800 notebooks/06_backtest_framework.ipynb
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=3600 notebooks/07_nelson_siegel.ipynb
 
 echo "== Remove volatile notebook execution timestamps =="
 "$PYTHON" scripts/clean_notebook_metadata.py \
   notebooks/00_data_audit.ipynb notebooks/01_panel_build.ipynb \
   notebooks/02_carry.ipynb notebooks/03_mean_reversion.ipynb \
   notebooks/04_a_diagnose.ipynb notebooks/05_b_pretest.ipynb \
-  notebooks/06_backtest_framework.ipynb
+  notebooks/06_backtest_framework.ipynb notebooks/07_nelson_siegel.ipynb
 
 echo "== Processed panels =="
 ls -lh data/processed/*.parquet

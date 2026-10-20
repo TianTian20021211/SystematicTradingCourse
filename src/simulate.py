@@ -35,6 +35,7 @@ class SimConfig:
     resize: str = "on_change"  # "on_change" | "daily"
     max_invalid: int = 5
     rebalance_band: float = 0.25
+    round_lots: bool = False  # True: whole contracts per leg (small books may round to zero)
     cost: cost_model.CostParams = field(default_factory=cost_model.CostParams)
 
 
@@ -72,7 +73,7 @@ def _root_book(legs: pd.DataFrame) -> dict:
     return book
 
 
-def _desired(spec, price: dict, pv: float, capital: float) -> dict | None:
+def _desired(spec, price: dict, pv: float, capital: float, round_lots: bool = False) -> dict | None:
     """Contracts per leg for a target spec at fill prices; None if unpriceable."""
 
     _key, contracts, units, budget = spec
@@ -83,7 +84,12 @@ def _desired(spec, price: dict, pv: float, capital: float) -> dict | None:
     if not ok:
         return None
     scale = budget * capital / np.sum(np.abs(units) * px * pv)
-    return dict(zip(contracts, units * scale))
+    n = units * scale
+    if round_lots:
+        n = np.round(n)
+        if not np.all(n != 0):
+            n = np.zeros_like(n)  # a leg below half a lot: the spread cannot be built
+    return dict(zip(contracts, n))
 
 
 def _price_book(marks_r: pd.DataFrame) -> dict:
@@ -146,7 +152,7 @@ def _step(f, s, root, state, book, prices, last_date, pv, cfg) -> tuple[dict, li
         old = state.get("budget", 0.0)
         if old == spec[3] or (old > 0 and abs(spec[3] / old - 1.0) <= cfg.rebalance_band):
             return hold, rows, exit_status or "hold"
-    new = _desired(spec, px, pv, cfg.capital)
+    new = _desired(spec, px, pv, cfg.capital, cfg.round_lots)
     traded = [] if new is None else [c for c in set(hold) | set(new) if abs(new.get(c, 0.0) - hold.get(c, 0.0)) > 1e-12]
     if new is None or not all(px.get(c, (np.nan, False))[1] for c in traded):
         return hold, rows, exit_status or "blocked"
@@ -246,6 +252,9 @@ def simulate(legs: pd.DataFrame, marks: pd.DataFrame, config: SimConfig | None =
         status_rows += s
     holdings = pd.DataFrame(hold_rows, columns=["date", "root", "contract", "n"])
     trades = pd.DataFrame(trade_rows, columns=["date", "root", "contract", "dn", "price", "reason"])
+    # Typed even when empty (e.g. every book rounds to zero lots).
+    holdings["date"] = pd.to_datetime(holdings["date"])
+    trades = trades.astype({"dn": float, "price": float}).assign(date=pd.to_datetime(trades["date"]))
     m = marks.rename(columns={"contract_code": "contract"})
     trades = trades.merge(m[["date", "root", "contract", "adv", "sigma", "point_value", "tick_size"]], on=["date", "root", "contract"], how="left")
     # Expiry exits have no marks row on the exit day: use the last known inputs.
@@ -258,6 +267,8 @@ def simulate(legs: pd.DataFrame, marks: pd.DataFrame, config: SimConfig | None =
     trades = cost_model.trade_costs(trades, cfg.cost)
     by_root = _by_root(_holdings_pnl(holdings, marks, calendar), trades)
     status = pd.DataFrame(status_rows, columns=["date", "root", "status"])
+    status["date"] = pd.to_datetime(status["date"])
+    by_root["date"] = pd.to_datetime(by_root["date"])
     by_root = by_root.merge(status, on=["date", "root"], how="outer")
     num_cols = by_root.columns.drop(["date", "root", "status"])
     by_root[num_cols] = by_root[num_cols].fillna(0.0)

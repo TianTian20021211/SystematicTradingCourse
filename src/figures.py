@@ -151,7 +151,8 @@ def _horizon_ticks(labels: pd.Series) -> list[str]:
     out = []
     for s in labels:
         a, b = s.replace("t+", "").split("->")
-        out.append(ps.tex(rf"$[t{{+}}{a},\,t{{+}}{b}]$"))
+        start = "t" if a == "0" else rf"t{{+}}{a}"
+        out.append(ps.tex(rf"$[{start},\,t{{+}}{b}]$"))
     return out
 
 
@@ -366,3 +367,77 @@ def bootstrap_ic_distribution(summary: pd.DataFrame, draws: dict, strategy: str,
                    + rf"IC of {score} at $t$ with the spread return over {window_label}; "
                    + rf"{block}-day moving-block bootstrap, two-sided $p$-values")
     return ps.finalize(fig, title, legend_from=ax, ncol=3)
+
+
+def ns_betas(fits: pd.DataFrame, wide: pd.DataFrame, roots: list[str], strategy: str):
+    """Paper Fig. 2 analogue: front price and level beta (top), slope beta (bottom) per root."""
+
+    f = fits.merge(wide[["date", "root", "F0"]], on=["date", "root"])
+    fig, axes = plt.subplots(2, len(roots), figsize=(ps.FULL_WIDTH, 3.6), sharex=True,
+                             gridspec_kw={"height_ratios": [1.4, 1]})
+    for j, root in enumerate(roots):
+        g = f.loc[f["root"] == root].set_index("date").sort_index()
+        top, bot = axes[0, j], axes[1, j]
+        top.plot(g.index, g["F0"], color="#a9a8a4", lw=0.6, label=ps.tex(r"Front settle $F_t(M_1)$"))
+        top.plot(g.index, g["bL"], color=ps.BLUE, lw=0.7, label=ps.tex(r"Level $\beta_{L,t}$"))
+        bot.plot(g.index, g["bS"], color=ps.ORANGE, lw=0.6, label=ps.tex(r"Slope $\beta_{S,t}$"))
+        ps.zero_line(bot)
+        top.set_title(ps.tex(root))
+        for ax in (top, bot):
+            ax.xaxis.set_major_locator(mdates.YearLocator(10))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+            ax.tick_params(labelsize=6.5)
+    axes[0, 0].set_ylabel(ps.tex(r"Price (quote units)"))
+    axes[1, 0].set_ylabel(ps.tex(r"$\beta_{S,t}$"))
+    title = ps.tex(rf"{strategy}: daily Nelson\textendash Siegel fit on the four nearest eligible contracts")
+    return ps.finalize(fig, title, legend_from=[axes[0, 0], axes[1, 0]], ncol=3)
+
+
+def lambda_validation(table: pd.DataFrame, chosen: str, strategy: str, period: str):
+    """(a) Tradable and (b) paper-timing gross Sharpe of the S strategy per lambda rule."""
+
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(ps.FULL_WIDTH, 2.8))
+    x = np.arange(len(table))
+    colors = [ps.BLUE if r == chosen else "#a9a8a4" for r in table["rule"]]
+    for ax, col, title in ((a1, "sharpe_tradable", r"Tradable: signal at $t$, fill at $t{+}1$"),
+                           (a2, "sharpe_paper", r"Paper timing: fill at the signal's own settle (not tradable)")):
+        ax.bar(x, table[col], width=0.62, color=colors, **BAR)
+        ps.zero_line(ax)
+        ax.set_xticks(x, [ps.tex(r.replace("_", r"\_")) for r in table["rule"]])
+        ax.tick_params(axis="x", length=0)
+        ax.set_ylabel(ps.tex(r"Gross Sharpe ratio"))
+        ax.set_title(ps.tex(title))
+    ps.panel_label(a1, "a"), ps.panel_label(a2, "b")
+    handles = [Patch(color=ps.BLUE, label=ps.tex(rf"Selected on validation: {chosen.replace('_', r'\_')}")),
+               Patch(color="#a9a8a4", label=ps.tex(r"Other causal $\lambda$ rules"))]
+    a1.legend(handles=handles)
+    title = ps.tex(rf"{strategy}: choosing the $\lambda$ rule on the validation sample ({period})")
+    return ps.finalize(fig, title, legend_from=a1, ncol=2)
+
+
+def timing_comparison(profiles: dict, strategy: str):
+    """Mean signed spread return by window for several signals, 95% NW CI.
+
+    The [t, t+1] window (fill at the signal's own settle) is shaded: it is the
+    paper's timing and is not tradable.
+    """
+
+    names = list(profiles)
+    windows = profiles[names[0]]["horizon"].tolist()
+    x = np.arange(len(windows))
+    width = 0.8 / len(names)
+    fig, ax = plt.subplots(figsize=(ps.FULL_WIDTH, 3.0))
+    ax.axvspan(-0.5, 0.5, color="#f0efec", lw=0, zorder=0, label=ps.tex(r"Not tradable (fill at the signal's settle)"))
+    for i, (color, name) in enumerate(zip(ps.CATEGORICAL, names)):
+        p = profiles[name]
+        pos = x - 0.4 + width * (i + 0.5)
+        ax.bar(pos, p["mean_bps"], width=width * 0.9, color=color, label=ps.tex(name), **BAR)
+        ax.errorbar(pos, p["mean_bps"], yerr=_ci(p["mean_bps"], p["t_nw"]), **ERR)
+    ps.zero_line(ax)
+    ax.set_xticks(x, _horizon_ticks(pd.Series(windows)))
+    ax.set_xlim(-0.5, len(windows) - 0.5)
+    ax.tick_params(axis="x", length=0)
+    ax.set_ylabel(ps.tex(r"Mean signed spread return (bp)"))
+    title = ps.tex(rf"{strategy}: does the signal survive a one-day execution lag? "
+                   r"sign$(s_t)\times(r_{\mathrm{near}}-r_{\mathrm{far}})$, 95\% NW CI")
+    return ps.finalize(fig, title, legend_from=ax, ncol=2)

@@ -91,6 +91,13 @@ juice, rough rice, lumber) trade several percent of their daily volume at USD
 weight, alpha = 1 equal participation); at alpha = 0.5 the carry example's
 impact drag at USD 10m falls from ~161 to ~85 bps/yr.
 
+Default capital is USD 1m for the whole portfolio (D-017). Contracts are
+fractional by default; `SimConfig(round_lots=True)` rounds every leg to whole
+contracts and skips a spread whose smallest leg is below half a lot, which
+shows how few positions a USD 100k book can actually hold. The paper's own
+cost scenarios are available as `costs.paper_scenarios()` (TC1–TC3 of
+Bianchi et al. 2023, per side, legs costed individually, no impact).
+
 Contracts are fractional, so gross returns, half-spread and fees in % of
 capital do not depend on capital; only impact does. `report.capacity_curve`
 rescales every trade by C/C₀ and re-costs it, which is exact under linear

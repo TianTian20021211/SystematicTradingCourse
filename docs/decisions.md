@@ -467,3 +467,44 @@ Status values: `proposed`, `accepted`, `superseded`.
   butterfly and the 1st/4th spread, and `notebooks/07_nelson_siegel.ipynb`.
   The 1-dof critique of `docs/project_brief.md` §4 is addressed by items 1c,
   4 and 10. Changing any item requires a new decision entry.
+
+---
+
+## D-017 · Idea E results: lambda as a causal hyperparameter, $1m capital, E closed
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** D-016 fixed the replication protocol. Two refinements were
+  requested before running it: treat the NS decay λ as a hyperparameter chosen
+  among causal rules on a validation sample, and size the framework for a
+  USD 100k–1m book (below that many contracts cannot be bought in whole lots).
+- **Decision:**
+  1. **λ rules** (`nelson_siegel.LAMBDA_RULES`), all causal: `paper`
+     (1.7933 / mean maturity), `fixed_2/4/6` (curvature peak at 2/4/6 months),
+     `rolling_ssr` (per root, grid λ minimising the summed fit SSR over the
+     previous 252 fitted days, day t excluded). Amends D-016 item 4.
+  2. **Selection:** the highest tradable gross Sharpe (t+1 fill, daily, equal
+     weight) on the validation sample 2006-01-01–2015-12-31; the test sample
+     2016–2026 is read once for the selected rule.
+  3. **Capital:** `SimConfig.capital` default and the notebooks use USD 1m;
+     capacity grids span USD 100k–100m. `SimConfig.round_lots=True` rounds
+     each leg to whole contracts and skips spreads with a leg below half a
+     lot; `capacity_curve` assumes fractional contracts.
+  4. **Paper costs:** `costs.paper_scenarios()` reproduces Bianchi et al.'s
+     TC1–TC3 per side (USD 0.75; 0.835 bp of notional via
+     `CostParams.proportional_bps`; USD 0.75 + 1/8 tick), legs costed
+     individually, no impact.
+  5. **Result and close-out:** the paper's S effect replicates at its own
+     timing (21 commodities, 1992–2019: gross 3.55%/yr, Sharpe 2.03 vs the
+     paper's 1.77% / 1.41) and vanishes with a one-day lag (gross −0.18%/yr,
+     t = −0.6; `[t+1, t+2]` signed return t = −0.1). The non-NS ΔS benchmark
+     behaves the same, all λ rules have validation Sharpe between −0.29 and
+     +0.02 (`rolling_ssr` selected; test gross +0.15%/yr, t = 0.2), and the C
+     butterfly is also flat (gross −0.32%/yr). Turnover is ~230×/yr, so even
+     the paper's cheapest TC1 gives −0.8%/yr. **E is closed as not
+     tradable**; per D-016 item 1(d) the Kalman / dynamic-NS extensions are
+     not run.
+- **Consequences:** `notebooks/07_nelson_siegel.ipynb` is the E record;
+  notebook 06 now runs at USD 1m. Revisiting E requires intraday or
+  trade-at-settlement data to test whether the same-settle effect is
+  executable.
