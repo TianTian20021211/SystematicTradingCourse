@@ -526,6 +526,83 @@ def f_lumber(width_cm: float = 6.6, height_cm: float = 4.9) -> tuple[Path, Path]
     return p1, p2
 
 
+def a_flip_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """A convergence (flip) signal on the v2 universe: liquid pairs with positive leg prices (D-025)."""
+
+    from src import signals, v2_signals
+
+    rank = pd.read_parquet(config.PROCESSED_DIR / "rank.parquet")
+    inputs = v2_signals.load_v2_inputs(rank, d=5, k=5, min_adv=100)
+    pairs = inputs.pairs.loc[inputs.pairs["liquid"].astype(bool) & inputs.pairs["settle_near"].gt(0)
+                             & inputs.pairs["settle_far"].gt(0)].reset_index(drop=True)
+    sig = signals.carry_signal(pairs, signals.CarryParams(signal="annualized"))
+    signal = pairs[["date", "root"]].assign(target=-np.sign(pairs["spread_dollar"]).to_numpy(),
+                                            score_flip=-sig["carry_ann"].to_numpy())
+    return pairs, inputs.marks, signal
+
+
+def a_horizon_decay(pairs, mk, signal, width_cm: float = 7.4, height_cm: float = 4.2) -> Path:
+    """(a) Marginal one-day and (b) cumulative signed spread return of A, 95% NW CI, full sample."""
+
+    from src import horizon
+
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(width_cm * CM, height_cm * CM), sharey=False)
+    for ax, hz, title in ((a1, horizon.marginal_horizons(20), "Marginal"), (a2, horizon.cumulative_horizons(20), "Cumulative")):
+        prof = horizon.horizon_profile(horizon.forward_returns(pairs, mk, hz), signal)
+        x = np.arange(1, len(prof) + 1)
+        ci = 1.96 * prof["mean_bps"] / prof["t_nw"]
+        ax.bar(x, prof["mean_bps"], 0.7, color=ps.BLUE, edgecolor=ps.SURFACE, lw=0.3)
+        ax.errorbar(x, prof["mean_bps"], yerr=ci, fmt="none", ecolor=ps.INK, elinewidth=0.5, capsize=0.8)
+        ps.zero_line(ax)
+        ax.set_xticks([1, 5, 10, 15, 20])
+        ax.set_title(ps.tex(title), fontsize=6.8)
+        ax.set_xlabel(ps.tex("Days after the fill"), fontsize=6.5)
+    a1.set_ylabel(ps.tex("Signed spread return (bp)"))
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / "a_flip_horizon_decay.pdf"
+    fig.savefig(path)
+    plt.close(fig)
+    return path
+
+
+def a_ic_bootstrap(pairs, mk, signal, width_cm: float = 13.6, height_cm: float = 5.0) -> Path:
+    """Per-commodity bootstrap distribution of the 5-day time-series IC of the A score."""
+
+    from src import horizon
+    from matplotlib.patches import Patch
+    from matplotlib.lines import Line2D
+
+    fwd = horizon.forward_returns(pairs, mk, [(1, 6)])
+    summ, draws = horizon.block_bootstrap_ic(fwd, signal, col="fwd_1_6", score_col="score_flip",
+                                             block=21, n_boot=2000)
+    s = summ.sort_values("ic").reset_index(drop=True)
+    allv = np.concatenate(list(draws.values()))
+    bins = np.linspace(min(np.quantile(allv, 0.0005), 0), np.quantile(allv, 0.9995), 60)
+    fig, ax = plt.subplots(figsize=(width_cm * CM, height_cm * CM))
+    grey = "#b9b8b3"
+    for i, r in s.iterrows():
+        dens, edges = np.histogram(draws[r["root"]], bins=bins)
+        w = dens / max(dens.max(), 1) * 0.42
+        nz = w > 0
+        ax.barh(edges[:-1][nz], w[nz], height=np.diff(edges)[nz], left=i, align="edge",
+                color=ps.BLUE if r["p_value"] < 0.05 else grey, lw=0)
+        ax.plot([i - 0.06] * 2, [r["ci_lo"], r["ci_hi"]], color=ps.INK, lw=0.7)
+        ax.plot(i - 0.06, r["ic"], "o", color=ps.INK, ms=1.8)
+    ps.zero_line(ax)
+    ax.set_xticks(range(len(s)), s["root"])
+    ax.tick_params(axis="x", length=0, labelsize=5.8)
+    ax.set_xlim(-0.6, len(s) - 0.4)
+    ax.set_ylabel(ps.tex(r"Rank IC, $[t+1,\,t+6]$"))
+    ax.legend(handles=[Patch(color=ps.BLUE, label=ps.tex(r"$p<0.05$")), Patch(color=grey, label=ps.tex(r"$p\geq0.05$")),
+                       Line2D([], [], color=ps.INK, marker="o", ms=1.8, lw=0.7, label=ps.tex(r"IC and 95\% CI"))],
+              loc="upper center", ncol=3)
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / "a_flip_ic_bootstrap.pdf"
+    fig.savefig(path)
+    plt.close(fig)
+    return path
+
+
 def main() -> None:
     ps.use()
     mpl.rcParams.update(SLIDE_FONT)
@@ -540,6 +617,9 @@ def main() -> None:
     print(e_horizon_decay(st, mk))
     print(e_nav_timing(st, mk))
     print(e_root_discussion(*e_root_data()))
+    pairs, mk_a, sig_a = a_flip_data()
+    print(a_horizon_decay(pairs, mk_a, sig_a))
+    print(a_ic_bootstrap(pairs, mk_a, sig_a))
     fits = cl_fits()
     print(e_curve_snapshots(fits, {
         "2020-04-17": "2020-04-17",

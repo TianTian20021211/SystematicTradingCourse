@@ -350,7 +350,6 @@ Impact
 the leg's lagged 60-day volatility and 20-day volume.}
 \end{table}
 \end{frame}
-
 % =====================================================================
 \begin{frame}{Roadmap: five ideas, one pipeline}
 \begin{table}
@@ -361,14 +360,14 @@ the leg's lagged 60-day volatility and 20-day volume.}
 \toprule
 \textbf{Idea} & \textbf{Design} & \textbf{Reference} & \textbf{Verdict} \\
 \midrule
-\textbf{A} & Carry sign, main design \textbf{A-flip}
-          & Assignment Ex.~1, \textcite{koijen2018carry}
-          & original negative, flip is the design \\
-\textbf{B} & Within-curve carry rank, main design \textbf{B-flip}
-          & Assignment Ex.~2, \textcite{masturzo2025inter}
-          & original negative, flip is the design \\
+\textbf{A} & Spread convergence
+          & \textcite{kanamura2010profit}
+          & candidate (gross) \\
+\textbf{B} & Curve relative-value convergence
+          & none, our design
+          & candidate (gross) \\
 \textbf{C} & Spread mean reversion
-          & \textcite{lubnau2015trading} & negative \\
+          & \textcite{lubnau2015trading} & weak gross \\
 \textbf{D} & Curve momentum
           & \textcite{paschke2020curve} & weak / negative \\
 \textbf{E} & Nelson--Siegel dynamics
@@ -380,166 +379,170 @@ the leg's lagged 60-day volatility and 20-day volume.}
 \vspace{1.5ex}
 {\footnotesize\color{slate}Same data, same eligibility, same engine, same
 all-in costs. \key{Only the signal changes.}\\[2pt]
-A/B are assignment suggestions, not paper replications. The flips are our design.}
+A and B are convergence designs, C to E are paper-based. The final section combines the alphas.}
 \end{frame}
-
 % =====================================================================
-\section{A: Carry timing}
+\section{A: Spread convergence}
 
-\begin{frame}{A \textperiodcentered\ Carry: the assignment direction, then the flip}
+\begin{frame}{A \textperiodcentered\ Spread convergence: the idea}
 \begin{columns}[T, onlytextwidth]
-\begin{column}{0.52\textwidth}
+\begin{column}{0.55\textwidth}
 \footnotesize
-\textbf{Original A} (assignment Example 1)
 \begin{itemize}
-  \item Backwardation ($C_t>0$) $\rightarrow$ long spread,
-        contango ($C_t<0$) $\rightarrow$ short spread
-  \item Standard carry story: the near leg converges to spot
-  \item \key{Result:} gross $-0.48\%$/yr, all-in net $-2.61\%$/yr,
-        negative at zero cost. \key{Closed.}
-\end{itemize}
-\vspace{0.5ex}
-{\scriptsize\color{slate}The short-contango side is the problem: raw mean
-$+2.4$ bp/day, $t=2.46$, while the long side is $\approx 0$.}
-\end{column}
-\begin{column}{0.45\textwidth}
-\footnotesize
-\textbf{Our main design: A-flip}
-\begin{itemize}
-  \item Reverse the sign: contango $\rightarrow$ long spread,
-        backwardation $\rightarrow$ short spread
-  \item Empirically, contango spreads strengthen as the near contract
-        converges, so the assignment's short leg is on the wrong side
-  \item Related: \textcite{koijen2018carry} document the standard commodity
-        carry premium in A's direction. The flip is a data-driven reversal,
-        not the standard carry trade.
+  \item A calendar spread should \key{converge}: the near and far contracts
+        cannot stay apart forever
+  \item Spread: $C_t = F_{\text{near}} - F_{\text{far}}$, and convergence means
+        $C_t \rightarrow 0$
+  \item If $C_t < 0$ (contango), the spread is cheap: \key{long the spread}
+  \item If $C_t > 0$ (backwardation), the spread is rich: \key{short the spread}
+  \item Trade the main pair: long the near contract and short the far one,
+        or the reverse
 \end{itemize}
 \end{column}
-\end{columns}
+\begin{column}{0.42\textwidth}
 \begin{table}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{5pt}
-\begin{tabular}{@{}l c c@{}}
+\begin{tabular}{@{}l l@{}}
 \toprule
- & Contango ($C_t<0$) & Backwardation ($C_t>0$) \\
+State & Position \\
 \midrule
-A original & short & long \\
-A-flip     & long  & short \\
+Contango ($C_t<0$)      & long spread \\
+Backwardation ($C_t>0$) & short spread \\
 \bottomrule
 \end{tabular}
-\caption{Spread position by curve state for the original A rule and the A-flip.}
+\caption{Position by curve state.}
 \end{table}
+\vspace{0.5ex}
+\begin{block}{Related paper}
+{\scriptsize \textcite{kanamura2010profit} model spread trading as a
+mean-reverting process with first-hitting times. In energy futures, profits
+depend on spread volatility and the speed of mean reversion.}
+\end{block}
+\end{column}
+\end{columns}
 \end{frame}
 
 % =====================================================================
-\begin{frame}{A \textperiodcentered\ Flip result: gross information, not yet a strategy}
+\begin{frame}{A \textperiodcentered\ Spread convergence: backtest and robustness}
 \begin{table}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{5pt}
 \begin{tabular}{@{}l r r r r@{}}
 \toprule
-Period & Ann. ret (\%/yr) & Sharpe & NW $t$ & 80\% MDE Sharpe \\
+Period & Gross (\%/yr) & Sharpe & NW $t$ & 80\% MDE Sharpe \\
 \midrule
 Full 1986--2026 & $+0.63$ & $0.63$ & $4.29$ & $0.43$ \\
 Train 1986--2015 & $+0.69$ & $0.67$ & $4.06$ & $0.51$ \\
 Test 2016--2026 & $+0.46$ & $0.51$ & $1.58$ & $0.84$ \\
 \bottomrule
 \end{tabular}
-\caption{A-flip by period. Gross only, 0.5$\times$ equal notional, no
-transaction costs.}
+\caption{A by period. Gross only, 0.5$\times$ equal notional, costs deferred to the portfolio.}
 \end{table}
+\vspace{-1ex}
 \begin{columns}[T, onlytextwidth]
-\begin{column}{0.48\textwidth}
-\footnotesize
-\begin{itemize}
-  \item 5-day IC: full $0.048$, train $0.045$, test $0.071$
-  \item Per-root bootstrap $p<0.05$: 11/24, 10/24, 8/24
-  \item Quantiles: Q5 (contango long) strongest at $+3.9$ to $+5.2$ bp,
-        Q1 (backwardation short) negative in full and train
-\end{itemize}
+\begin{column}{0.54\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=3.5cm]{figures/a_flip_horizon_decay.pdf}
+\caption{Signed 1$\times$ spread return by day after the fill, marginal (left) and cumulative (right), 95\% NW CI.}
+\end{figure}
 \end{column}
-\begin{column}{0.48\textwidth}
+\begin{column}{0.43\textwidth}
 \footnotesize
 \begin{itemize}
-  \item Timing: $t+1$ fill $+0.631\%$/yr vs same-settle $+0.706\%$,
-        so the edge survives $t+1$
-  \item Test is positive but underpowered: observed Sharpe $0.51$ vs
-        MDE $0.84$
-  \item \key{Suggestive, not confirmed}, with costs deferred to the portfolio
+  \item Timing: $t+1$ fill $+0.63\%$/yr vs same-settle $+0.71\%$,
+        so the edge survives the one-day lag
+  \item 5-day IC $0.048$, $0.045$, $0.071$ (full, train, test), roots with
+        $p<0.05$: 11/24, 10/24, 8/24
+  \item Test $+0.46\%$, Sharpe $0.51$ vs MDE $0.84$:
+        \key{suggestive, not confirmed}
 \end{itemize}
 \end{column}
 \end{columns}
-\takeaway{A-flip is a gross-information candidate. It is not an all-in net
-strategy and does not change the official A result.}
 \end{frame}
 
 % =====================================================================
-\section{B: Curve relative value}
-
-\begin{frame}{B \textperiodcentered\ Relative value: the assignment rank, then the flip}
+\begin{frame}{A \textperiodcentered\ Spread convergence: position book and gross P\&L}
 \begin{columns}[T, onlytextwidth]
-\begin{column}{0.52\textwidth}
-\footnotesize
-\textbf{Original B} (assignment Example 2)
-\begin{itemize}
-  \item At each date and root, rank annualized carry of
-        M1--M2, M2--M3, M3--M4
-  \item Long the highest-carry adjacent spread and short the lowest, four legs in total
-  \item \key{Result:} gross $-1.13\%$/yr, all-in net $-4.47\%$/yr,
-        negative before costs. Pre-registered rule: \key{skip B}. Closed.
-\end{itemize}
-\vspace{0.5ex}
-{\scriptsize\color{slate}\textcite{masturzo2025inter} compare intra-commodity
-calendar-spread pairs with inter-commodity pairs and find the intra-commodity
-version weaker, consistent with our original B.}
+\begin{column}{0.54\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.86\linewidth]{figures/a_convergence_positions.pdf}
+\caption{Year-end position. Blue long near, orange short.}
+\end{figure}
 \end{column}
-\begin{column}{0.45\textwidth}
-\footnotesize
-\textbf{Our main design: B-flip}
+\begin{column}{0.43\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.72\linewidth]{figures/a_convergence_pnl.pdf}
+\caption{Gross P\&L, v2 simulator, 0.5$\times$ target.}
+\end{figure}
+\vspace{0.5ex}
 \begin{itemize}
-  \item Reverse the rank: long the \key{lowest}-carry adjacent spread,
-        short the \key{highest}
-  \item The original rank is systematically wrong, and the reverse has strong
-        gross information
-  \item Same K=5 engine, weekly, four legs, \key{post-hoc and gross-only}
+  \item Book: long contango, short backwardation, heavy in the early 1990s
+  \item Gross P\&L trends up. The table's $+0.63\%$ is the 5-day information
+        test
 \end{itemize}
 \end{column}
 \end{columns}
+\end{frame}
+
+% =====================================================================
+\section{B: Curve relative value convergence}
+
+\begin{frame}{B \textperiodcentered\ Curve relative value convergence: the idea}
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.55\textwidth}
+\footnotesize
+\begin{itemize}
+  \item Within one curve, adjacent spreads should \key{converge in relative value}
+  \item At each date and root, compute annualized carry for
+        M1--M2, M2--M3, M3--M4
+  \item \key{Long the lowest-carry adjacent spread}, \key{short the highest}
+  \item Four legs, and shared legs net out, so the book is a relative-value bet
+        on one curve
+  \item The extreme carry points should not stay extreme forever
+\end{itemize}
+\end{column}
+\begin{column}{0.42\textwidth}
 \begin{table}
 \centering
 \scriptsize
-\setlength{\tabcolsep}{5pt}
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}l c c@{}}
 \toprule
- & Long leg & Short leg \\
+Adjacent spread & Carry & Position \\
 \midrule
-B original & highest carry & lowest carry \\
-B-flip     & lowest carry  & highest carry \\
+M1--M2 & low  & long \\
+M2--M3 & mid  & none \\
+M3--M4 & high & short \\
 \bottomrule
 \end{tabular}
-\caption{Long and short adjacent spreads for the original B rank and the B-flip.}
+\caption{Illustration of the B positions, not data.}
 \end{table}
+\end{column}
+\end{columns}
 \end{frame}
 
 % =====================================================================
-\begin{frame}{B \textperiodcentered\ Flip result: strong gross, but not standalone}
+\begin{frame}{B \textperiodcentered\ Curve relative value convergence: backtest and robustness}
 \begin{table}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{5pt}
 \begin{tabular}{@{}l r r l@{}}
 \toprule
-Design & Gross (\%/yr) & Gross Sharpe & Note \\
+Design & Gross (\%/yr) & Sharpe & Note \\
 \midrule
-B-flip & $+0.50$ & $1.06$ & NW $t=7.14$, turnover $31.4\times$ \\
-Raw exact flip & $+1.13$ & $1.26$ & sign-only reversal \\
-Static front/back & $+0.11$ & $0.21$ & no carry ranking \\
+Convergence & $+0.50$ & $1.06$ & NW $t=7.14$, turnover $31.4\times$ \\
+Static front/back & $+0.11$ & $0.21$ & no relative-value ranking \\
 \bottomrule
 \end{tabular}
-\caption{B-flip and two references, full sample 1986--2026. The headline is
-gross, and all-in is a secondary diagnostic.}
+\caption{B, full sample 1986--2026, gross only. Fixed specification, 2016--2026
+is a stability slice, not out of sample.}
 \end{table}
 \begin{columns}[T, onlytextwidth]
 \begin{column}{0.48\textwidth}
@@ -560,248 +563,271 @@ gross, and all-in is a secondary diagnostic.}
 \end{itemize}
 \end{column}
 \end{columns}
-\takeaway{B-flip is a post-hoc, gross-only signal. It is not an out-of-sample
-strategy and does not change the official B result.}
+\end{frame}
+
+% =====================================================================
+\begin{frame}{B \textperiodcentered\ Curve relative value convergence: position book and gross P\&L}
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.54\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.86\linewidth]{figures/b_convergence_positions.pdf}
+\caption{Year-end position. Blue long near, orange short.}
+\end{figure}
+\end{column}
+\begin{column}{0.43\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.8\linewidth]{figures/b_convergence_pnl.pdf}
+\caption{Gross P\&L, v2 simulator.}
+\end{figure}
+\vspace{0.5ex}
+\begin{itemize}
+  \item The four-leg book rotates across roots, and positions are diversified
+  \item Gross P\&L $+0.50\%$/yr. Half-spread alone is 84 bps, so costs still
+        consume it
+\end{itemize}
+\end{column}
+\end{columns}
 \end{frame}
 
 % =====================================================================
 \section{C: Spread mean reversion}
 
-\begin{frame}{C \textperiodcentered\ Paper: mean reversion with dynamic hedge ratios}
+\begin{frame}{C \textperiodcentered\ Spread mean reversion: the idea}
 \paperref{lubnau2015trading}
 \begin{columns}[T, onlytextwidth]
-\begin{column}{0.55\textwidth}
+\begin{column}{0.56\textwidth}
 \footnotesize
 \begin{itemize}
-  \item State-space hedge ratio between near $A$ and far $B$:
-  \begin{align*}
-    p_{A,t} &= \beta_{1,t} + \beta_{2,t}\,p_{B,t} + v_t\\
-    \beta_{j,t} &= \beta_{j,t-1} + w_{j,t}, \qquad j=1,2
-  \end{align*}
-  \item \where\ $\beta_{2,t}$ is the hedge ratio, filtered daily by the Kalman filter
-  \item Hedged portfolio $p_{H,t} = p_{A,t} - \hat\beta_{2,t}\,p_{B,t}$
-  \item Signal: $z_t = (p_{H,t} - \mathrm{MA}_{L,t})/\sigma_{L,t}$
+  \item The trade is the \key{residual}, not the price level: hedge the near
+        contract $A$ with the far contract $B$,
+        $p_{H,t} = p_{A,t} - \beta_t\,p_{B,t}$
+  \item Standardize the residual:
+        $z_t = (p_{H,t} - \mathrm{MA}_{20,t})/\sigma_{20,t}$
   \item \key{Long $z_t<-2$, short $z_t>2$, exit at $z_t=0$}
+  \item Three hedge ratios: \key{1:1 dollar} (headline),
+        \key{60-day rolling OLS}, \key{Kalman DLM}
+  \item 24 commodities, 1986--2026, main pair, weekly rebalance, $t+1$ fill,
+        gross only
 \end{itemize}
 \end{column}
-\begin{column}{0.42\textwidth}
-\footnotesize
-\begin{itemize}
-  \item Energy: WTI, natural gas, heating oil, gasoline
-  \item Front month vs months 2--5, 1992--2013
-  \item Holding 2--21 days, 0.1\% cost per trade
-  \item Paper reports \key{Sharpe above 2} for most WTI and NG pairs
-  \item Caveat: a change in $\hat\beta_{2,t}$ moves $p_{H,t}$ without P\&L
-\end{itemize}
-\vspace{1ex}
-\begin{block}{Key idea}
-{\scriptsize Trade the residual, not the price level.}
+\begin{column}{0.41\textwidth}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}L{1.95cm} L{3.35cm}@{}}
+\toprule
+Paper & This project \\
+\midrule
+Energy only & 24 commodities \\
+1992--2013 & 1986--2026 \\
+Front vs 2--5 & Main pair \\
+Sharpe above 2 & gross Sharpe 0.38 \\
+\bottomrule
+\end{tabular}
+\caption{Paper design versus this project for idea C.}
+\end{table}
+\vspace{0.4ex}
+\begin{block}{Why three hedge ratios}
+{\scriptsize The hedge ratio is the key degree of freedom, and with four
+contracts it is unstable.}
 \end{block}
 \end{column}
 \end{columns}
 \end{frame}
 
 % =====================================================================
-\begin{frame}{C \textperiodcentered\ What we replicated, what we changed}
-\begin{columns}[T, onlytextwidth]
-\begin{column}{0.55\textwidth}
-\footnotesize
-\begin{itemize}
-  \item Universe: \key{24 commodities, 1986--2026}, not only energy
-  \item Main pair: nearest two eligible contracts, $D=10$, weekly rebalance
-  \item Three hedge ratios, same $z$-score logic:
-        \key{1:1 dollar}, \key{60-day rolling OLS}, \key{Kalman DLM}
-  \item Signal on an additive roll-chained index, execution on real contracts
-  \item The paper uses 0.1\% per trade, while we report gross and a
-        \key{three-layer all-in cost}
-  \item Why three: the hedge ratio is the key degree of freedom, and with four
-        contracts it is unstable
-\end{itemize}
-\end{column}
-\begin{column}{0.42\textwidth}
-\begin{table}
-\centering
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}L{2.3cm} L{2.9cm}@{}}
-\toprule
-Paper & This project \\
-\midrule
-Energy only & 24 commodities \\
-Front vs 2--5 & Main pair \\
-0.1\%/trade & half-spread + fee + impact \\
-Sharpe above 2 & gross and all-in net \\
-\bottomrule
-\end{tabular}
-\caption{Paper design versus this project for idea C.}
-\end{table}
-\end{column}
-\end{columns}
-\end{frame}
-
-% =====================================================================
-\begin{frame}{C \textperiodcentered\ Result: gross is small, costs dominate}
+\begin{frame}{C \textperiodcentered\ Spread mean reversion: gross backtest and robustness}
 \begin{table}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{5pt}
 \begin{tabular}{@{}l r r r r@{}}
 \toprule
-Variant & Gross (\%/yr) & All-in net (\%/yr) & Net Sharpe & Test gross \\
+Variant & Gross (\%/yr) & Gross Sharpe & NW $t$ & Test gross \\
 \midrule
-1:1 dollar      & $+0.61$ & $\mathbf{-3.70}$ & $-2.06$ & $+0.16$ \\
-Rolling OLS     & $+0.12$ & $-3.06$ & $-2.42$ & $-0.01$ \\
-Kalman DLM      & $+0.61$ & $-6.10$ & $-2.24$ & $+0.98$ \\
+C1 1:1 dollar   & $+0.61$ & $0.38$ & $2.62$ & $+0.16$ \\
+C2 rolling OLS  & $+0.12$ & $0.11$ & $0.69$ & $-0.01$ \\
+C3 Kalman DLM   & $+0.61$ & $0.25$ & $1.62$ & $+0.98$ \\
 \bottomrule
 \end{tabular}
-\caption{Idea C by hedge-ratio variant, official v2 results. Returns are
-annualized percentages, and test gross is the 2016--2026 slice.}
+\caption{C by hedge ratio, gross only, costs deferred to the portfolio.}
 \end{table}
+\vspace{-1.2ex}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}L{3.30cm} L{10.35cm}@{}}
+\toprule
+Robustness check & Result \\
+\midrule
+Three hedge ratios & C1, C2, C3 gross $+0.61$, $+0.12$, $+0.61$, gross Sharpe $0.38$, $0.11$, $0.25$ \\
+Train $\rightarrow$ test gross & C1 $+0.78 \rightarrow +0.16$, C2 $+0.17 \rightarrow -0.01$, C3 $+0.48 \rightarrow +0.98$ \\
+Daily validation SR & C1 $0.240$, C2 $0.265$, C3 $-0.332$, alpha gate $0.4$ failed \\
+Execution lag, placebo & same-settle $0.419 \rightarrow$ tradable $0.064$, placebo $p=0.656$ \\
+Breadth, jackknife & 15/24 validation roots positive, drop LH $0.448$, drop NG, CT, CC $0.12$ \\
+IC, OOS $R^2$ & 1, 5, 10, 20-day IC $0.010$, $0.003$, $-0.001$, $0.021$, OOS $R^2<0$ \\
+\bottomrule
+\end{tabular}
+\caption{Robustness. Weekly is the official D-019 result, the daily audit is
+validation only, test rows are descriptive and post hoc.}
+\end{table}
+\vspace{-1.2ex}
+{\scriptsize\color{navy}\textbf{Why the paper differs.} Sharpe $>2$ is an
+energy-subset result from a large grid, not a broad strategy, and likely
+post-selection. Our gross Sharpe is $0.38$, and on the paper sample
+CL $-0.26$, NG $+0.31$.}
+\end{frame}
+
+% =====================================================================
+\begin{frame}{C \textperiodcentered\ Spread mean reversion: position book and gross P\&L}
 \begin{columns}[T, onlytextwidth]
-\begin{column}{0.48\textwidth}
-\footnotesize
-\begin{itemize}
-  \item No variant survives the three-layer cost, with turnover 43--55$\times$/yr
-  \item Robustness: weekly vs daily, three hedge ratios, train/test
-  \item \key{No stable edge} across the variants
-\end{itemize}
+\begin{column}{0.50\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.86\linewidth]{figures/c_mean_reversion_positions.pdf}
+\caption{Year-end position. Blue long near, orange short.}
+\end{figure}
 \end{column}
-\begin{column}{0.48\textwidth}
+\begin{column}{0.47\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.8\linewidth]{figures/c_mean_reversion_pnl.pdf}
+\caption{Gross P\&L, \$10m capital, dashed line at 2016.}
+\end{figure}
+\vspace{0.3ex}
 \footnotesize
 \begin{itemize}
-  \item Daily audit: validation gross SR $0.240/0.265/-0.332$,
-        so the alpha gate of $0.4$ \key{failed}
-  \item Test read once, descriptive: selected C1 gross SR $-0.196$
-  \item Not a selection input and not a new result
+  \item Book rotates across all 24 roots, with no persistent directional tilt
+  \item Gross $+0.61\%$/yr full sample, $+0.16\%$/yr test
+  \item Gross P\&L drifts up but the slope is small and unstable
 \end{itemize}
 \end{column}
 \end{columns}
-\takeaway{C is closed. The paper's high Sharpe does not survive 24 commodities,
-higher turnover and all-in costs.}
 \end{frame}
 
 % =====================================================================
 \section{D: Curve momentum}
 
-\begin{frame}{D \textperiodcentered\ Paper: curve momentum}
-\paperref{paschke2020curve}
+\begin{frame}{D \textperiodcentered\ Curve momentum: the trade idea}
 \begin{columns}[T, onlytextwidth]
-\begin{column}{0.55\textwidth}
+\begin{column}{0.57\textwidth}
 \footnotesize
 \begin{itemize}
-  \item Within one futures curve, compute the return of each nearby contract
-        over \key{12 months}
-  \item \key{Long the nearby with the higher past return, short the lower},
-        hold one month
-  \item 22 commodities, 1986--2015
-  \item Diversified gross SR \key{1.28}, net \key{0.93}
-  \item Timing explains 57.75\% of the mean, the rest is a static tilt
-  \item Energy turns negative after costs because monthly expiries raise turnover
+  \item Within one commodity's curve, compare the two nearest tradable
+        contracts (near = earlier expiry, far = later expiry). This is a
+        \key{relative} trade, not a long or short commodity bet
+  \item For each leg, compound its roll-adjusted daily rank return over the
+        past \key{12 months}:
+        $m_{i,t}=\prod_{s\in[t-12m,\,t]}(1+r_{i,s})-1$
+  \item Signal: \key{$score_t=m_{near,t}-m_{far,t}$}
+  \item If $score_t>0$, \key{long the near leg, short the far leg}.
+        If $score_t<0$, reverse. Hold \key{one month}
+  \item Month-end close signal, \key{$t+1$ close fill}. The target is held
+        until the next month-end, monthly rebalance
+  \item Economic story: relative curve momentum persists over the next month,
+        and the contract that has outperformed stays stronger
 \end{itemize}
+\vspace{0.2ex}
+{\scriptsize\color{slate}Reference: \textcite{paschke2020curve}.}
 \end{column}
-\begin{column}{0.42\textwidth}
+\begin{column}{0.40\textwidth}
 \begin{table}
 \centering
 \scriptsize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}l r r@{}}
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}L{2.35cm} L{3.15cm}@{}}
 \toprule
-Sector & Gross SR & Net SR \\
+Parameter & Choice \\
 \midrule
-Energy      & 0.36 & $-0.11$ \\
-Grains      & 0.78 & 0.65 \\
-Meats       & 0.99 & 0.99 \\
-Metals      & 0.13 & $-0.15$ \\
-\midrule
-Diversified & \textbf{1.28} & \textbf{0.93} \\
+Universe & 24 roots, 1986--2026 \\
+Legs & $N=2$ main pair \\
+Formation & 12 months \\
+Holding & 1 month \\
+Signal & $m_{near}-m_{far}$ \\
+Position & $\operatorname{sign}(score)$, $\pm1$ per leg \\
+Sizing & equal notional \\
+Delivery rule & no delivery month, $k=5$ \\
+Expiry buffer & $d=5$ days to last trading \\
+Liquidity & thinner-leg ADV $\ge100$ \\
+Execution & month-end $\rightarrow$ $t+1$ close \\
+Costs & gross only \\
 \bottomrule
 \end{tabular}
-\caption{Curve-momentum Sharpe ratios by sector, selected rows from the paper.}
+\caption{D specification. Official v2 all-in net $-1.42\%$/yr, turnover
+$22\times$/yr.}
 \end{table}
 \end{column}
 \end{columns}
 \end{frame}
 
 % =====================================================================
-\begin{frame}{D \textperiodcentered\ What we replicated, what we changed}
-\begin{columns}[T, onlytextwidth]
-\begin{column}{0.55\textwidth}
-\footnotesize
-\begin{itemize}
-  \item \key{N=2 main pair}, not the four nearby contracts: one traded spread,
-        comparable to A and C
-  \item 12-month formation, month-end lookback, rank return index, pure sign,
-        monthly rebalance
-  \item 24 commodities, 1986--2026, $D=5$ eligibility for replication,
-        v2 all-in costs
-  \item Static always-long benchmark separates timing from a static curve tilt
-  \item The four-nearby version is a separate backlog (D-x), not mixed into D
-\end{itemize}
-\end{column}
-\begin{column}{0.42\textwidth}
-\begin{table}
-\centering
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}L{2.3cm} L{2.9cm}@{}}
-\toprule
-Paper & This project \\
-\midrule
-22 commodities & 24 commodities \\
-Four nearbys & N=2 main pair \\
-1986--2015 & 1986--2026 \\
-Monthly & Monthly \\
-Brokerage + one tick & half-spread + fee + impact \\
-\bottomrule
-\end{tabular}
-\caption{Paper design versus this project for idea D.}
-\end{table}
-\end{column}
-\end{columns}
-\end{frame}
-
-% =====================================================================
-\begin{frame}{D \textperiodcentered\ Result: weak gross, negative net, unstable information}
+\begin{frame}{D \textperiodcentered\ Curve momentum: backtest and robustness}
 \begin{table}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{5pt}
-\begin{tabular}{@{}l r r r@{}}
+\begin{tabular}{@{}l r r r r@{}}
 \toprule
-Period & Gross (\%/yr) & All-in net (\%/yr) & Net Sharpe \\
+Period & Gross (\%/yr) & Sharpe & NW $t$ & 80\% MDE Sharpe \\
 \midrule
-Full 1986--2026 & $+0.22$ & $\mathbf{-1.42}$ & $-1.52$ \\
-Train 1986--2015 & $+0.37$ & $-1.54$ & $-1.59$ \\
-Test 2016--2026 & $-0.21$ & $-1.08$ & $-1.33$ \\
+Full 1986--2026 & $+0.22$ & $0.25$ & $1.77$ & $0.43$ \\
+Train 1986--2015 & $+0.37$ & $0.41$ & $2.60$ & $0.51$ \\
+Test 2016--2026 & $-0.21$ & $-0.26$ & $-0.83$ & $0.84$ \\
 \bottomrule
 \end{tabular}
-\caption{Idea D by period, official v2 results.}
+\caption{D by period, gross only, \$10m, equal notional. Official v2 all-in net
+$-1.42\%$/yr. Test is a post-hoc stability slice.}
 \end{table}
+\vspace{-1.2ex}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}L{2.30cm} L{7.55cm} L{3.75cm}@{}}
+\toprule
+Check & Data & Conclusion \\
+\midrule
+Core IC & 1m IC $0.049$ (NW $t$ 3.48), $79\%$ roots positive, hit $52.5\%$, FDR $2/24$ & small, concentrated \\
+Horizon & IC $0.049$, $0.140$, $0.173$, $0.190$ at 1, 3, 6, 12 months & slow, most beyond 1m \\
+Independence & $\Delta$adj $R^2$ $+0.0069$ (CI includes 0), residual IC $+0.016$, static $11.1$ vs timing $11.2$ bp/m & no incremental value \\
+Stability & 1986--99 IC $0.013$, high-vol IC $-0.007$, rolling 36m positive $39\%$ & unstable over time \\
+Placebo & block shuffle $p<0.001$, lag-1m IC $0.016$, future-score lead $0.028$ & not noise, persistent or static \\
+\bottomrule
+\end{tabular}
+\caption{D signal-validity checks.}
+\end{table}
+\end{frame}
+
+% =====================================================================
+\begin{frame}{D \textperiodcentered\ Curve momentum: position book and gross P\&L}
 \begin{columns}[T, onlytextwidth]
-\begin{column}{0.48\textwidth}
-\footnotesize
-\begin{itemize}
-  \item Static always-long: $+0.108\%$/yr gross, Sharpe $0.21$,
-        so D's timing is not additive
-  \item Signal validity: mean per-root IC $0.049$, NW $t=3.48$,
-        79\% roots positive, FDR-significant \key{2/24}, hit rate 52.5\%
-  \item Horizon: IC $0.140/0.173/0.190$ at 3/6/12 months,
-        hit rate 56.3/57.7/58.9\%
-\end{itemize}
+\begin{column}{0.50\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.86\linewidth]{figures/d_positions.pdf}
+\caption{Month-end book. Blue long near, orange short.}
+\end{figure}
 \end{column}
-\begin{column}{0.48\textwidth}
+\begin{column}{0.47\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.8\linewidth]{figures/d_gross_pnl.pdf}
+\caption{Gross P\&L, \$10m capital, dashed line at 2016.}
+\end{figure}
+\vspace{0.5ex}
 \footnotesize
 \begin{itemize}
-  \item Independence: incremental $R^2$ $+0.0069$, 95\% CI includes 0
-  \item Rolling 36-month IC positive only 39\% of the time
-  \item Within-root placebo $p<0.001$, so the information is real but not independent
+  \item Book rotates across all 24 roots, with no persistent directional tilt
+  \item Gross exposure $\approx100\%$ of capital, turnover $\approx22\times$/yr
+  \item Gross $+0.22\%$/yr full, $-0.21\%$/yr test
 \end{itemize}
 \end{column}
 \end{columns}
-\takeaway{D is closed as a standalone strategy. The signal is detectable but
-unstable, and mostly overlaps with static and carry information.}
 \end{frame}
-
 % =====================================================================
 \section{E: Nelson--Siegel dynamics}
 
@@ -1007,7 +1033,6 @@ lowers the variance but removes the daily change that carries the signal, so
 Eqs.~(\ref{eq:kfstate}) and (\ref{eq:kfobs}) fit today's curve better yet
 forecast and trade worse. We keep the daily OLS fit.}
 \end{frame}
-
 % =====================================================================
 \section{Combining the alphas}
 
@@ -1207,29 +1232,26 @@ keeps rising through the test period after all costs.}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}l r r r l@{}}
 \toprule
-Idea & Gross (\%/yr) & All-in net (\%/yr) & Sharpe & Verdict \\
+Idea & Gross (\%/yr) & Gross Sharpe & All-in net (\%/yr) & Verdict \\
 \midrule
-A original & $-0.48$ & $-2.61$ & $-2.60$ & wrong sign \\
-A flip     & $+0.63$ & n.a.    & $0.63$  & candidate \\
-B original & $-1.13$ & $-4.47$ & $-4.53$ & negative before costs \\
-B flip     & $+0.50$ & n.a.    & $1.06$  & candidate \\
-C mean reversion & $+0.61$ & $-3.70$ & $-2.06$ & costs dominate \\
-D curve momentum & $+0.22$ & $-1.42$ & $-1.52$ & weak and unstable \\
-E Nelson--Siegel & $-0.07$ & $-9.77$ & $-3.36$ & paper timing only \\
+A spread convergence & $+0.63$ & $0.63$ & n.a. & candidate (gross) \\
+B relative value & $+0.50$ & $1.06$ & n.a. & candidate (gross) \\
+C mean reversion & $+0.61$ & $0.38$ & $-3.70$ & weak gross \\
+D curve momentum & $+0.22$ & $0.25$ & $-1.42$ & weak and unstable \\
+E Nelson--Siegel & $-0.07$ & $-0.03$ & $-9.77$ & paper timing only \\
 \midrule
-Combined alphas, ridge, 22 days & $+0.57$ & $+0.23$ & $0.23$ & net positive in all periods \\
+Combined alphas, ridge, 22 days & $+0.57$ & $0.58$ & $+0.23$ & net positive in all periods \\
 \bottomrule
 \end{tabular}
-\caption{Full sample 1986--2026, $t+1$ fill. Sharpe all-in net, gross for the flips. n.a.: not computed.}
+\caption{Full sample 1986--2026, $t+1$ fill. n.a.: costs deferred to the portfolio.}
 \end{table}
 \begin{columns}[T, onlytextwidth]
 \begin{column}{0.48\textwidth}
 \footnotesize
 \begin{itemize}
-  \item The assignment directions (A/B) fail \key{before costs}, while the
-        flipped versions carry gross information
-  \item C/D carry gross signal that costs consume. E works only at the
-        paper's untradable timing
+  \item A and B convergence carry gross information, C and D carry weak gross
+        signal that costs consume
+  \item E works only at the paper's untradable timing
   \item Contract-level alignment is the foundation, since generic slot returns
         would be wrong
 \end{itemize}
@@ -1237,16 +1259,15 @@ Combined alphas, ridge, 22 days & $+0.57$ & $+0.23$ & $0.23$ & net positive in a
 \begin{column}{0.48\textwidth}
 \footnotesize
 \begin{itemize}
-  \item A flip and B flip are \key{portfolio candidates}, not standalone
-        strategies, and the test evidence is suggestive
+  \item A and B are \key{portfolio candidates}, not standalone strategies, and
+        the test evidence is suggestive
   \item \key{Combining the alphas} pays only when traded slowly: the 22-day
         ridge book is net positive in every period, test descriptive
-  \item No single idea is tradable, but the pipeline is reusable
+  \item Next: risk-budget sizing and a walk-forward test
 \end{itemize}
 \end{column}
 \end{columns}
 \end{frame}
-
 % =====================================================================
 \begin{frame}[plain]
 \vfill
@@ -1298,6 +1319,16 @@ Combined alphas, ridge, 22 days & $+0.57$ & $+0.23$ & $0.23$ & net positive in a
 \end{itemize}
 \end{column}
 \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: A, per-root 5-day IC}
+\begin{figure}
+\centering
+\includegraphics[width=0.86\linewidth]{figures/a_flip_ic_bootstrap.pdf}
+\caption{Full sample 1986--2026, 21-day block bootstrap, 2{,}000 draws, blue
+$p<0.05$. 11/24 roots are significant. In the test slice 8/24 are significant
+and only 1/24 has a positive 95\% CI.}
+\end{figure}
 \end{frame}
 
 \begin{frame}[allowframebreaks]{References}
