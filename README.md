@@ -40,6 +40,9 @@ test 是 2016–2026 的 post-hoc slice。
 E（Nelson–Siegel）不在这个 v2 表中：它是 paper replication，paper timing
 可复现（Sharpe 2.03），t+1 fill 后消失；见
 `notebooks/14_idea_e_nelson_siegel.ipynb` 和 D-021–D-023。
+**融合（D-030，notebook 15）：** 把 A–E 抽象成 12 个连续 alpha 因子合成一个
+spread 预测；validation net Sharpe 1.34，但 test 2016–2026 net Sharpe −0.61
+（预测 IC 在 test 仍为正，亏损集中在 LB）。
 原始 CSV 在 `output/v2_rerun/comparison.csv`（本地，gitignored）。Notebook 11
 另含 **B-flip** 的 post-hoc、gross-only signal research（D-026）；上表的 B
 仍是原 B 的 negative 结果，B-flip 不进这张 official net 表。D-027 的 daily C

@@ -33,6 +33,14 @@ jupyter nbconvert --execute --to notebook --inplace \
 jupyter nbconvert --execute --to notebook --inplace \
   --ExecutePreprocessor.timeout=3600 notebooks/14_idea_e_nelson_siegel.ipynb
 
+echo "== Alpha combination (D-030): select stage, read-once test, notebook 15 =="
+"$PYTHON" scripts/run_alpha.py --stage select
+if [ ! -f output/alpha/test_readonce.json ]; then
+  "$PYTHON" scripts/run_alpha.py --stage test --confirm-read-once
+fi
+jupyter nbconvert --execute --to notebook --inplace \
+  --ExecutePreprocessor.timeout=3600 notebooks/15_alpha_combination.ipynb
+
 echo "== Cross-strategy comparison table (optional utility) =="
 "$PYTHON" scripts/run_v2_rerun.py \
   --strategies a,d,c,c_ols,c_kalman,b --force
@@ -42,7 +50,7 @@ echo "== Remove volatile notebook execution timestamps =="
   notebooks/00_data_audit.ipynb notebooks/01_panel_build.ipynb \
   notebooks/10_idea_a_carry.ipynb notebooks/11_idea_b_adjacent_carry.ipynb \
   notebooks/12_idea_c_mean_reversion.ipynb notebooks/13_idea_d_curve_momentum.ipynb \
-  notebooks/14_idea_e_nelson_siegel.ipynb
+  notebooks/14_idea_e_nelson_siegel.ipynb notebooks/15_alpha_combination.ipynb
 
 echo "== Processed panels =="
 ls -lh data/processed/*.parquet

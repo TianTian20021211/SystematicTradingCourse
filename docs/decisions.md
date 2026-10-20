@@ -1070,3 +1070,110 @@ Status values: `proposed`, `accepted`, `superseded`.
   by the sequential selection but failed the 0.4 validation gross-SR gate;
   the descriptive test read does not promote C or change the weekly official
   results.
+
+---
+
+## D-030 · Alpha combination: factors from A–E, screen, model zoo, monetisation
+
+- **Status:** accepted
+- **Date:** 2026-10-20
+- **Context:** Every idea is weak or negative as a standalone ±1 strategy
+  (D-019, D-022, D-025–D-028), but several carry measurable gross
+  information. The user asked to abstract each idea into continuous alpha
+  factors, screen them per commodity with a day-block bootstrap of the
+  time-series IC, combine the survivors with a small model zoo at several
+  forecast horizons, choose a model by paired bootstrap on validation, and
+  monetise the combined forecast with the v2 simulator and layered costs.
+  This is the fusion section of the final report.
+- **Decision (pre-registered):**
+  1. **Instrument and timing.** v2 D-018 main pair (`d=5, k=5,
+     min_adv=100`, 24 roots); factors at the t settle use data up to t;
+     fill at t+1. Rows used for IC, fitting and trading are `usable`
+     (liquid, both leg prices > 0), as in `sizing.legs_from_signal`.
+  2. **Factors (12).** A: `a_carry` (annualised carry), `a_carry_dev`
+     (minus its 252-day mean). B: `b_curve_carry` (front minus back eligible
+     adjacent carry), `b_rel_carry` (main-pair carry minus mean adjacent
+     carry). C: `c_z20`, `c_z60` (minus the z-score of the continuous spread
+     index), `c_rev5` (minus the 5-day pair return). D: `d_mom21`, `d_mom63`,
+     `d_mom252` (cumulative pair return). E: `e_dslope`, `e_dcurv` (one-day
+     NS slope/curvature change ÷ mean price, `rolling_ssr` λ). Raw signs are
+     kept; models learn the direction. Models use per-root causal scaling
+     (÷ expanding RMS, min 252 obs, winsorised ±4; missing → 0).
+  3. **Targets.** Fixed-pair forward spread returns `[t,t+1]` (paper
+     timing, diagnostic only), `[t+1,t+2]`, `[t+1,t+3]`, `[t+1,t+6]`,
+     `[t+1,t+11]`, `[t+1,t+22]`; fitted after ÷ (lagged 60-day pair vol ×
+     √length).
+  4. **Samples.** Train 1986–2005 (screen, fit), validation 2006–2015
+     (model, horizon and portfolio choice), test 2016–2026 read once by
+     `scripts/run_alpha.py --stage test --confirm-read-once`
+     (`output/alpha/test_readonce.json`). The select stage truncates marks
+     and pairs at 2015-12-31 so no validation target uses a 2016 settle.
+  5. **Bootstrap.** Joint moving-block bootstrap over dates: all roots and
+     all scores share the resampled date blocks (cross-root dependence kept;
+     model differences paired). Block length: blocks {1, 5, 10, 21, 42, 63,
+     126} on train `[t+1,t+6]`; choose the smallest block whose median
+     cross-root SE is within 10% of the 126-day SE; at horizon h use
+     max(block, h).
+  6. **Screen (per horizon, train).** Primary: significant (p<0.05, sign of
+     the cross-root mean IC) on ≥ 50% of roots. Fallback if < 3 pass: the
+     cross-root mean-IC 95% CI excludes 0 and ≥ 2/3 of roots share its sign.
+  7. **Model zoo (fixed hyper-parameters).** OLS; Ridge α∈{1e3, 1e5};
+     Lasso α∈{1e-3, 1e-2}; ElasticNet (α=1e-2, l1=0.5); random forest (200
+     trees, depth 6, min leaf 500); XGBoost (300 trees, depth 3, lr 0.05).
+     Pooled across roots, fitted on train; test forecasts refit on
+     1986–2015.
+  8. **Model selection (per horizon, validation).** Paired bootstrap of the
+     cross-root mean IC difference for every model pair; a win = 95% CI
+     above 0; most wins selected, ties to the simpler model.
+  9. **Monetisation.** Time-series rules: `sign`, `linear`
+     (clip(pred/2s, ±1)), `band` (update sign only when the expected return
+     beats the estimated round-trip half-spread + fees, else hold);
+     cross-sectional experiment `xs` (long top 5 / short bottom 5 roots by
+     forecast; labelled a comparison because settle times differ across
+     exchanges). Equal 1/N budget, equal-notional legs, k = horizon length
+     overlapping sleeves (band: k=1), $1m capital; $100k and $100k
+     whole-lot diagnostics. The time-series configuration with the highest
+     validation all-in net Sharpe is the headline; the best `xs` horizon is
+     reported alongside.
+- **Consequences:** New `src/alpha_factors.py`, `src/alpha_screen.py`,
+  `src/alpha_models.py`, `src/alpha_portfolio.py`, `src/alpha_figures.py`,
+  `scripts/run_alpha.py`, `tests/test_alpha.py` and
+  `notebooks/15_alpha_combination.ipynb`. Official per-idea results (D-019)
+  are unchanged. Caveat: the factor list includes the post-hoc A/B sign
+  insights only through the factors themselves; signs are estimated on
+  train, never chosen by looking at 2006 onward.
+- **Results (2026-10-20):**
+  1. **Block length.** Median cross-root SE rises from 0.0040 (block 1) to
+     0.0071 (block 10) and is flat thereafter → block 10 (max(10, h) per
+     horizon). An i.i.d. bootstrap would understate the SE by about half.
+  2. **Screen (train).** A (`a_carry`, `a_carry_dev`, negative IC = the
+     flip direction) and C (`c_z20`, `c_rev5`) pass at every horizon; B
+     (`b_curve_carry`, `b_rel_carry`) only at `[t+1,t+11]`/`[t+1,t+22]`;
+     `e_dcurv` only at `[t+1,t+3]`/`[t+1,t+6]` (fallback, 0 roots
+     individually significant); no D factor passes at any horizon. A IC
+     grows with horizon (−0.02 at 1 day to −0.12 at 21 days); C and E are
+     strongest at the non-tradable `[t,t+1]`.
+  3. **Models (validation IC).** `[t+1,t+2]` 0.036 (ols), `[t+1,t+3]` 0.046
+     (lasso 1e-3), `[t+1,t+6]` 0.068 (lasso 1e-3), `[t+1,t+11]` 0.096
+     (ols), `[t+1,t+22]` 0.124 (lasso 1e-2). Linear models are never beaten
+     by the trees; XGBoost wins no paired comparison at any horizon.
+  4. **Validation monetisation ($1m, all-in net Sharpe).** Headline TS =
+     `[t+1,t+6]` linear, 1.34 (gross 1.91, +0.57%/yr net, turnover 17×);
+     best XS = `[t+1,t+6]`, 0.63. Short horizons are eaten by costs
+     (`[t+1,t+2]` XS turnover 140×, net negative).
+  5. **Test 2016–2026 (read once).** Headline TS gross Sharpe −0.21, net
+     −0.61 (−0.49%/yr); XS gross −0.46, net −0.91. Full-sample TS net
+     Sharpe 0.09. The forecast information survives (test IC `[t+1,t+6]`
+     0.028, `[t+1,t+11]` 0.062, `[t+1,t+22]` 0.141, all CIs above 0), but
+     the P&L does not: lumber (LB) alone costs 42 bp/yr gross in test (the
+     portfolio loses 17 bp/yr); excluding LB the test gross is +25 bp/yr
+     (descriptive, not used for any choice). Tail days: 2020-04-20/21 CL,
+     2020-06-03 RR, 2021-10-07 and 2022-02-02 LB, 2026-01-21 NG.
+  6. **Size.** Capacity curve: net ≈ flat up to $1m, zero at $3m, negative
+     beyond. At $100k with whole lots the book almost never trades (1/N
+     budget ≈ $4k per root, below one contract's notional).
+  7. **Verdict.** The fusion works as an information aggregator (higher IC
+     than any single idea, positive in test) but the pre-registered equal
+     1/N monetisation fails out of sample. Liquidity/risk-budgeted sizing
+     and longer horizons are the next hypotheses and need a new decision;
+     2016–2026 is no longer a clean holdout.

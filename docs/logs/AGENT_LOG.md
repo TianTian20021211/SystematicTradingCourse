@@ -2704,3 +2704,47 @@ while keeping C closed and the weekly official results untouched.
 any new C hypothesis is a separate pre-registered project. The next research
 step remains H (holding-period scan), and the 2016–2026 test slice must not be
 used for tuning.
+
+---
+
+## LOG-0061 · 2026-10-20 · Phase 14 · Claude Code
+
+**Task:** Alpha combination across ideas A–E (D-030): continuous factors,
+per-root day-block bootstrap IC screen with a block-length experiment, model
+zoo with paired bootstrap selection, time-series and cross-sectional
+monetisation with layered costs, read-once test.
+
+**What changed:**
+- New `src/alpha_factors.py` (12 factors, targets, causal scaling),
+  `src/alpha_screen.py` (joint date-block bootstrap, block sensitivity,
+  screen, yearly IC), `src/alpha_models.py` (pooled zoo, OOS predictions,
+  paired comparison), `src/alpha_portfolio.py` (sign/linear/band/xs rules,
+  round-trip cost, root characteristics/contribution),
+  `src/alpha_figures.py`.
+- `scripts/run_alpha.py` with `--stage select` (marks truncated at
+  2015-12-31) and `--stage test --confirm-read-once`
+  (`output/alpha/test_readonce.json`).
+- `notebooks/15_alpha_combination.ipynb` (Chinese narrative, 19 figures).
+- `tests/test_alpha.py` (9 synthetic tests).
+- D-030 in `docs/decisions.md`; README / HANDOFF pointers.
+
+**Commands:**
+- `python scripts/run_alpha.py --stage select` (~9 min)
+- `python scripts/run_alpha.py --stage test --confirm-read-once` (~1 min)
+- `python -m nbconvert --execute --to notebook --inplace notebooks/15_alpha_combination.ipynb`
+- `python -m pytest -q`
+
+**Why:** every idea alone is weak; the user asked whether combining them as
+alpha factors yields a usable spread forecast and strategy.
+
+**Validation / results:** block 10; A and C pass at all horizons, B at
+long horizons, D never; validation IC 0.036–0.124 rising with horizon;
+linear models ≥ trees; headline `[t+1,t+6]` linear validation net Sharpe
+1.34; test gross −0.21 / net −0.61 although test IC stays positive (0.028
+at 5 days, 0.141 at 21 days); LB alone −42 bp/yr gross in test.
+
+**Commit:** `feat(alpha): combine A–E into alpha factors, screen, model zoo and monetisation (D-030)` (`this commit`).
+
+**Next:** liquidity- or risk-budgeted sizing and longer horizons as a new
+pre-registered decision; evaluate with walk-forward since the test slice has
+been read.
