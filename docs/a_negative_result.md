@@ -6,6 +6,13 @@
 **Full detail:** `notebooks/10_idea_a_carry.ipynb` (old `04_a_diagnose`
 retired; recovery in `docs/notebook_history.md`).
 
+> **Update 2026-10-20 (D-025):** the original A direction documented here
+> remains a closed negative, and its v2 result is unchanged. The adopted
+> carry signal is the sign-flipped rule `target_flip = -sign(spread_dollar)`
+> (contango → long spread, backwardation → short spread), tested gross-only
+> in `notebooks/10_idea_a_carry.ipynb` §7. This is a new hypothesis, not a
+> rescue of A; transaction costs are deferred to the final portfolio.
+
 ---
 
 ## 1. Headline
@@ -99,3 +106,36 @@ spread（near − far）倾向于上升。Short spread 是在赌 near 继续弱�
 不再调参数，不做 long-only / threshold / cross-section / inverse-vol / h 变体。
 报告里只写一句：A 的 carry sign 在这个数据上不成立。下一步是 C（mean
 reversion），它在另一个 branch 上推进。
+
+---
+
+## 7. Flip follow-up（D-025，2026-10-20）
+
+原始 A 的 sign 是 documented negative；D-025 采用 sign-reversed rule
+`target_flip = -sign(spread_dollar)` 作为 carry 的 **adopted candidate
+signal**。这不是 §6 禁止的 long-only / threshold / cross-section /
+inverse-vol / h 变体，而是一个新的、固定的方向假设；官方 A v2 结果不变。
+
+Gross 信息检验（默认参数；详见 notebook 10 §7；0.5x equal-notional）：
+
+| Period | Ann. ret | Sharpe | NW t | 80% MDE Sharpe |
+|---|---:|---:|---:|---:|
+| full 1986–2026 | +0.631% | 0.633 | 4.286 | 0.434 |
+| train 1986–2015 | +0.694% | 0.672 | 4.056 | 0.507 |
+| test 2016–2026 | +0.455% | 0.512 | 1.580 | 0.843 |
+
+- 5-day IC（`score_flip = -carry_ann`, `fwd_1_6`）：ALL full 0.048 /
+  train 0.045 / test 0.071；per-root bootstrap p<0.05 的个数
+  11/24、10/24、8/24。
+- 分箱：Q5（contango long）最强（full/test/train +4.88/+5.21/+3.87 bp）；
+  Q1（backwardation short）在 full/train 为负，在 test 为正（+2.42 bp），
+  即 short leg 在 test 是拖累。
+- Timing：t+1 fill full +0.631%/yr（Sharpe 0.633），same-settle full
+  +0.706%/yr（Sharpe 0.744）；edge 没有在 t+1 后消失。
+
+**Verdict:** full/train 的 gross 信息为正且显著；test 方向为正但统计上不
+显著（80% MDE Sharpe 0.843 > 观测 0.512），所以是 **suggestive, not
+confirmed**。不声称 test-period alpha；§7 不含成本；不做 test tuning。
+
+**Final status for the original direction: closed negative**（§1–§6 不变）。
+The flip is a separately adopted candidate signal, not a continuation of A.

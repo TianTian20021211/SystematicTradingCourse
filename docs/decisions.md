@@ -750,3 +750,65 @@ Status values: `proposed`, `accepted`, `superseded`.
 - **Consequences:** Local `main` now contains the cloud E work and the D-020
   layout. E remains closed as not tradable (D-022). A future idea notebook
   slot is 15.
+
+---
+
+## D-025 · Idea A flip: sign-reversed carry as the adopted candidate signal
+
+- **Status:** accepted
+- **Date:** 2026-10-20
+- **Context:** The original A rule (long the spread in backwardation, short in
+  contango) is a documented v2 negative: full gross −0.484%/yr, all-in
+  −2.610%/yr, overall net Sharpe −2.595; test gross −0.272%/yr, all-in
+  −1.464%/yr. The observed sign is opposite, especially for the contango
+  short. The user decided to test the sign-reversed rule as the adopted
+  carry signal. This is a new hypothesis, not a rescue of A.
+- **Decision:**
+  1. Original A (`signals.carry_signal`, `v2_signals.a_legs`) is unchanged;
+     its official v2 result remains the negative benchmark in notebook 10
+     §4–§6.
+  2. Adopted candidate: `target_flip = -sign(spread_dollar)` on the same
+     K=5/d=5/min_adv=100 universe: contango → long spread, backwardation →
+     short spread. The continuous flip score is `score_flip = -carry_ann`
+     (positive = contango), so a positive IC supports the flip. The original
+     `carry_ann` is kept for interpretation; the notebook does not relabel
+     it.
+  3. First pass uses defaults only: `d=5`, `k=5`, `min_adv=100`,
+     `CarryParams(signal="dollar_sign", annualize_days="delivery_month")`,
+     `fwd_1_2` for daily Sharpe/MDE, `fwd_1_6` for 5-day information,
+     `DEFAULT_HORIZONS` plus 1–20 day marginal/cumulative windows, 5 bins
+     with `min_history=252`, IC `min_obs=252`, and a 21-day moving-block
+     bootstrap with `n_boot=2000`, `seed=0`. No grid search.
+  4. Liquidity: information tests use `inputs.pairs["liquid"]` and positive
+     leg prices, matching `sizing.legs_from_signal`; on other pair-dates the
+     target is 0 and `score_flip` is NaN. Illiquid pair-dates are not
+     included in IC, horizon, bins or bootstrap.
+  5. Scale: the horizon table and decay figure are 1x spread returns; signed
+     returns, Sharpe and MDE are 0.5x equal-notional gross. The two scales
+     are labeled and never mixed.
+  6. Samples: full 1986–2026 is descriptive; train 1986–2015 is in-sample;
+     test 2016–2026 is post-hoc confirmatory. No parameter is chosen on
+     test. Because the flip sign was motivated after observing A's
+     full-sample sign, the test is not a pristine pre-registered holdout;
+     the notebook states this caveat.
+  7. Results: full/train signed returns are positive and significant; test
+     is positive but not significant at 5% (0.5x Sharpe 0.512, NW t 1.580;
+     80% MDE Sharpe 0.843). The 5-day ALL IC is 0.048 full / 0.045 train /
+     0.071 test; per-root bootstrap p<0.05 on 11/24, 10/24 and 8/24 roots.
+     The contango-long quintile is the strongest; the backwardation-short
+     leg is weak in test. Verdict: **suggestive, not confirmed** for the
+     test-period alpha.
+  8. Adoption: the flip is the adopted **candidate** carry signal for the
+     final portfolio, conditional on the portfolio's net result. Costs,
+     sizing and portfolio construction are deferred; this section does not
+     claim a net-profitable or test-proven signal.
+  9. Deferred: transaction costs, final portfolio, and any threshold,
+     long-only, lookback, holding-period, pair or sizing variant. Any such
+     variant requires a separate decision and user approval and must not be
+     tuned on 2016–2026.
+- **Consequences:** Notebook 10 §7 is the flip record;
+  `docs/a_negative_result.md`, `docs/diagnostics_plan.md`, README, HANDOFF
+  and PROGRESS point to it. The official A v2 result and the cross-idea
+  comparison are unchanged. `src/diagnostics.py` and its tests are the
+  reusable period-sliced diagnostic layer; no signal, universe or cost
+  logic changes.

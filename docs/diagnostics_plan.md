@@ -1,7 +1,8 @@
 # Failure Diagnostics — Plan（A/B/D）
 
-**Status:** proposed; not implemented. This is the handoff for the next
-conversation.
+**Status:** partially implemented (2026-10-20). The A flip information tests
+are in notebook 10 §7 and D-025. The A failure-diagnostic card, B and D cards
+remain proposed/deferred.
 **Date:** 2026-10-19
 **Input:** v2 reruns on `main` — `output/v2_rerun/comparison.csv`,
 `output/v2_rerun/{a,b,d}_root.csv`, `docs/v1_v2_comparison.md`,
@@ -269,3 +270,32 @@ D is basis momentum: 12-month formation, monthly target, N=2. The plan is:
 - Confirm whether to add a v1-aligned robustness for A only (1:1 contracts,
   weekly, flat 5 bps) or keep v2 as the only main result.
 - Then implement `src/diagnostics.py` and notebook 15.
+
+---
+
+## 9. A flip information diagnostics — implemented (D-025)
+
+The sign-reversed A carry (`target_flip = -sign(spread_dollar)`) is the
+adopted candidate signal, not a rescue of A. Its gross information tests are
+implemented in `notebooks/10_idea_a_carry.ipynb` §7 and `src/diagnostics.py`.
+
+Default parameters (no grid search): `d=5`, `k=5`, `min_adv=100`,
+`CarryParams(signal="dollar_sign", annualize_days="delivery_month")`,
+`fwd_1_2` (daily Sharpe/MDE), `fwd_1_6` (5-day information),
+`DEFAULT_HORIZONS` plus 1–20 day marginal/cumulative, 5 bins with
+`min_history=252`, IC `min_obs=252`, and a 21-day moving-block bootstrap with
+`n_boot=2000`, `seed=0`. Liquidity: liquid pair-dates with positive leg
+prices only. Scale: horizon/profile 1x; signed returns/Sharpe/MDE 0.5x.
+
+Result summary (0.5x gross, `fwd_1_2`):
+
+| Period | Ann. ret | Sharpe | NW t | 80% MDE Sharpe |
+|---|---:|---:|---:|---:|
+| full | +0.631% | 0.633 | 4.286 | 0.434 |
+| train | +0.694% | 0.672 | 4.056 | 0.507 |
+| test | +0.455% | 0.512 | 1.580 | 0.843 |
+
+IC (`score_flip`, `fwd_1_6`): ALL 0.048 / 0.045 / 0.071; per-root
+bootstrap p<0.05 on 11/24, 10/24, 8/24 roots. Test is directionally positive
+but not significant; verdict **suggestive, not confirmed**. The original A
+card (§3.3) and the B/D cards remain not implemented.
