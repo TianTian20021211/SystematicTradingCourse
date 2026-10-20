@@ -237,9 +237,9 @@ ticker to 2026-10-13 (LB to 2023). Months: contract months per year used by the 
         the old M2's previous price
   \item \key{Never difference generic prices across a roll}: that jump is a
         spread, not a return
-  \item Eligibility: no delivery month, exit at least 5 trading days before,
-        and days to last trading $> D=10$ \smallnote{(D=5/20 are robustness only)}
-  \item Main pair: the two nearest eligible contracts, K=5 ex-ante liquid roots
+  \item Eligibility: no delivery month, exit at least 5 trading days before it,
+        and at least 5 trading days left to the last trading day
+  \item Main pair: the two nearest eligible contracts
 \end{itemize}
 \end{column}
 \begin{column}{0.42\textwidth}
@@ -267,25 +267,28 @@ Adjacent pairs      & 610{,}801 \\
 \end{frame}
 
 % =====================================================================
-\begin{frame}{One engine for all five ideas}
+\begin{frame}{One backtest engine for all five ideas}
 \footnotesize
 \begin{itemize}
-  \item v2 is holdings-based: \texttt{marks $\rightarrow$ sizing $\rightarrow$
-        simulate $\rightarrow$ report}
-  \item Signal at the $t$ close and \key{fill at the $t+1$ close}, with existing
-        positions marked before orders
-  \item All-in cost: \key{half-spread + exchange fee + square-root impact}
-  \item K=5 ex-ante, USD 10m book, equal notional, and weekly, monthly or daily
-        rebalance by idea
-  \item Full 1986--2026, train 1986--2015, \key{test 2016--2026 read once, no tuning}
-  \item Report gross and all-in net: annualized return, Sharpe, turnover, drawdown
+  \item The engine holds real contracts, marks them to the daily settlement price
+        and charges costs on every trade
+  \item The signal uses the $t$ settle and the order \key{fills at the $t+1$
+        settle}, so no trade uses information it could not have had
+  \item Costs: \key{half-spread, exchange and broker fees, square-root market impact}
+  \item No position in a delivery month or in the 5 trading days before it.
+        Equal capital per commodity and equal notional on the two legs
+  \item Rebalancing is weekly, monthly or daily depending on the idea. Capital is
+        \$10m for A to D and \$1m for E and the combination, and it matters only
+        through impact
+  \item Choices are made before 2016, and \key{2016--2026 is read once as the test}
+  \item We report gross and net annualized return, Sharpe, turnover and drawdown
 \end{itemize}
 \begin{figure}
 \centering
 \begin{tikzpicture}[node distance=0.38cm]
-\node[box] (sig) {Signal at $t$\\close};
+\node[box] (sig) {Signal at $t$\\settle};
 \node[box, right=of sig] (tgt) {Target\\legs};
-\node[box, right=of tgt] (fill) {Fill at\\$t+1$ close};
+\node[box, right=of tgt] (fill) {Fill at\\$t+1$ settle};
 \node[box, right=of fill] (mark) {Mark holdings\\and costs};
 \node[boxacc, right=of mark] (pnl) {P\&L and\\Sharpe};
 \draw[arr] (sig) -- (tgt);
@@ -293,7 +296,7 @@ Adjacent pairs      & 610{,}801 \\
 \draw[arr] (fill) -- (mark);
 \draw[arr] (mark) -- (pnl);
 \end{tikzpicture}
-\caption{Order of operations in the v2 holdings-based backtest engine.}
+\caption{Order of operations in the backtest engine.}
 \end{figure}
 \end{frame}
 
@@ -478,7 +481,7 @@ Test 2016--2026 & $+0.46$ & $0.51$ & $1.58$ & $0.84$ \\
 \begin{figure}
 \centering
 \includegraphics[width=0.72\linewidth]{figures/a_convergence_pnl.pdf}
-\caption{Gross P\&L, v2 simulator, 0.5$\times$ target.}
+\caption{Gross P\&L, backtest engine, 0.5$\times$ target.}
 \end{figure}
 \vspace{0.5ex}
 \begin{itemize}
@@ -579,7 +582,7 @@ is a stability slice, not out of sample.}
 \begin{figure}
 \centering
 \includegraphics[width=0.8\linewidth]{figures/b_convergence_pnl.pdf}
-\caption{Gross P\&L, v2 simulator.}
+\caption{Gross P\&L, backtest engine.}
 \end{figure}
 \vspace{0.5ex}
 \begin{itemize}
@@ -672,7 +675,7 @@ Breadth, jackknife & 15/24 validation roots positive, drop LH $0.448$, drop NG, 
 IC, OOS $R^2$ & 1, 5, 10, 20-day IC $0.010$, $0.003$, $-0.001$, $0.021$, OOS $R^2<0$ \\
 \bottomrule
 \end{tabular}
-\caption{Robustness. Weekly is the official D-019 result, the daily audit is
+\caption{Robustness. Weekly is the headline result, the daily audit is
 validation only, test rows are descriptive and post hoc.}
 \end{table}
 \vspace{-1.2ex}
@@ -750,14 +753,14 @@ Holding & 1 month \\
 Signal & $m_{near}-m_{far}$ \\
 Position & $\operatorname{sign}(score)$, $\pm1$ per leg \\
 Sizing & equal notional \\
-Delivery rule & no delivery month, $k=5$ \\
+Delivery rule & exit 5 days before delivery month \\
 Expiry buffer & $d=5$ days to last trading \\
 Liquidity & thinner-leg ADV $\ge100$ \\
 Execution & month-end $\rightarrow$ $t+1$ close \\
 Costs & gross only \\
 \bottomrule
 \end{tabular}
-\caption{D specification. Official v2 all-in net $-1.42\%$/yr, turnover
+\caption{D specification. All-in net $-1.42\%$/yr, turnover
 $22\times$/yr.}
 \end{table}
 \end{column}
@@ -779,7 +782,7 @@ Train 1986--2015 & $+0.37$ & $0.41$ & $2.60$ & $0.51$ \\
 Test 2016--2026 & $-0.21$ & $-0.26$ & $-0.83$ & $0.84$ \\
 \bottomrule
 \end{tabular}
-\caption{D by period, gross only, \$10m, equal notional. Official v2 all-in net
+\caption{D by period, gross only, \$10m, equal notional. All-in net
 $-1.42\%$/yr. Test is a post-hoc stability slice.}
 \end{table}
 \vspace{-1.2ex}
@@ -1304,17 +1307,15 @@ Combined alphas, ridge, 22 days & $+0.57$ & $0.58$ & $+0.23$ & net positive in a
   \item \key{Fee}: exchange fee per contract
   \item \key{Impact}: square-root of order size / ADV
   \item All-in net = gross $-$ half-spread $-$ fee $-$ impact
-  \item v1's flat 5 bps/leg is historical and is not mixed with v2
 \end{itemize}
 \end{column}
 \begin{column}{0.48\textwidth}
 \footnotesize
 \begin{itemize}
   \item \key{Eligibility}: no delivery month, exit at least 5 trading days
-        before, and days to last trading $>D$
+        before it, and at least 5 trading days left to the last trading day
   \item \key{Main pair}: two nearest eligible contracts
   \item \key{Carry}: annualized near--far price difference
-  \item \key{D}: research buffer, $D=10$ main, $D=5/20$ robustness
   \item \key{Test}: 2016--2026, read once and never used for tuning
 \end{itemize}
 \end{column}

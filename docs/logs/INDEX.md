@@ -84,3 +84,4 @@
 | LOG-0080 | 2026-10-20 | Phase 15 | Claude Code | Merge Tian A-D deck with jiaheng/final-deck by user rules (formatting, slides 3/6, E onwards from Jiaheng); A figures redrawn | presentations/final/*, scripts/make_slide_figures.py, docs/logs/* | `bc93057` |
 | LOG-0081 | 2026-10-20 | Phase 15 | Claude Code | Final deck: Backup renamed Appendix, appendix slide on 22-day ridge book by contract months and settlement, title date | presentations/final/*, scripts/make_slide_tables.py, docs/logs/* | `ac436c3` |
 | LOG-0082 | 2026-10-20 | Phase 15 | Claude Code | Final deck: center figure/text columns, Table 1 delivery type and contracts per year | presentations/final/main.tex, docs/logs/* | `9afec00` |
+| LOG-0083 | 2026-10-20 | Phase 15 | Claude Code | Final deck: plain-language engine slide, internal notation removed, eligibility matches backtests | presentations/final/*, scripts/make_slide_tables.py, docs/logs/* | this commit |

@@ -76,7 +76,7 @@ def e_backtest_tex(grid: pd.DataFrame) -> Path:
     lines = [
         r"\begin{tabular}{@{}l r r r r r r r@{}}",
         r"\toprule",
-        r" & & \multicolumn{3}{c}{Paper cost scenarios} & \multicolumn{3}{c}{Our v2 costs, cumulative} \\",
+        r" & & \multicolumn{3}{c}{Paper cost scenarios} & \multicolumn{3}{c}{Our costs, cumulative} \\",
         r"\cmidrule(lr){3-5}\cmidrule(l){6-8}",
         r"Fill and holding window & Gross & TC1 & TC2 & TC3 & Half-spread & $+$ fees & $+$ impact \\",
         r"\midrule",

@@ -3652,3 +3652,25 @@ Table 1 gains "Delivery" (CO, FC, LH cash, others physical) and "Months"
 **Validation / results:** deck compiles, Table 1 fits, no new overflow.
 
 **Commit:** `style(slides): center figure-text columns, delivery and months in Table 1` (`9afec00`).
+
+---
+
+## LOG-0083 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Remove internal notation from the final deck and rewrite the engine
+slide in plain language.
+
+**What changed:** `presentations/final/main.tex`: the engine slide no longer
+mentions "v2", K=5 or a single capital; it states the fill timing, cost
+layers, delivery-month exit, equal sizing, capital by section ($10m A–D, $1m
+E and combination, only impact depends on it) and the read-once test.
+Eligibility on slide 4 and in the appendix now matches the backtests (exit 5
+trading days before the delivery month, at least 5 trading days to the last
+trading day) instead of D=10. "v2 simulator", "official D-019", "Official v2",
+"$k=5$" and the v1 note are gone; the E table header reads "Our costs".
+`scripts/make_slide_tables.py` header updated.
+
+**Validation / results:** rendered text contains no v1, v2, K=5, D=10,
+decision or log IDs, and no `;`, `—` or `|`.
+
+**Commit:** `style(slides): plain-language engine slide, no internal notation` (`this commit`).
