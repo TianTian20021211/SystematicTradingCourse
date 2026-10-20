@@ -233,3 +233,21 @@ def test_time_series_ic_is_per_root_spearman() -> None:
     out = horizon.ts_ic(fwd, sig, col="fwd_1_2", score_col="score").set_index("root")
     expected = pd.Series(score).rank().corr(fwd["fwd_1_2"].rank())
     assert np.isclose(out.loc["X", "ic"], expected)
+
+
+def test_block_bootstrap_ic_detects_signal_and_null() -> None:
+    from src import horizon
+
+    rng = np.random.default_rng(3)
+    n = 800
+    dates = pd.bdate_range("2000-01-03", periods=n)
+    score = rng.normal(size=n)
+    rows = [dict(date=d, root="SIG", score=s, fwd_1_2=0.3 * s + rng.normal()) for d, s in zip(dates, score)]
+    rows += [dict(date=d, root="NUL", score=rng.normal(), fwd_1_2=rng.normal()) for d in dates]
+    df = pd.DataFrame(rows)
+    out, draws = horizon.block_bootstrap_ic(df[["date", "root", "fwd_1_2"]], df[["date", "root", "score"]],
+                                            col="fwd_1_2", score_col="score", block=10, n_boot=500)
+    out = out.set_index("root")
+    assert out.loc["SIG", "p_value"] < 0.01 and out.loc["SIG", "ci_lo"] > 0
+    assert out.loc["NUL", "p_value"] > 0.05
+    assert len(draws["SIG"]) == 500

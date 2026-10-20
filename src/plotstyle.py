@@ -144,13 +144,16 @@ def finalize(fig, title: str | None = None, legend_from=None, ncol: int = 4):
     """
 
     height = fig.get_size_inches()[1]
-    top = 1.0 - (0.24 / height if title else 0.0)
+    top = 1.0 - ((0.07 + 0.17 * (title.count("\n") + 1)) / height if title else 0.0)
     bottom = 0.0
     if legend_from is not None:
         axes = legend_from if isinstance(legend_from, (list, tuple)) else [legend_from]
         seen, handles, labels = set(), [], []
         for ax in axes:
-            for h, lab in zip(*ax.get_legend_handles_labels()):
+            leg = ax.get_legend()
+            pairs = (zip(leg.legend_handles, [t.get_text() for t in leg.get_texts()]) if leg is not None
+                     else zip(*ax.get_legend_handles_labels()))
+            for h, lab in pairs:
                 if lab not in seen:
                     seen.add(lab), handles.append(h), labels.append(lab)
             if ax.get_legend() is not None:

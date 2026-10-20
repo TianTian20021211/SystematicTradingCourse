@@ -212,3 +212,61 @@ def bin_returns(
         daily = b.groupby("date")[col].mean()
         rows.append(dict(bin=k, mean_bps=daily.mean() * 1e4, t_nw=newey_west_t(daily, lag), n=len(b)))
     return pd.DataFrame(rows)
+
+
+def _block_indices(n: int, block: int, n_boot: int, rng: np.random.Generator) -> np.ndarray:
+    """Moving-block bootstrap row indices, shape (n_boot, n)."""
+
+    n_blocks = -(-n // block)
+    starts = rng.integers(0, n - block + 1, size=(n_boot, n_blocks))
+    idx = (starts[:, :, None] + np.arange(block)[None, None, :]).reshape(n_boot, -1)
+    return idx[:, :n].astype(np.int32)
+
+
+def _pearson_rows(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """Row-wise Pearson correlation of two (B, n) arrays."""
+
+    xc = x - x.mean(axis=1, keepdims=True)
+    yc = y - y.mean(axis=1, keepdims=True)
+    return (xc * yc).sum(axis=1) / np.sqrt((xc**2).sum(axis=1) * (yc**2).sum(axis=1))
+
+
+def block_bootstrap_ic(
+    fwd: pd.DataFrame,
+    signal: pd.DataFrame,
+    col: str = "fwd_1_6",
+    score_col: str = "score",
+    block: int = 21,
+    n_boot: int = 2000,
+    min_obs: int = 252,
+    seed: int = 0,
+) -> tuple[pd.DataFrame, dict]:
+    """Per-commodity moving-block bootstrap of the time-series rank IC.
+
+    Each root's (score_t, fwd_t) pairs are resampled in blocks of ``block``
+    consecutive observations, which preserves the serial dependence created
+    by overlapping forward windows and persistent scores. Ranks are taken on
+    the full sample and the IC of a resample is the Pearson correlation of
+    the resampled ranks (the standard Spearman bootstrap shortcut).
+
+    Returns:
+        ``summary`` (one row per root: ``ic, ci_lo, ci_hi, p_value, n``,
+        two-sided p = 2 min(P(IC* <= 0), P(IC* >= 0))) and ``draws``
+        (root -> array of bootstrap ICs).
+    """
+
+    f = _merge_score(fwd, signal, score_col).dropna(subset=[score_col, col]).sort_values(["root", "date"])
+    rng = np.random.default_rng(seed)
+    rows, draws = [], {}
+    for root, g in f.groupby("root"):
+        if len(g) < max(min_obs, 2 * block):
+            continue
+        rs, rf = g[score_col].rank().to_numpy(), g[col].rank().to_numpy()
+        idx = _block_indices(len(g), block, n_boot, rng)
+        boot = _pearson_rows(rs[idx], rf[idx])
+        ic = np.corrcoef(rs, rf)[0, 1]
+        p = min(1.0, 2 * min((boot <= 0).mean(), (boot >= 0).mean()))
+        lo, hi = np.quantile(boot, [0.025, 0.975])
+        rows.append(dict(root=root, ic=ic, ci_lo=lo, ci_hi=hi, p_value=p, n=len(g)))
+        draws[root] = boot
+    return pd.DataFrame(rows), draws

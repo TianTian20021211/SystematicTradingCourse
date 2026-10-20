@@ -13,6 +13,8 @@ from __future__ import annotations
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 import numpy as np
 import pandas as pd
 
@@ -218,7 +220,7 @@ def quintile_returns(bins: pd.DataFrame, strategy: str, score: str, window_label
     labels[0], labels[-1] = "Q1\n(low)", f"Q{len(bins)}\n(high)"
     ax.set_xticks(x, labels)
     ax.tick_params(axis="x", length=0)
-    ax.set_xlabel(ps.tex(rf"Quintile of {score} within the commodity's own past (ex ante)"))
+    ax.set_xlabel(ps.tex(rf"Own-history quintile of {score} (ex ante)"))
     ax.set_ylabel(ps.tex(rf"Spread return over {window_label} (bp)"))
     title = ps.tex(rf"{strategy}: forward spread return by {score} quintile," + "\n"
                    + r"mean across commodities, 95\% NW CI")
@@ -235,10 +237,14 @@ def k_sweep(table: pd.DataFrame, strategy: str):
     a1.set_ylabel(ps.tex(r"Traded notional / capital, per year"))
     a1.set_title(ps.tex(r"Turnover"))
     for color, (col, label) in zip(ps.ORDINAL_BLUE, LAYER_LABELS.items()):
-        a2.plot(k, table[f"ret_{LAYER_KEYS[col]}"], color=color, label=ps.tex(label), **MARKER)
+        ret = table[f"ret_{LAYER_KEYS[col]}"]
+        a2.plot(k, ret, color=color, label=ps.tex(label), **MARKER)
+        if col in ("ret_gross", "ret_net_all"):
+            half = _ci(ret, table[f"t_{LAYER_KEYS[col]}"])
+            a2.fill_between(k, ret - half, ret + half, color=color, alpha=0.18, lw=0)
     ps.zero_line(a2)
     a2.set_ylabel(ps.tex(r"Annual return (\% of capital)"))
-    a2.set_title(ps.tex(r"Annual return after each cost layer"))
+    a2.set_title(ps.tex(r"Annual return after each cost layer (bands: 95\% NW CI)"))
     for ax in (a1, a2):
         _log_x(ax, ticks=list(k))
         ax.set_xlabel(ps.tex(r"Sleeves $k$ (position = mean of the last $k$ daily targets)"))
@@ -288,3 +294,75 @@ def capacity_compare(tables: dict, strategy: str):
     ps.panel_label(a1, "a"), ps.panel_label(a2, "b")
     title = ps.tex(rf"{strategy}: capacity under alternative position sizing")
     return ps.finalize(fig, title, legend_from=[a1, a2], ncol=2)
+
+
+def horizon_decay(marginal: pd.DataFrame, cumulative: pd.DataFrame, strategy: str):
+    """(a) Gross signed return on each day ahead; (b) cumulative over the holding period.
+
+    ``marginal`` is ``horizon_profile`` on windows [t+h, t+h+1]; ``cumulative``
+    on windows [t+1, t+1+h]. Both are gross (no costs) and execution free.
+    """
+
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(ps.FULL_WIDTH, 3.0))
+    h = np.arange(1, len(marginal) + 1)
+    a1.errorbar(h, marginal["mean_bps"], yerr=_ci(marginal["mean_bps"], marginal["t_nw"]),
+                color=ps.BLUE, ecolor=ps.BLUE, elinewidth=0.7, capsize=1.5, **MARKER)
+    ps.zero_line(a1)
+    a1.set_xlabel(ps.tex(r"Day ahead $h$ (return from settle $t{+}h$ to $t{+}h{+}1$)"))
+    a1.set_ylabel(ps.tex(r"Basis points on that day"))
+    a1.set_title(ps.tex(r"Marginal return by day ahead, 95\% NW CI"))
+    hc = np.arange(1, len(cumulative) + 1)
+    y, half = cumulative["mean_bps"].to_numpy(), _ci(cumulative["mean_bps"], cumulative["t_nw"])
+    a2.fill_between(hc, y - half, y + half, color=ps.BLUE, alpha=0.18, lw=0, label=ps.tex(r"95\% NW CI"))
+    a2.plot(hc, y, color=ps.BLUE, label=ps.tex(r"Mean cumulative return"), **MARKER)
+    ps.zero_line(a2)
+    a2.set_xlabel(ps.tex(r"Holding period $h$ (fill at $t{+}1$, exit at $t{+}1{+}h$)"))
+    a2.set_ylabel(ps.tex(r"Basis points over the holding period"))
+    a2.set_title(ps.tex(r"Cumulative return by holding period"))
+    for ax in (a1, a2):
+        ax.set_xticks([1, 5, 10, 15, 20])
+    ps.panel_label(a1, "a"), ps.panel_label(a2, "b")
+    title = ps.tex(rf"{strategy}: gross signed spread return by horizon, "
+                   r"sign$(s_t)\times(r_{\mathrm{near}}-r_{\mathrm{far}})$, mean across commodities")
+    return ps.finalize(fig, title, legend_from=a2, ncol=2)
+
+
+def bootstrap_ic_distribution(summary: pd.DataFrame, draws: dict, strategy: str, score: str,
+                              window_label: str, block: int, alpha: float = 0.05):
+    """Per-commodity block-bootstrap distribution of the time-series IC.
+
+    One vertical histogram per commodity (sorted by IC), its point estimate,
+    95% percentile interval and two-sided bootstrap p-value. Commodities with
+    p < alpha are drawn in blue, the rest in grey.
+    """
+
+    s = summary.sort_values("ic").reset_index(drop=True)
+    lo = min(np.quantile(d, 0.001) for d in draws.values())
+    hi = max(np.quantile(d, 0.999) for d in draws.values())
+    bins = np.linspace(lo, hi, 41)
+    fig, ax = plt.subplots(figsize=(ps.FULL_WIDTH, 3.6))
+    for i, r in s.iterrows():
+        dens, edges = np.histogram(draws[r["root"]], bins=bins, density=True)
+        color = ps.BLUE if r["p_value"] < alpha else "#a9a8a4"
+        ax.barh(edges[:-1], dens / dens.max() * 0.42, height=np.diff(edges), left=i,
+                align="edge", color=color, lw=0)
+        ax.plot([i - 0.08, i - 0.08], [r["ci_lo"], r["ci_hi"]], color=ps.INK, lw=0.8)
+        ax.plot(i - 0.08, r["ic"], "o", color=ps.INK, ms=2.6)
+        p = r["p_value"]
+        ptxt = r"$p<0.001$" if p < 0.001 else rf"$p={p:.3f}$"
+        ax.text(i + 0.1, hi + 0.03 * (hi - lo), ps.tex(ptxt), rotation=90, ha="center", va="bottom",
+                fontsize=6.3, color=ps.INK_2)
+    ps.zero_line(ax)
+    ax.set_xticks(range(len(s)), s["root"])
+    ax.tick_params(axis="x", length=0)
+    ax.set_xlim(-0.6, len(s) - 0.3)
+    ax.set_ylim(lo, hi + 0.42 * (hi - lo))
+    ax.set_ylabel(ps.tex(r"Time-series Spearman IC"))
+    handles = [Patch(color=ps.BLUE, label=ps.tex(rf"Bootstrap distribution, $p<{alpha:g}$")),
+               Patch(color="#a9a8a4", label=ps.tex(rf"Bootstrap distribution, $p\geq{alpha:g}$")),
+               Line2D([], [], color=ps.INK, marker="o", ms=2.6, lw=0.8, label=ps.tex(r"Estimate and 95\% interval"))]
+    ax.legend(handles=handles)
+    title = ps.tex(rf"{strategy}: is each commodity's time-series IC different from zero?" + "\n"
+                   + rf"IC of {score} at $t$ with the spread return over {window_label}; "
+                   + rf"{block}-day moving-block bootstrap, two-sided $p$-values")
+    return ps.finalize(fig, title, legend_from=ax, ncol=3)

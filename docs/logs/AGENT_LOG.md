@@ -1498,3 +1498,34 @@ close-out) into `jiaheng/backtest-v2`.
 
 **Next:** marginal horizon and k-profile figures; per-commodity block
 bootstrap of the time-series IC.
+
+## LOG-0033 · 2026-10-19 · Phase 7e · Claude Code
+
+**Goal:** Add the horizon-decay, dense k-profile and per-commodity
+bootstrap-IC figures to notebook 06.
+
+**Actions:**
+- `horizon.marginal_horizons` / `cumulative_horizons`: windows
+  [t+h, t+h+1] and [t+1, t+1+h], h = 1..20.
+- `horizon.block_bootstrap_ic`: per-commodity moving-block bootstrap
+  (21-day blocks, 2,000 draws) of the time-series rank IC; percentile CI and
+  two-sided p-value.
+- `report.k_sweep` reports Newey-West t per layer; `figures.k_sweep` adds
+  95% bands; new `figures.horizon_decay` and
+  `figures.bootstrap_ic_distribution` (one vertical histogram per
+  commodity with p-values).
+- `plotstyle.finalize` reads existing legends and sizes multi-line titles.
+- Notebook 06: new cells in section 5, dense k grid (1..60), updated
+  conclusions and next steps (Chinese narrative).
+
+**Commands:**
+- `python -m pytest -q` → 87 passed
+- notebook 06 executed top to bottom (11 figures, no errors)
+
+**Validation:** Carry: marginal signed return significant only on days 1-3
+(t_NW −4.6, −3.5, −2.6); bootstrap p < 0.05 for 14 of 24 commodities
+(13 at p < 0.01); k = 1 → 60 cuts turnover 26× → 14.5×.
+
+**Commit:** `feat(figures): add horizon decay, k profile and bootstrap IC`
+
+**Next:** D/E signals on v2.
