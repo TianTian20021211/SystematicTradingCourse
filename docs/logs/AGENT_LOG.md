@@ -2944,7 +2944,7 @@ reading.
 tradable t+1 gross −0.18% (−0.11); k = 5/20 do not turn it positive.
 `python -m pytest -q` passes.
 
-**Commit:** `feat(slides): final-deck formatting and idea-E slides with vector figures` (`this commit`).
+**Commit:** `feat(slides): final-deck formatting and idea-E slides with vector figures` (`cb0822e`).
 
 **Next:** E evaluation-figure slide and per-commodity discussion slide;
 notebook 14 should add the interior-LOO result.
