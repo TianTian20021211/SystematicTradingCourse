@@ -13,6 +13,11 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 > E（Nelson–Siegel）已完成并 closed as not tradable（notebook 14，
 > D-021–D-023）；下一步是 H（holding-period scan）。
 > D-x（cross-sectional basis-momentum）是单独的 backlog，不混入 D。
+>
+> **A flip（D-025）：** 原始 A 方向仍是 closed negative；`target_flip =
+> -sign(spread_dollar)`（contango long / backwardation short）是 adopted
+> candidate signal。它只做 gross 信息检验（notebook 10 §7），交易成本留到
+> final portfolio；不进下面的 all-in net 表。
 
 ---
 
@@ -39,6 +44,10 @@ E（Nelson–Siegel）不在这个 v2 表中：它是 paper replication，paper 
 （5 bps/leg、`d=None`、1:1 contracts）见 `docs/v1_v2_comparison.md`；
 旧 notebook 已 retired，恢复方式见 `docs/notebook_history.md`。
 
+**A flip 不在上表：** 上表的 A carry 是原始方向（official v2 negative）。
+§7 的 flip 是 gross-only 信号研究，不是新的 all-in net 结果；不要把它和
+上表的 net 数字混在一起。
+
 ---
 
 ## 当前状态（含 v1 历史 baselines；正式结果见上表）
@@ -62,6 +71,8 @@ E（Nelson–Siegel）不在这个 v2 表中：它是 paper replication，paper 
 - [x] 用 v2 重跑 A/D/C/C-rolling-OLS/C-Kalman/B；每个 idea 一个 notebook；
       **v2 为正式结果（D-019）**；v1/v2 对比见 `docs/v1_v2_comparison.md`
 - [x] E（Nelson–Siegel）：paper timing 复现，t+1 后消失；closed as not tradable
+- [x] A flip（sign reversal）信息检验：full/train/test gross；adopted
+      candidate signal（D-025，notebook 10 §7）
 - [ ] H（holding-period scan）；D-x 是 backlog
 
 `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb` 和五个 idea notebook
@@ -139,7 +150,7 @@ docs/
 src/                      # 所有数据处理逻辑（notebook 只调用）
   continuous.py           # roll-chained leg indices + rolling OLS hedge ratio
   kalman.py               # Kalman-filter hedge ratio (rolling-likelihood DLM)
-  signals.py              # signal functions（A carry; C mean reversion; D curve momentum）
+  signals.py              # signal functions（A carry; A flip = -sign in notebook 10 §7; C mean reversion; D curve momentum）
   backtest.py             # v1：target legs + event-loop engine（weekly/monthly/daily）
   metrics.py              # v1 summary / conditional mean / sector / plot
   a_diagnostics.py        # A 负结果诊断
@@ -214,6 +225,9 @@ output/                    # 生成的图/报告（gitignored）
   2.03 在 t+1 fill 后消失，E closed as not tradable；notebook 14。
 - **云端合并（D-024）：** E 并入 D-020 布局；E 决策重编号为 D-021–D-023，
   notebook 改为 14。
+- **A flip（D-025）：** 原始 A 方向 closed negative；`target_flip =
+  -sign(spread_dollar)` 是 adopted candidate carry signal；gross-only
+  信息检验在 notebook 10 §7；成本留到 final portfolio，不做 test tuning。
 
 详见 `docs/decisions.md`。
 

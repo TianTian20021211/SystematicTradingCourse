@@ -7,6 +7,8 @@
 **C baseline + hedge-ratio + Kalman variants:** merged into `main`; C closed.  
 **D baseline:** D-013; merged into `main`; closed as negative/mixed.
 **E baseline:** D-021–D-023; notebook 14; closed as not tradable.
+**A flip:** D-025; adopted candidate signal; gross information tests in
+notebook 10 §7; test suggestive, not confirmed.
 **Backtest v2:** D-016; merged from `jiaheng/backtest-v2` in LOG-0039.
 **Plans:** A `~/.claude/plans/polished-crafting-clock.md`;
 C `~/.claude/plans/valiant-pondering-peacock.md`.
@@ -67,7 +69,8 @@ notebooks 10–14; framework comparison:
 | v2 re-runs A/D/C/C-hedge/B | done / official | notebooks 10–13; D-018 conventions; D-019 final |
 | Official results | done | v2 is the final reported result; v1 is historical |
 | E (Nelson–Siegel) | done / closed | notebook 14; D-021–D-023; not tradable |
-| Tests | done | 136 passed |
+| A flip (D-025) | done / adopted candidate | gross only; notebook 10 §7; test not significant |
+| Tests | done | 142 passed |
 | Notebooks | done | `00`, `01`, `10_idea_a_carry`, `11_idea_b_adjacent_carry`, `12_idea_c_mean_reversion`, `13_idea_d_curve_momentum`, `14_idea_e_nelson_siegel` |
 
 ---
@@ -139,9 +142,37 @@ A 和 B 都作为 **documented negative baselines** 收尾。结论已经足够�
 
 - A：carry sign 方向错，尤其 contango short；不是参数或成本问题。
 - B：adjacent-carry rank 在成本前就为负；skip B。
-- 不再调参数，不做 rescue 变体（threshold、long-only、cross-section、
-  inverse-vol、h=21）。
+- 原始 A/B 方向不再调参数，不做 rescue 变体（threshold、long-only、
+  cross-section、inverse-vol、h=21）。
 - 报告里只简短说明：A/B 这个 idea 测试出来不行。
+
+**A flip（D-025）是 separately adopted candidate signal**，不改变上面的
+closed 结论：原始 A 方向仍是 negative benchmark；`target_flip =
+-sign(spread_dollar)` 只做 gross 信息检验，成本留到 final portfolio。
+
+---
+
+## A flip information test（D-025）
+
+`target_flip = -sign(spread_dollar)`：contango → long spread，backwardation
+→ short spread。默认参数，无 grid search；gross、execution-free；详见
+notebook 10 §7。0.5x equal-notional signed return，`fwd_1_2`：
+
+| Period | Ann. ret | Sharpe | NW t | 80% MDE Sharpe |
+|---|---:|---:|---:|---:|
+| full 1986–2026 | +0.631% | 0.633 | 4.286 | 0.434 |
+| train 1986–2015 | +0.694% | 0.672 | 4.056 | 0.507 |
+| test 2016–2026 | +0.455% | 0.512 | 1.580 | 0.843 |
+
+- 5-day IC（`score_flip = -carry_ann`, `fwd_1_6`）：ALL full 0.048 /
+  train 0.045 / test 0.071；per-root bootstrap p<0.05 的个数
+  11/24、10/24、8/24。
+- 分箱：Q5（contango long）最强（full/test/train +4.88/+5.21/+3.87 bp）；
+  Q1（backwardation short）在 full/train 为负，在 test 为正（+2.42 bp）。
+- Timing：t+1 fill full +0.631%/yr（Sharpe 0.633）；same-settle full
+  +0.706%/yr（Sharpe 0.744）；edge 没有在 t+1 后消失。
+- Test 方向为正但不显著；80% MDE Sharpe 0.843 > 观测 0.512，结论是
+  **suggestive, not confirmed**；不声称 test-period alpha；不做 test tuning。
 
 ---
 
@@ -392,7 +423,10 @@ plus `output/v2_rerun/<strategy>_performance.csv`; optionally run
 
 ## Next
 
-1. A/B are closed; no further parameter tuning or rescue variants.
+1. The original A/B directions are closed; no further parameter tuning or
+   rescue variants. The A flip (D-025) is a separately adopted candidate
+   signal; its gross information tests are in notebook 10 §7. Do not tune
+   the flip on the 2016–2026 test sample.
 2. C is merged and closed as mixed/negative; do not build a daily
    paper-replication branch. If revisited, daily CL/NG is a separate
    pre-registered project.
@@ -408,6 +442,9 @@ plus `output/v2_rerun/<strategy>_performance.csv`; optionally run
    rescue A/B/C/D.
 7. No report has been written yet; A/B/C/D are documented as negative or
    mixed-negative baselines.
+8. A flip: the gross information test is done (D-025, notebook 10 §7);
+   next is the final portfolio's cost/sizing layer. Test evidence is
+   suggestive, not confirmed; do not tune on 2016–2026.
 
 ---
 

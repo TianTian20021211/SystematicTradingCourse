@@ -2335,3 +2335,68 @@ D-020 layout; the two histories collided on decision, log and notebook IDs.
 
 **Next:** Align A's information tests with `horizon.horizon_profile`,
 `ts_ic`/`block_bootstrap_ic`, and `block_bootstrap_mean`.
+
+## LOG-0055 · 2026-10-20 · Phase 12 · Claude Code
+
+**Goal:** Test the sign-flipped A carry as the adopted candidate signal using
+gross, execution-free information diagnostics, without changing the official
+v2 A result.
+
+**Actions:**
+- Added the period-sliced diagnostics layer `src/diagnostics.py` (full/train/
+  test slicing, horizon profiles, IC, own-history bins, per-root IC/signed
+  bootstraps, 0.5x signed returns, period summary) and
+  `tests/test_diagnostics.py` (6 synthetic tests).
+- Notebook 10: load `inputs` once and pass them to the official A rerun; added
+  §7 with the flip signal, signed horizon profile, marginal/cumulative decay,
+  IC and bins, block-bootstrap IC, same-settle vs t+1 timing, per-root signed
+  returns/stability, and test-period MDE. Renamed the old reading to §8 and
+  updated it.
+- Adopted `target_flip = -sign(spread_dollar)` and
+  `score_flip = -carry_ann`; masked illiquid pair-dates and non-positive leg
+  prices to match the traded universe; no signal/universe/cost logic changes.
+- Added D-025 and updated `docs/a_negative_result.md`,
+  `docs/diagnostics_plan.md`, `README.md`, `docs/HANDOFF.md`,
+  `docs/PROGRESS.md`.
+
+**Files changed:**
+- `src/diagnostics.py` (new)
+- `tests/test_diagnostics.py` (new)
+- `notebooks/10_idea_a_carry.ipynb`
+- `docs/decisions.md`
+- `docs/a_negative_result.md`
+- `docs/diagnostics_plan.md`
+- `README.md`
+- `docs/HANDOFF.md`
+- `docs/PROGRESS.md`
+- `docs/logs/AGENT_LOG.md`
+- `docs/logs/INDEX.md`
+
+**Commands:**
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 142 passed
+- `~/miniconda3/envs/mfe/bin/jupyter nbconvert --execute --to notebook
+  --inplace --ExecutePreprocessor.timeout=900 notebooks/10_idea_a_carry.ipynb`
+- `~/miniconda3/envs/mfe/bin/python scripts/clean_notebook_metadata.py
+  notebooks/10_idea_a_carry.ipynb`
+
+**Why:** The original A direction is a documented negative, but the observed
+sign is opposite. The user adopted the sign-flipped rule as a candidate and
+asked for gross signal-information tests before portfolio costs. Full is
+descriptive and 2016–2026 is a post-hoc confirmatory slice; no parameter was
+chosen on test.
+
+**Validation:** official A v2 numbers unchanged (full gross −0.484%, all-in
+−2.610%, overall net Sharpe −2.595; test gross −0.272%, all-in −1.464%).
+Flip gross results: full +0.631%/yr (Sharpe 0.633, NW t 4.286), train
++0.694% (0.672, 4.056), test +0.455% (0.512, 1.580; 80% MDE Sharpe 0.843).
+5-day ALL IC 0.048 / 0.045 / 0.071; per-root bootstrap p<0.05 11/24, 10/24,
+8/24. Verdict: suggestive, not confirmed. Notebook executes with no errors;
+figures `output/figures/idea_a_flip_*` and tables `output/v2_rerun/a_*.csv`
+are gitignored.
+
+**Commit:** `feat(diagnostics): add flip-carry information diagnostics to notebook 10`
+(`this commit`).
+
+**Next:** Review §7; then the final portfolio's cost/sizing layer. Do not tune
+the flip on 2016–2026. The A failure-diagnostic card, B and D cards remain
+deferred.

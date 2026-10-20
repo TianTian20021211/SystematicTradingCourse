@@ -2,6 +2,9 @@
 
 **最后更新：** 2026-10-20
 **A baseline：** `bd6691b`；**A diagnosis：** `f02f18b`。  
+**A flip：** D-025；adopted candidate signal；gross 信息检验在 notebook 10 §7；
+test 为 suggestive, not confirmed；成本 deferred。
+
 **B pre-test：** `d257e0e`。  
 **C baseline + hedge-ratio + Kalman variant：** 已合入 main；C 已作为
 mixed/negative 收尾。  
@@ -47,6 +50,13 @@ gross → all-in net：
 **v2 是正式结果（D-019）**；v1 仅作历史对照。结论仍是 negative/mixed；
 v1/v2 不可直接比较。详见 notebooks 10–14、
 `docs/v1_v2_comparison.md` 和 `docs/notebook_history.md`。
+
+**A flip（D-025）：** 原始 A 方向仍是 closed negative，正式 v2 结果不变。
+`target_flip = -sign(spread_dollar)` 是 adopted candidate signal；notebook 10
+§7 的 gross 信息检验：full +0.631%/yr（Sharpe 0.633，NW t 4.286）、train
++0.694%（0.672，4.056）、test +0.455%（0.512，1.580；80% MDE 0.843）。
+test 方向为正但不显著，结论 **suggestive, not confirmed**；成本留到 final
+portfolio。不要把它放进上面的 all-in net 表。
 
 ---
 
@@ -127,6 +137,9 @@ merge 后保持本地，不要 push。
 **A、B、C 1:1、C rolling-OLS、C Kalman、D 都是负结果或 mixed-negative；
 A/B 已收尾（不再调参/不做 rescue），C/D 已 closed 并合入 main；
 下一步是 E 和 H。** v1 结果保留为历史 baseline，见 `docs/v1_v2_comparison.md`。
+**A flip（D-025）是 separately adopted candidate signal：** 原始 A 方向仍是
+closed negative；`target_flip = -sign(spread_dollar)` 的 gross 信息检验在
+notebook 10 §7，test 为 suggestive, not confirmed，成本 deferred。
 
 ---
 
@@ -235,6 +248,7 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 | D-022 | E 结果：paper timing Sharpe 2.03，t+1 后消失；closed as not tradable |
 | D-023 | E follow-ups：fit significance、paper-timing costs、Kalman A/B not adopted |
 | D-024 | 云端 E 并入 D-020 布局；E 决策/日志重编号 |
+| D-025 | A flip：`target_flip = -sign(spread)` 为 adopted candidate carry signal；gross 信息检验、成本 deferred、不做 test tuning |
 
 完整内容见 `docs/decisions.md`。
 
@@ -300,8 +314,9 @@ cap 任何数据。**NG 方向对、CL 不对；aggregate 不可交易，C 收�
 - D 已 closed 为 documented negative/mixed；不做 test-set tuning；
   D-x（cross-sectional basis-momentum）是单独的 backlog，不混入 D。
 - H（holding-period scan）的正式实现；monthly engine support 已就绪。
-- A/B 已收尾，不再做变体或调参；residual B 不计划，除非以后作为独立
-  预注册 idea。
+- 原始 A/B 方向已收尾，不再做变体或调参；A flip 是 separately adopted
+  candidate signal（D-025），其 gross 信息检验已完成；不做 flip test tuning。
+  residual B 不计划，除非以后作为独立预注册 idea。
 - Robustness：D=5/20、liquidity buckets、tick-based cost、
   point-in-time D=10 proxy。
 - 最终 liquidity threshold（baseline 不硬筛）。
@@ -385,7 +400,9 @@ B 的 adjacent-carry rank 在成本前就为负；C 的 1:1、rolling-OLS 和 Ka
    （D-021–D-023，notebook 14）；
 4. 做 H（holding-period scan）；monthly engine support 已就绪；
 5. D-x（cross-sectional basis-momentum）作为独立 backlog，等 H 之后决定；
-6. 不要用 test 调参；A/B 已收尾，C/D 不再做 rescue 变体。
+6. 不要用 test 调参；原始 A/B 已收尾，C/D 不再做 rescue 变体；
+7. A flip 的 gross 信息检验已完成（D-025，notebook 10 §7）；下一步是
+   final portfolio 的成本/sizing；不要用 2016–2026 调 flip。
 
 ---
 
@@ -393,7 +410,9 @@ B 的 adjacent-carry rank 在成本前就为负；C 的 1:1、rolling-OLS 和 Ka
 
 `docs/diagnostics_plan.md` 记录了 A/B/D 的诊断协议：v2 rerun 为主，per-root
 Sharpe bootstrap CI + 3 年窗口正收益比例，A 的 days-to-expiry / beta-neutral /
-seasonality，B 的一段话，D 的机制检验待下一次对话确认。**尚未实现。**
+seasonality，B 的一段话，D 的机制检验待下一次对话确认。**部分实现
+（2026-10-20）：** A flip 的 gross 信息检验在 notebook 10 §7（D-025）；
+A 的 failure-diagnostic card、B 和 D 的 card 仍未实现。
 
-下一步：新对话先确认 D 的机制检验和是否需要 A 的 v1 对齐 robustness，再写
-`src/diagnostics.py` + `notebooks/15_failure_diagnostics.ipynb`。
+下一步：确认 D 的机制检验和是否需要 A 的 v1 对齐 robustness，再补
+`src/diagnostics.py` 的 A/B/D card 和（如需要）`notebooks/15_failure_diagnostics.ipynb`。
