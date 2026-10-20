@@ -40,6 +40,7 @@ documented negative/mixed；monthly engine support 已加入。
 - `cf94b1f` `feat(curve-momentum): add idea D baseline notebook`
 - `8a92198` `docs(curve-momentum): record idea D baseline`
 - `c3e9fce` `docs(logs): record idea D baseline commit hash`
+- `3bb0f36` `docs(handoff): record idea D local merge handoff`
 
 **Working tree：** clean；`pytest -q` → 80 passed；notebook 06 已执行。
 
