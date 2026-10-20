@@ -2948,3 +2948,37 @@ tradable t+1 gross −0.18% (−0.11); k = 5/20 do not turn it positive.
 
 **Next:** E evaluation-figure slide and per-commodity discussion slide;
 notebook 14 should add the interior-LOO result.
+
+---
+
+## LOG-0066 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Final deck, continued: trading-environment slide and idea-E slides
+4–5 (evaluation figures, per-commodity discussion), highlights, TC1–TC3 note.
+
+**What changed:**
+- `presentations/final/main.tex`: new slide "The simulated trading
+  environment" after the engine slide (fill at the t+1 settle with TAS
+  availability by exchange and year, cost table with calibration sources,
+  portfolio size $100k–$30m, default $1m equal 1/N); E slide 4 (horizon
+  decay and cumulative return at both timings); E slide 5 (per-commodity
+  Sharpe vs interior LOO R², λ dependence); paper λ explained; TC1–TC3 in the
+  Table 14 caption; key phrases highlighted; "E · Results" placeholder removed.
+- `presentations/final/refs.bib`: Szakmary et al. (2010), Wang, Garcia and
+  Irwin (2014), Gao et al. (2018), Tóth et al. (2011), Bouchaud et al. (2018).
+- `scripts/make_slide_figures.py`: `e_horizon_decay`, `e_nav_timing`,
+  `e_root_data`, `e_root_discussion`.
+
+**Why:** user request while preparing the final presentation.
+
+**Validation / results:** deck compiles. TAS (CME/ICE notices): energy 2006,
+ICE softs 2008–09, metals ~2010–11, grains and livestock June 2015; none found
+for oats, rough rice, lumber. Paper-timing gross Sharpe by λ rule
+(1992–2019): paper 1.88, fixed 4 0.64, rolling SSR −0.25. Rank correlation of
+per-commodity paper-timing Sharpe with interior LOO R²: −0.16; livestock fits
+worst but is strongest. `python -m pytest -q` passes.
+
+**Commit:** `feat(slides): trading-environment slide and idea-E evaluation and discussion slides` (`this commit`).
+
+**Next:** fill the E rows in the roadmap and conclusion tables; portfolio
+slide; notebook 14 should record the interior-LOO and λ-dependence findings.

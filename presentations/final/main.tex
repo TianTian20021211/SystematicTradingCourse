@@ -298,6 +298,60 @@ Adjacent pairs      & 610{,}801 \\
 \end{frame}
 
 % =====================================================================
+\begin{frame}{The simulated trading environment}
+\footnotesize
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.49\textwidth}
+\textbf{Fill at the settlement price}
+\begin{itemize}
+  \item Signal at the $t$ settle, \key{fill at the $t+1$ settle}
+  \item Trade at Settlement orders allow this fill in the front 2 to 4 months:
+        energy since 2006, softs 2009, metals 2011, grains and livestock 2015
+  \item Not before these dates, nor in oats, rough rice and lumber, where the
+        half-spread charge proxies the gap to the settle
+\end{itemize}
+\end{column}
+\begin{column}{0.49\textwidth}
+\textbf{Portfolio size}
+\begin{itemize}
+  \item Default \key{\$1m, equal $1/N$} across commodities, equal-notional
+        legs. We test \$100k to \$30m
+  \item Too small: at \$100k one commodity's budget is below one contract
+  \item Too large: square-root impact grows from 1.4 bp/yr at \$1m to
+        63 bp/yr at \$30m and needs better execution
+\end{itemize}
+\end{column}
+\end{columns}
+\vspace{-0.8ex}
+\begin{table}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}L{1.4cm} L{5.6cm} L{6.0cm}@{}}
+\toprule
+Cost & Model, per traded leg & Calibration \\
+\midrule
+Half-spread
+  & $0.5$ tick $\times\,(10^4/\mathrm{ADV})^{0.18}$, at most $10\times$.
+    One half-spread per listed spread order
+  & One-tick quoted spread \parencite{szakmary2010trend}, volume elasticity
+    $-0.18$ \parencite{wang2014behavior} \\
+Fees
+  & \$1.5 per contract per side on every leg
+  & Exchange, clearing and broker fees \parencite{gao2018market}, close to
+    current CME and ICE schedules \\
+Impact
+  & $Y\sigma\sqrt{Q/\mathrm{ADV}}$ per unit of traded notional, $Y=0.5$,
+    first contract free
+  & Square-root law \parencite{toth2011anomalous, bouchaud2018trades} \\
+\bottomrule
+\end{tabular}
+\caption{Costs charged on top of the settlement price. $\sigma$ and ADV are
+the leg's lagged 60-day volatility and 20-day volume.}
+\end{table}
+\end{frame}
+
+% =====================================================================
 \begin{frame}{Roadmap: five ideas, one pipeline}
 \begin{table}
 \centering
@@ -780,9 +834,9 @@ F_t(M)=\beta_{L,t}
           $<0$ contango
     \item Curvature $\beta_C$: a hump or dip in the middle of the curve
   \end{itemize}
-  \item \key{Trade, time series per commodity}: if $\Delta\beta_{S,t}>0$, long
-        the 1st and short the 4th contract, else the reverse. Fill at $t+1$,
-        hold one day, $1/N$ budget, equal-notional legs
+  \item \key{Trade, time series per commodity}: \hl{if $\Delta\beta_{S,t}>0$,
+        long the 1st and short the 4th contract, else the reverse}. Fill at
+        $t+1$, hold one day, $1/N$ budget, equal-notional legs
 \end{itemize}
 \end{column}
 \begin{column}{0.41\textwidth}
@@ -800,18 +854,19 @@ F_t(M)=\beta_{L,t}
 \begin{itemize}
   \item \textcite{nelson1987parsimonious} model the fixed-income forward curve,
         Eq.~(\ref{eq:nsfwd}), and Eq.~(\ref{eq:ns}) is its average over $[0,M]$.
-        A futures price is not such an average, so Eq.~(\ref{eq:ns}) need not hold
+        A futures price is not such an average, so \key{Eq.~(\ref{eq:ns}) need
+        not hold}
         {\scriptsize
         \begin{equation}\label{eq:nsfwd}
         f(M)=\beta_L+\beta_S\,e^{-\lambda M}+\beta_C\,\lambda M\,e^{-\lambda M}
         \end{equation}}
         \vspace{-2.6ex}
-  \item Only futures data can tell whether each added factor describes the term
-        structure significantly better
+  \item Only futures data can tell whether \key{each added factor} describes
+        the term structure \key{significantly better}
   \item Nested fits $\beta_L$, then $\beta_L+\beta_S$, then Eq.~(\ref{eq:ns}),
-        scored by the out-of-sample $R^2$ of the held-out 2nd or 3rd contract.
-        Holding out the 1st or 4th is extrapolation, where $\beta_C$ helps 10
-        commodities and hurts 10
+        scored by the \key{out-of-sample $R^2$ of the held-out 2nd or 3rd
+        contract}. Holding out the 1st or 4th is extrapolation, where $\beta_C$
+        helps 10 commodities and hurts 10
 \end{itemize}
 \vspace{-1.4ex}
 \begin{figure}
@@ -829,18 +884,18 @@ $\beta_C$ helps 23.}
 \begin{column}{0.49\textwidth}
 \textbf{From today's curve to a position}
 \begin{itemize}
-  \item Fit Eq.~(\ref{eq:ns}) at the $t$ settle. If $\Delta\beta_{S,t}>0$, long
-        the 1st and short the 4th contract, else the reverse
-  \item Equal-notional legs, $1/N$ across commodities, 21 commodities,
-        1992--2019, paper $\lambda$
+  \item Fit Eq.~(\ref{eq:ns}) at the $t$ settle. \hl{If $\Delta\beta_{S,t}>0$,
+        long the 1st and short the 4th contract, else the reverse}
+  \item Paper $\lambda_t=1.7933/\bar M_t$ with $\bar M_t$ the mean maturity:
+        the curvature peak sits at $\bar M_t$, so $\lambda_t$ moves daily
 \end{itemize}
 \end{column}
 \begin{column}{0.49\textwidth}
 \textbf{Timing: the paper versus a tradable fill}
 \begin{itemize}
-  \item Paper: fill at the signal's own settle and earn $[t,\,t+1]$. Not
-        tradable, the settle is published after the close
-  \item Tradable: fill at $t+1$ and earn $[t+1,\,t+2]$, or hold $k$
+  \item Paper: fill at the signal's own settle and earn $[t,\,t+1]$.
+        \key{Not tradable}, the settle is published after the close
+  \item Tradable: \key{fill at $t+1$} and earn $[t+1,\,t+2]$, or hold $k$
         overlapping sleeves
 \end{itemize}
 \end{column}
@@ -849,26 +904,56 @@ $\beta_C$ helps 23.}
 \begin{table}
 \centering
 \scriptsize
-\renewcommand{\arraystretch}{0.92}
+\renewcommand{\arraystretch}{0.86}
 \setlength{\tabcolsep}{3.5pt}
 \input{tables/e_backtest.tex}
-\caption{Slope strategy, \$1m. Annualized return in percent, annualized Sharpe
-($\times\sqrt{252}$) in parentheses.}
+\caption{Slope strategy, 21 commodities, 1992--2019, \$1m. Annualized return in
+percent, annualized Sharpe ($\times\sqrt{252}$) in parentheses. Paper costs per
+side: TC1 \$0.75 per contract, TC2 0.835 bp of notional, TC3 TC1 plus 1/8 tick.}
 \end{table}
 \end{frame}
 
-\begin{frame}{E \textperiodcentered\ Results}
-\begin{center}
-\begin{minipage}{0.82\linewidth}
-\begin{block}{To be filled}
+\begin{frame}{E \textperiodcentered\ Where the paper's return comes from}
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=4.1cm]{figures/e_horizon_decay.pdf}
+\caption{Mean signed spread return of the slope signal in each one-day window
+after the signal, 95\% Newey--West CI.}
+\end{figure}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{figure}
+\centering
+\includegraphics[height=4.1cm]{figures/e_nav_timing.pdf}
+\caption{Cumulative return at the paper timing and at the tradable $t+1$
+fill, gross and net of the paper's TC1.}
+\end{figure}
+\end{column}
+\end{columns}
+\takeaway{The whole effect sits in $[t,\,t+1]$, the window that starts at the
+settle that produced the signal. One day of execution delay removes it, so the
+replication succeeds but the strategy cannot be traded.}
+\end{frame}
+
+\begin{frame}{E \textperiodcentered\ Which commodities, and does a good fit help?}
 \footnotesize
 \begin{itemize}
-  \item Replication at the paper's timing, then the tradable $t+1$ fill
-  \item Costs, $\lambda$ choice and robustness
+  \item \key{Fit quality does not predict the edge}: rank correlation of
+        paper-timing Sharpe with LOO $R^2$ is $-0.16$
+  \item Livestock fits worst yet is among the strongest: $\Delta\beta_{S,t}$
+        picks up settlement noise that reverses the next day
+  \item The effect \key{depends on $\lambda$}: Sharpe 1.88 (paper rule), 0.64
+        ($\lambda=4$), $-0.25$ (rolling fit), 1992--2019
 \end{itemize}
-\end{block}
-\end{minipage}
-\end{center}
+\vspace{-1.6ex}
+\begin{figure}
+\centering
+\includegraphics[width=0.84\linewidth]{figures/e_root_discussion.pdf}
+\caption{Gross Sharpe at both timings (top) and bootstrap of the median interior
+LOO $R^2$ (bottom), paper $\lambda$, 1986--2026.}
+\end{figure}
 \end{frame}
 
 % =====================================================================
