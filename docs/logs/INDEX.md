@@ -29,5 +29,6 @@
 | LOG-0025 | 2026-10-19 | Phase 6j | Claude Code | Reconcile C branch with A/B main after rebase | AGENTS.md, README.md, docs/HANDOFF.md, docs/PROGRESS.md, scripts/run_all.sh | `f68822b` |
 | LOG-0026 | 2026-10-19 | Phase 6k | Claude Code | Kalman hedge-ratio variant and C close-out | src/kalman.py, tests/test_kalman.py, docs/decisions.md, docs/*.md | `48ae998` |
 | LOG-0027 | 2026-10-19 | Phase 7 | Claude Code | Merge idea C into main and reconcile A/B docs | AGENTS.md, README.md, docs/HANDOFF.md, docs/PROGRESS.md, docs/onboarding.md, docs/logs/* | `86dd750` |
-| LOG-0028 | 2026-10-19 | Phase 8a | Claude Code | Monthly engine + curve-momentum / basis-momentum signal | src/curve.py, src/backtest.py, src/signals.py, tests/test_backtest.py, tests/test_curve_momentum.py | pending |
-| LOG-0029 | 2026-10-19 | Phase 8b | Claude Code | Idea D baseline notebook and diagnostics | notebooks/06_curve_momentum.ipynb, scripts/run_all.sh | pending |
+| LOG-0028 | 2026-10-19 | Phase 8a | Claude Code | Monthly engine + curve-momentum / basis-momentum signal | src/curve.py, src/backtest.py, src/signals.py, tests/test_backtest.py, tests/test_curve_momentum.py | `4db6849` |
+| LOG-0029 | 2026-10-19 | Phase 8b | Claude Code | Idea D baseline notebook and diagnostics | notebooks/06_curve_momentum.ipynb, scripts/run_all.sh | `cf94b1f` |
+| LOG-0030 | 2026-10-19 | Phase 8c | Claude Code | Record idea D baseline and close-out docs | README.md, AGENTS.md, paper/README.md, docs/* | pending |

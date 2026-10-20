@@ -304,6 +304,33 @@ Conventions:
   them. NaN windows do not open new positions and do not force an exit.
 - `evaluation="daily"` raises `NotImplementedError` in the current baseline.
 
+### 10.3d Curve-momentum / basis-momentum signal (idea D)
+
+`src.signals.curve_momentum_signal()` returns a complete daily target path:
+
+| Column | Description |
+|---|---|
+| `date`, `root` | Keys |
+| `commodity`, `sector` | Labels |
+| `target` | +1 (long near / short far), −1 (reverse), 0 (flat); forward-filled from the last month-end |
+| `score` | `mom_near − mom_far` on signal dates; NaN otherwise |
+| `is_signal_date` | The root's last pair date in a month, or a global month-end used to reset a month with no pair |
+| `rank_near`, `rank_far` | Ranks used at the signal date; NaN otherwise |
+| `mom_near`, `mom_far` | 12-month rank-slot returns at the signal date; NaN otherwise |
+
+Construction:
+
+- Build a rank return index per `(root, rank)` by compounding
+  `1 + ret_rank`; NaN and negative-price/`ret_rank <= -1` days are held flat.
+- At each month-end, compare the trailing 12-month index returns of the
+  current `rank_near` and `rank_far`.
+- A window needs at least 80% valid returns; a window containing
+  `negative_price` or `ret_rank <= -1` is invalid.
+- A month with no pair gets an explicit zero target; a NaN month-end score
+  also sets the next month to zero.
+- The signal is mathematically basis-momentum; P&L still uses the raw dollar
+  spread through the engine.
+
 ### 10.4 Target legs
 
 `src.backtest.build_target_legs()` returns one row per leg:
@@ -338,6 +365,9 @@ Conventions:
 
 - Signal at t close, fill at t+1 settlement close. `PX_SETTLE` is treated as the
   close/fill price.
+- `BacktestConfig.rebalance` supports `last_trading_day_of_week` (default) and
+  `last_trading_day_of_month`; the signal layer must use the same
+  `curve.weekly_rebalance_dates` / `curve.monthly_rebalance_dates` helper.
 - Gross-notional return uses the previous day's last valid prices.
 - Costs are 5 bps per leg of that leg's notional, applied to actual net traded
   legs; a two-leg entry/exit ≈ 5 bps of gross, a four-leg roll/flip ≈ 10 bps.

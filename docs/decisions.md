@@ -283,3 +283,53 @@ Status values: `proposed`, `accepted`, `superseded`.
   LOG-0026 (Kalman/close-out). If a daily CL/NG replication is ever revisited,
   it must be a separate pre-registered project with engine daily-rebalance
   support.
+
+---
+
+## D-013 · Curve-momentum / basis-momentum baseline (D)
+
+- **Status:** accepted
+- **Date:** 2026-10-19
+- **Context:** A/B/C are closed as negative or mixed-negative. Idea D is the
+  next signal family: within-commodity curve momentum. The signal is
+  mathematically basis-momentum: the difference between the trailing returns
+  of the near and far rank slots (Paschke, Prokopczuk & Wese Simen 2020;
+  Boons & Porras Prado 2019). The baseline must reuse the K=5 panel and the
+  event-loop engine, and must not change A/C behavior.
+- **Decision:**
+  1. **Universe:** N=2, the main pair's current `rank_near` / `rank_far`;
+     no liquidity filter; all 24 commodities.
+  2. **Signal:** 12-month formation; each root's last pair date in a month is
+     its month-end; build a roll-adjusted rank return index from `ret_rank`
+     by compounding `1 + ret_rank`, skipping NaN and negative-price/broken
+     days; require at least 80% valid returns in the window; a window
+     containing `negative_price` or `ret_rank <= -1` is invalid. Score =
+     `mom_near - mom_far`; target = sign(score), 0 if either mom is missing
+     or the score is 0.
+  3. **Timing:** signal at month-end close, fill at t+1 close. The month-end
+     target is forward-filled to every trading date until the next month-end
+     so mid-month rolls keep the position. A missing month-end score sets the
+     next month's target to 0.
+  4. **Positions and costs:** ±1 units on the two legs; equal-weight across
+     active roots; 5 bps per leg; report gross and net.
+  5. **Sample:** full 1986–2026; train 1986–2015; test 2016–2026.
+  6. **First result (K=5, monthly):** full gross +0.55%/yr, net −0.99%/yr,
+     net Sharpe −0.04, max drawdown −34.8%, turnover 16.1×; train gross
+     +0.85%, net −0.65%; test gross −0.28%, net −1.89%. Static always-+1
+     gross +0.35% / net −0.84%, turnover 11.4×; D's gross is slightly higher
+     but its net is worse. Monthly net Sharpe: full −0.90, train −0.61, test
+     −1.66; block-bootstrap t-stat full −5.87, test −5.41. The gross result is
+     weak and not robust out of sample; 5 bps/leg costs turn it negative. This
+     is a documented negative/mixed baseline, not a tuning target.
+  7. **Deferred:** N=4, weekly/6-month variants, liquidity thresholds,
+     inverse-vol, decay, D-vs-A and carry-regime diagnostics, H. `D-x`
+     (cross-sectional basis-momentum) is a separate backlog item: rank
+     commodities by BM, long the top bucket and short the bottom bucket. It
+     must not be mixed into this baseline.
+- **Consequences:** The monthly rebalance helper is shared by the signal and
+  engine and is reusable for H. `src/signals.py` gains
+  `CurveMomentumParams` / `curve_momentum_signal`; `src/curve.py` gains
+  `monthly_rebalance_dates`; `src/backtest.py` accepts
+  `rebalance="last_trading_day_of_month"` without changing weekly behavior.
+  The D notebook is `06_curve_momentum.ipynb`. Do not use the 2016–2026 test
+  sample for tuning; A/B/C remain closed.

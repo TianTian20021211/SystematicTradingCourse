@@ -56,7 +56,7 @@ summary = metrics.summarize(result)
 
 `run_backtest` 不读文件；只接受 DataFrame，所以单测可以用 synthetic frames。
 
-## 加一个新 signal（例如 C）
+## 加一个新 signal（C / D）
 
 C 需要一个 roll-safe 的连续价差序列；这是 `src/continuous.py` 的职责，
 signal function 只消费 `spread_index`：
@@ -72,6 +72,19 @@ signal = signals.mean_reversion_signal(
 )
 targets = backtest.build_target_legs(signal, bt["spread"])
 result = backtest.run_backtest(bt["spread"], bt["contract"], targets, config)
+```
+
+D 需要 rank-level 的 roll-adjusted 收益；这是 `panel.build_return_panel`
+的职责，signal function 只消费 `ret_rank`：
+
+```python
+returns = panel.build_return_panel(bt["rank"], bt["contract"])
+signal = signals.curve_momentum_signal(bt["spread"], returns)
+targets = backtest.build_target_legs(signal, bt["spread"])
+result = backtest.run_backtest(
+    bt["spread"], bt["contract"], targets,
+    backtest.BacktestConfig(rebalance="last_trading_day_of_month"),
+)
 ```
 
 signal function 输出同样的 `date, root, score, target`；
@@ -95,7 +108,7 @@ Engine 只认腿级 `units`，所以不用改。
 ```python
 BacktestConfig(
     cost_bps_per_leg=5.0,
-    rebalance="last_trading_day_of_week",
+    rebalance="last_trading_day_of_week",  # or "last_trading_day_of_month"
     execution_lag=1,
     missing_exit_sessions=5,
     return_denominator="gross_notional",
@@ -104,8 +117,12 @@ BacktestConfig(
 )
 ```
 
-当前只支持 `execution_lag=1`、weekly rebalance、gross-notional return；
-其他值会显式报错，不会静默忽略。
+当前只支持 `execution_lag=1`、weekly/monthly rebalance、gross-notional
+return；其他值会显式报错，不会静默忽略。Signal 和 engine 必须使用同一个
+`curve.weekly_rebalance_dates` / `curve.monthly_rebalance_dates`，避免
+signal 日期和调仓日期漂移。`metrics.conditional_mean` 仍按 weekly
+evaluation 写；monthly 结果用 `notebooks/06_curve_momentum.ipynb` 里的
+月度诊断，不要直接喂给它。
 
 ## Engine 的规则（必须知道）
 
@@ -148,4 +165,11 @@ C 的 Kalman hedge-ratio variant（rolling 252-day likelihood、每 60 天重估
 V/W、9 点 q grid）也已完成：aggregate full gross +0.98% / vol 8.9% /
 max DD −28.9%；per-root paper sample 里 NG 为正、CL 为负。5 bps 估算后仍为
 负，且 paper 的 Sharpe >2 没有在 weekly K=5 设置下复现。**C 作为
-mixed/negative 收尾**，不做 daily paper replication。D/B 还没实现。
+mixed/negative 收尾**，不做 daily paper replication。
+
+D（curve momentum / basis-momentum）baseline 已实现：N=2 main pair、
+12-month formation、monthly rebalance、±1、5 bps；结果见
+`notebooks/06_curve_momentum.ipynb` 和 `output/curve_momentum_*`。
+Full-sample gross 为正但很弱，net 为负；test gross 已经为负。D 作为
+documented negative/mixed baseline，不做 test-set tuning。`D-x`
+（cross-sectional basis-momentum）是单独的 backlog，不混入 D。

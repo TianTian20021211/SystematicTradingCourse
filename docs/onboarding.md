@@ -7,10 +7,11 @@
 
 用 1986–2026 的 Bloomberg 商品期货数据研究 calendar spread。数据层已完成：
 把 generic M1–M4 还原成真实合约，建 rank/contract/return/spread panel。
-A（carry）、B 和 C（mean reversion）的 baseline 都已跑通，但在最简 K=5
-版本里都是负结果；C 的 rolling-OLS 和 Kalman hedge-ratio variant 也没有
-改善。A/B 已收尾（不再调参/不做 rescue），C 已 closed 并合入 main；
-D/H 是下一阶段。
+A（carry）、B、C（mean reversion）和 D（curve momentum / basis-momentum）
+的 baseline 都已跑通，但在最简 K=5 版本里都是负结果或 mixed-negative；
+C 的 rolling-OLS 和 Kalman hedge-ratio variant 也没有改善。A/B 已收尾
+（不再调参/不做 rescue），C/D 已 closed 并合入 main；H 是下一阶段，
+D-x（cross-sectional basis-momentum）是 backlog。
 
 ## 2. 先读什么
 
@@ -42,7 +43,7 @@ XLSX 只用于生成 `data/metadata/commodities.csv`；日常 notebook 不依赖
 
 ## 4. 环境与运行
 
-一条命令（会安装依赖、跑 tests、执行 A/B/C notebook）：
+一条命令（会安装依赖、跑 tests、执行 A/B/C/D notebook）：
 
 ```bash
 bash scripts/run_all.sh
@@ -64,6 +65,7 @@ notebooks/02_carry.ipynb             # A baseline
 notebooks/03_mean_reversion.ipynb    # C baseline + hedge-ratio
 notebooks/04_a_diagnose.ipynb        # A 负结果诊断（依赖 02 的输出）
 notebooks/05_b_pretest.ipynb         # B adjacent-carry 预测试
+notebooks/06_curve_momentum.ipynb    # D curve-momentum / basis-momentum baseline
 ```
 
 测试（不需要 raw data）：
@@ -90,8 +92,10 @@ python -m pytest -q
 panel、liquidity diagnostics、adjacent-pair robustness。
 A baseline 和 A 诊断已完成（`02_carry`、`04_a_diagnose`），B 预测试也已完成
 （`05_b_pretest`），C baseline + rolling-OLS + Kalman variant 已完成
-（`03_mean_reversion`、`src/kalman.py`）；A/B/C 都是负结果或
-mixed-negative。A/B 已收尾，C 已 closed 并合入 main；下一步是 D/H；
+（`03_mean_reversion`、`src/kalman.py`），D curve-momentum baseline 也已完成
+（`06_curve_momentum`、`src/signals.py` 的 `curve_momentum_signal`）；
+A/B/C/D 都是负结果或 mixed-negative。A/B 已收尾，C/D 已 closed 并合入
+main；下一步是 H；D-x 是 backlog。
 先读 `docs/PROGRESS.md` 和 `docs/backtest_framework.md`。
 不要用 test set 调参。
 如果发现数据问题，先更新 `docs/logs/AGENT_LOG.md` 和 `docs/decisions.md`。

@@ -1390,3 +1390,45 @@ to add robustness or move to H.
 **Commit:** `feat(curve-momentum): add idea D baseline notebook`
 
 **Next:** Record the D decision and close-out docs; then H.
+
+---
+
+## LOG-0030 · 2026-10-19 20:36 · Phase 8c · Claude Code
+
+**Goal:** Record the D decision and close-out documentation.
+
+**Actions:**
+- Added D-013: D baseline conventions, first result, and the deferred
+  N=4/weekly/6m/liquidity/inverse-vol/decay list.
+- Recorded `D-x` (cross-sectional basis-momentum) as a separate backlog
+  item, not part of D.
+- Updated `README.md`, `AGENTS.md`, `docs/HANDOFF.md`,
+  `docs/PROGRESS.md`, `docs/onboarding.md`,
+  `docs/backtest_framework.md`, and `docs/data_dictionary.md` for D.
+- Updated `paper/README.md` to list the local `basis_momentum.pdf`.
+- Added LOG-0028–LOG-0030 and INDEX rows.
+
+**Files changed:**
+- `README.md`, `AGENTS.md`, `paper/README.md`
+- `docs/HANDOFF.md`, `docs/PROGRESS.md`, `docs/decisions.md`,
+  `docs/onboarding.md`, `docs/backtest_framework.md`,
+  `docs/data_dictionary.md`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 80 passed
+- `git diff --check` → clean
+
+**Why:** D is a documented negative/mixed baseline; the docs must say so
+without inviting test-set tuning. D-x is explicitly deferred and must not be
+mixed into D.
+
+**Validation:**
+- D-013 matches the executed notebook summary and static/monthly tables.
+- README/AGENTS/HANDOFF/PROGRESS/onboarding/backtest_framework/
+  data_dictionary all list D and notebook 06 consistently.
+- No raw data, PDFs, processed parquet, or output files are staged.
+
+**Commit:** `docs(curve-momentum): record idea D baseline`
+
+**Next:** H (holding-period scan); D-x remains a separate backlog item.

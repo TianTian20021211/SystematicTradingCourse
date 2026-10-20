@@ -5,15 +5,18 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 用 1986–2026 的 Bloomberg 商品期货数据，研究同一商品不同到期月之间的 **calendar spread**：曲线形状、roll、carry、价差的可预测性与可交易性。
 
 > 这个 repo 是**数据层 + 研究脚手架**。数据层、A baseline、A 负结果诊断、
-> B 预测试、C baseline、C rolling-OLS hedge-ratio 和 C Kalman variant
-> 已完成；A/B/C 都是负结果或 mixed-negative。C 已 closed 并合入 main；
-> D/H 是下一阶段。
+> B 预测试、C baseline、C rolling-OLS hedge-ratio、C Kalman variant 和
+> D curve-momentum baseline 已完成；A/B/C/D 都是负结果或 mixed-negative。
+> C 和 D 已 closed；下一步是 H。
 >
 > A/B 的负结果在 **0 bps（不考虑 transaction cost）** 下已经成立；
-> C 的 1:1、rolling OLS 和 Kalman variant 也都不是稳健正的。5 bps/leg
-> 只是放大亏损，不改变符号。
+> C 的 1:1、rolling OLS 和 Kalman variant 也都不是稳健正的；D 的 gross
+> 很弱，5 bps 后为负，test 的 gross 已经为负。5 bps/leg 只是放大亏损，
+> 不改变符号。
 >
 > A/B 已收尾：不再调参数、不做 rescue 变体；报告里只简短说明 A/B 不行。
+> D 作为 documented negative/mixed baseline；D-x（cross-sectional
+> basis-momentum）是单独的 backlog，不混入 D。
 
 ---
 
@@ -30,13 +33,16 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 - [x] C baseline：continuous index + weekly mean-reversion；负结果
 - [x] C hedge-ratio variant：60-day rolling OLS；负结果
 - [x] C Kalman variant：rolling-likelihood DLM；mixed/negative，C closed
-- [ ] D/H（C 已合入 main）
+- [x] D curve-momentum / basis-momentum baseline：N=2、12m、monthly；
+      gross 弱、net 负，D documented negative/mixed
+- [x] Monthly rebalance engine support
+- [ ] H（holding-period scan）；D-x 是 backlog
 
 `notebooks/00_data_audit.ipynb`、`01_panel_build.ipynb`、`02_carry.ipynb`、
-`03_mean_reversion.ipynb`、`04_a_diagnose.ipynb` 和
-`05_b_pretest.ipynb` 已可从头运行；01 生成 `data/processed/*.parquet`，
+`03_mean_reversion.ipynb`、`04_a_diagnose.ipynb`、`05_b_pretest.ipynb` 和
+`06_curve_momentum.ipynb` 已可从头运行；01 生成 `data/processed/*.parquet`，
 02 生成 `output/carry_*`，03 生成 `output/mean_reversion_*`，04/05 生成
-诊断和 B 预测试输出（都不提交）。
+诊断和 B 预测试输出，06 生成 `output/curve_momentum_*`（都不提交）。
 
 **新对话 / 队友先读：** `docs/HANDOFF.md` → `AGENTS.md` → `docs/decisions.md` → `docs/logs/INDEX.md`。
 
@@ -77,7 +83,8 @@ MTH 9897 · Project 7 · Baruch MFE 2026
 
    第二个 notebook 会生成 `data/processed/*.parquet`（不提交到 repo）；
    第三个跑 A baseline，03 跑 C baseline + hedge-ratio，04 跑 A 诊断，
-   05 跑 B 预测试；结果写到 `output/`（不提交）。
+   05 跑 B 预测试，06 跑 D curve-momentum baseline；结果写到 `output/`
+   （不提交）。
 
 ---
 
@@ -102,14 +109,14 @@ docs/
 src/                      # 所有数据处理逻辑（notebook 只调用）
   continuous.py           # roll-chained leg indices + rolling OLS hedge ratio
   kalman.py               # Kalman-filter hedge ratio (rolling-likelihood DLM)
-  signals.py              # signal functions（A carry; C mean reversion）
-  backtest.py             # target legs + event-loop engine
+  signals.py              # signal functions（A carry; C mean reversion; D curve momentum）
+  backtest.py             # target legs + event-loop engine（weekly/monthly）
   metrics.py              # summary / conditional mean / sector / plot
   a_diagnostics.py        # A 负结果诊断
   b_pre_test.py           # cheap adjacent-carry B 预测试
-notebooks/                # 00, 01, 02, 03, 04, 05
+notebooks/                # 00, 01, 02, 03, 04, 05, 06
 tests/                    # synthetic fixtures + parser/roll/spread/backtest tests
-scripts/run_all.sh        # 一键复现：依赖 + tests + A/B/C notebook
+scripts/run_all.sh        # 一键复现：依赖 + tests + A/B/C/D notebook
 
 data/raw/                  # 原始数据（本地；public repo 不提交）
 data/metadata/             # 24 商品元数据 + checksum（提交）
