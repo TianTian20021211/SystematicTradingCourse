@@ -117,7 +117,7 @@
 \subtitle{Project 7: Commodity Futures Calendar Spreads}
 \author{Jiaheng Han \& Tian Tian}
 \institute{Baruch College, MFE Program}
-\date{October 2026}
+\date{October 20, 2026}
 
 \begin{document}
 
@@ -1283,7 +1283,7 @@ Combined alphas, ridge, 22 days & $+0.57$ & $0.58$ & $+0.23$ & net positive in a
 % =====================================================================
 \appendix
 
-\begin{frame}{Backup: data QA}
+\begin{frame}{Appendix: data QA}
 \footnotesize
 \begin{itemize}
   \item 0 duplicate contract-date rows
@@ -1295,7 +1295,7 @@ Combined alphas, ridge, 22 days & $+0.57$ & $0.58$ & $+0.23$ & net positive in a
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Backup: cost model and definitions}
+\begin{frame}{Appendix: cost model and definitions}
 \begin{columns}[T, onlytextwidth]
 \begin{column}{0.48\textwidth}
 \footnotesize
@@ -1321,7 +1321,7 @@ Combined alphas, ridge, 22 days & $+0.57$ & $0.58$ & $+0.23$ & net positive in a
 \end{columns}
 \end{frame}
 
-\begin{frame}{Backup: A, per-root 5-day IC}
+\begin{frame}{Appendix: A, per-root 5-day IC}
 \begin{figure}
 \centering
 \includegraphics[width=0.86\linewidth]{figures/a_flip_ic_bootstrap.pdf}
@@ -1329,6 +1329,39 @@ Combined alphas, ridge, 22 days & $+0.57$ & $0.58$ & $+0.23$ & net positive in a
 $p<0.05$. 11/24 roots are significant. In the test slice 8/24 are significant
 and only 1/24 has a positive 95\% CI.}
 \end{figure}
+\end{frame}
+
+\begin{frame}{Appendix: where does the 22-day ridge book earn?}
+\begin{columns}[T, onlytextwidth]
+\begin{column}{0.47\textwidth}
+\begin{table}
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{0.92}
+\setlength{\tabcolsep}{4pt}
+\input{tables/f_groups.tex}
+\caption{Net-of-all-cost contribution in bp of capital per year, Sharpe in
+parentheses, ridge every 22 days, \$1m, equal $1/N$.}
+\end{table}
+\end{column}
+\begin{column}{0.50\textwidth}
+\footnotesize
+\begin{itemize}
+  \item \key{Monthly contracts are the steadiest}: about 11 to 13 bp a year in
+        every period. Adjacent months are close and evenly spaced, so the curve
+        signal is continuous
+  \item \key{4 to 5 contracts a year pay only in validation}: two to three
+        months between legs, across harvests, so seasonality enters the spread
+  \item Cash-settled roots (CO, FC, LH) earn more per root, but there are
+        only three
+  \item \key{Confounded with sector}: monthly contracts are the energy complex
+        and two of three cash-settled roots are livestock. Descriptive, post hoc
+\end{itemize}
+{\scriptsize\color{slate}Cash settled: FC and LH against CME indices, CO
+against the ICE Brent Index (EFP delivery optional). Contracts per year are the
+months used by the M1 to M4 roll.}
+\end{column}
+\end{columns}
 \end{frame}
 
 \begin{frame}[allowframebreaks]{References}

@@ -129,7 +129,49 @@ def f_ridge_tex() -> Path:
     return path
 
 
+CASH_SETTLED = {"CO", "FC", "LH"}
+MONTHS_PER_YEAR = {"CL": 12, "CO": 12, "HO": 12, "NG": 12, "XB": 12, "BO": 8, "FC": 8, "LH": 8, "SM": 8, "S": 7,
+                   "GC": 6, "JO": 6, "LB": 6, "LC": 6, "RR": 6, "C": 5, "CC": 5, "CT": 5, "HG": 5, "KC": 5,
+                   "O": 5, "SI": 5, "W": 5, "SB": 4}
+
+
+def f_groups_tex(run: str = "every 22 days | equal") -> Path:
+    """Net-of-all-cost contribution of the 22-day ridge book by contract structure and settlement."""
+
+    import numpy as np
+
+    b = pd.read_parquet(config.OUTPUT_DIR / "alpha" / "by_root_lbfix.parquet")
+    b = b.loc[b["run"].eq(run)].assign(date=lambda d: pd.to_datetime(d["date"]))
+    b["net"] = b["pnl_gross"] - b[["cost_half_spread", "cost_fee", "cost_impact"]].sum(axis=1)
+    dates = pd.DatetimeIndex(sorted(b["date"].unique()))
+    m = b["root"].map(MONTHS_PER_YEAR)
+    groups = [("12 contracts a year", m.eq(12)), ("6 to 8 a year", m.between(6, 8)), ("4 to 5 a year", m.le(5)),
+              None, ("Cash settled", b["root"].isin(CASH_SETTLED)), ("Physically delivered", ~b["root"].isin(CASH_SETTLED))]
+    periods = [("1986-01-01", "2005-12-31"), ("2006-01-01", "2015-12-31"), ("2016-01-01", "2026-12-31")]
+    lines = [r"\begin{tabular}{@{}l r r r r@{}}", r"\toprule",
+             r"Group & Roots & Train & Valid & Test \\", r"\midrule"]
+    for g in groups:
+        if g is None:
+            lines.append(r"\midrule")
+            continue
+        name, mask = g
+        d = b.loc[mask].groupby("date")["net"].sum().reindex(dates, fill_value=0.0) / 1e6
+        cells = []
+        for lo, hi in periods:
+            x = d.loc[lo:hi]
+            cells.append((x.mean() * 252 * 1e4, x.mean() / x.std() * np.sqrt(252)))
+        lines.append(" & ".join([name, str(b.loc[mask, "root"].nunique())] + [rf"${_signed(r)}$" for r, _ in cells]) + r" \\")
+        lines.append(" & ".join(["", ""] + [rf"$({_signed(sr)})$" for _, sr in cells]) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    path = OUT_TEX / "f_groups.tex"
+    path.write_text("\n".join(lines) + "\n")
+    return path
+
+
 def main() -> None:
+    if "--groups" in sys.argv:
+        print(f_groups_tex())
+        return
     if "--ridge" in sys.argv:
         print(f_ridge_tex())
         return

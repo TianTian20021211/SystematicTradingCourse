@@ -3612,3 +3612,25 @@ formatting, Jiaheng's E-onwards slides; backup content is Tian's.
 matching Tian's note. `python -m pytest -q` passes.
 
 **Commit:** merge commit (`bc93057`).
+
+---
+
+## LOG-0081 · 2026-10-20 · Phase 15 · Claude Code
+
+**Task:** Final deck appendix: rename "Backup" to "Appendix", add a slide on
+where the 22-day ridge book earns by contract structure and settlement type,
+and date the title page October 20, 2026.
+
+**What changed:** `presentations/final/main.tex` (three frames renamed, new
+appendix frame with Table 19 from `scripts/make_slide_tables.py --groups`,
+`\date`), `presentations/final/tables/f_groups.tex`.
+
+**Validation / results:** net-of-all-cost contribution (bp/yr, Sharpe),
+train / valid / test: 12 contracts a year (energy) +10.8 / +11.5 / +12.9;
+6–8 a year +3.5 / +2.3 / +22.6; 4–5 a year −5.7 / +28.2 / −3.8; cash settled
+(CO, FC, LH) +5.3 / +2.4 / +11.8; physical +3.3 / +39.7 / +19.9. Groups are
+confounded with sector, descriptive only. CO is cash settled against the ICE
+Brent Index with optional EFP delivery (ICE product guide); FC and LH are cash
+settled against CME indices.
+
+**Commit:** `feat(slides): appendix on contract structure and settlement, title date` (`this commit`).
