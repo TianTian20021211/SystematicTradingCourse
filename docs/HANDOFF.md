@@ -36,6 +36,21 @@ validation 为负，所以没有被选中）。Gate 仍是 failed，C 仍 closed
 official weekly D-019 不变；图在 notebook 12 §12。复现：
 `python scripts/run_c_daily_audit.py --stage full --confirm-read-once`。
 
+**D-030 alpha 融合（2026-10-20）：** A–E 抽象成 12 个连续因子，train 上按
+horizon 做 day-block bootstrap 筛选（block 10 天），A（flip 方向）和 C 在
+所有 horizon 入选，B 只在长 horizon，D 从未入选；OLS/Ridge/Lasso/EN/RF/XGB
+在 validation 上 paired bootstrap 选模型（线性模型最好）。Validation IC
+0.036–0.124（随 horizon 上升）；头条 `[t+1,t+6]` linear、\$1m validation
+all-in net Sharpe 1.34。**Test 2016–2026 只读一次：gross Sharpe −0.21，
+net −0.61**，但 test IC 仍为正（5 天 0.028，21 天 0.141）；亏损集中在 LB
+（−42 bp/yr gross）。Notebook 15；复现 `python scripts/run_alpha.py
+--stage select` 后 `--stage test --confirm-read-once`。下一步：按流动性/
+风险预算 sizing、长 horizon，需新 decision 和 walk-forward 评估。
+**D-031 跟进：** IC 在约 42 天到顶、年化 IC 从 1 天起单调衰减；look-ahead
+检验通过；validation 选的低频（每 10 天调仓）test 仍为负；**事后**看
+`[t+1,t+22]` 预测每 22 天调仓 test net +0.57%/yr（Sharpe 0.45）——只能作为
+下一步 walk-forward 的预注册假设。
+
 **正式结果：** v2 重跑（D-019）；v1 数字仅作历史 baseline。旧 notebook
 02–08 已 retired（D-020），见 `docs/notebook_history.md`。
 

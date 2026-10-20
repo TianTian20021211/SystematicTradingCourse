@@ -2707,6 +2707,92 @@ used for tuning.
 
 ---
 
+## LOG-0061 · 2026-10-20 · Phase 14 · Claude Code
+
+**Task:** Alpha combination across ideas A–E (D-030): continuous factors,
+per-root day-block bootstrap IC screen with a block-length experiment, model
+zoo with paired bootstrap selection, time-series and cross-sectional
+monetisation with layered costs, read-once test.
+
+**What changed:**
+- New `src/alpha_factors.py` (12 factors, targets, causal scaling),
+  `src/alpha_screen.py` (joint date-block bootstrap, block sensitivity,
+  screen, yearly IC), `src/alpha_models.py` (pooled zoo, OOS predictions,
+  paired comparison), `src/alpha_portfolio.py` (sign/linear/band/xs rules,
+  round-trip cost, root characteristics/contribution),
+  `src/alpha_figures.py`.
+- `scripts/run_alpha.py` with `--stage select` (marks truncated at
+  2015-12-31) and `--stage test --confirm-read-once`
+  (`output/alpha/test_readonce.json`).
+- `notebooks/15_alpha_combination.ipynb` (Chinese narrative, 19 figures).
+- `tests/test_alpha.py` (9 synthetic tests).
+- D-030 in `docs/decisions.md`; README / HANDOFF pointers.
+
+**Commands:**
+- `python scripts/run_alpha.py --stage select` (~9 min)
+- `python scripts/run_alpha.py --stage test --confirm-read-once` (~1 min)
+- `python -m nbconvert --execute --to notebook --inplace notebooks/15_alpha_combination.ipynb`
+- `python -m pytest -q`
+
+**Why:** every idea alone is weak; the user asked whether combining them as
+alpha factors yields a usable spread forecast and strategy.
+
+**Validation / results:** block 10; A and C pass at all horizons, B at
+long horizons, D never; validation IC 0.036–0.124 rising with horizon;
+linear models ≥ trees; headline `[t+1,t+6]` linear validation net Sharpe
+1.34; test gross −0.21 / net −0.61 although test IC stays positive (0.028
+at 5 days, 0.141 at 21 days); LB alone −42 bp/yr gross in test.
+
+**Commit:** `feat(alpha): combine A–E into alpha factors, screen, model zoo and monetisation (D-030)` (`08119e3`).
+
+**Next:** liquidity- or risk-budgeted sizing and longer horizons as a new
+pre-registered decision; evaluate with walk-forward since the test slice has
+been read.
+
+---
+
+## LOG-0062 · 2026-10-20 · Phase 14 · Claude Code
+
+**Task:** D-031 follow-ups to the alpha combination: IC term structure to
+252 days, look-ahead check, pairwise model-difference grid, ex-LB reruns,
+per-commodity cumulative P&L, low-frequency execution experiments.
+
+**What changed:**
+- `src/alpha_factors.rolled_forward`; `src/alpha_portfolio.hold_between_rebalances`
+  and `run_rule(every=...)`; new figures in `src/alpha_figures.py`
+  (`ic_term_structure`, `lookahead_check`, `pairwise_diff_grid`,
+  `root_cumulative`, `lowfreq_grid`, `nav_configs`; rolling-IC labels).
+- `scripts/run_alpha.py` stages `horizons`, `exlb`, `lowfreq`,
+  `lowfreq_desc`.
+- Notebook 15: §4 term structure and pairwise grid, §5 look-ahead check,
+  §7 model-per-period note, §7b per-commodity / ex-LB, §7c low frequency,
+  updated conclusions.
+- `tests/test_alpha.py` (+2 tests), D-031, README/HANDOFF pointers.
+
+**Commands:**
+- `python scripts/run_alpha.py --stage horizons --n-boot 500`
+- `python scripts/run_alpha.py --stage exlb`
+- `python scripts/run_alpha.py --stage lowfreq`
+- `python scripts/run_alpha.py --stage lowfreq_desc`
+- `python -m nbconvert --execute --to notebook --inplace notebooks/15_alpha_combination.ipynb`
+- `python -m pytest -q`
+
+**Why:** user questions on the D-030 results (plateau, look-ahead, model
+windows, lumber, per-commodity P&L, lower-frequency trading).
+
+**Validation / results:** IC peaks ~42 days, annualised IC decays from day
+1; look-ahead check passes; validation low-frequency choice (every 10 days)
+net Sharpe 1.38 but negative in test; post-hoc `[t+1,t+22]` every-22-day
+configuration +0.57%/yr net in test (Sharpe 0.45). All post-test runs are
+labelled descriptive.
+
+**Commit:** `feat(alpha): horizon term structure, low-frequency execution and post-test diagnostics (D-031)` (`f34c519`).
+
+**Next:** pre-register a walk-forward study of long-horizon forecasts with
+monthly rebalancing, rolled-return targets and liquidity/risk budgets.
+
+---
+
 ## LOG-0063 · 2026-10-20 11:45 · Phase 15 · Claude Code
 
 **Goal:** Build a simple, compilable LaTeX framework for the 20-minute final
@@ -2773,3 +2859,53 @@ placeholder; the 20 minutes are talk time and Q&A is separate.
 
 **Next:** Merge `origin/main` (D-030/D-031 alpha combination) into local main;
 then fill figures, E and the portfolio section after the user's review.
+
+---
+
+## LOG-0064 · 2026-10-20 · Phase 15 · Claude Code
+
+**Goal:** Merge `origin/main` (D-030/D-031 alpha combination) into the local
+presentation branch, keep both sides' results, and make the merged tree
+testable.
+
+**Actions:**
+- Merged `origin/main` (5 commits, including `08119e3` D-030 and `f34c519`
+  D-031) into local `main` after the presentation commit.
+- Resolved the `AGENT_LOG.md` and `INDEX.md` conflicts by keeping the remote
+  entries as LOG-0061/0062 and appending the presentation entry as LOG-0063;
+  the merge itself is LOG-0064.
+- Kept both README changes: the D-030 alpha-combination note from the remote
+  and the `presentations/final/` repo-map entry from the local branch.
+- Added the missing alpha-model dependencies (`scikit-learn==1.9.1`,
+  `xgboost==3.2.0`) to `requirements.txt`; the remote alpha code imported
+  them but did not declare them.
+
+**Files changed:**
+- Merge brings in `src/alpha_*.py`, `scripts/run_alpha.py`,
+  `notebooks/15_alpha_combination.ipynb`, `tests/test_alpha.py`,
+  `docs/decisions.md` (D-030/D-031), `docs/HANDOFF.md`, `README.md` and
+  `scripts/run_all.sh`.
+- `requirements.txt`
+- `docs/logs/AGENT_LOG.md`, `docs/logs/INDEX.md`
+
+**Commands:**
+- `git merge --no-ff origin/main`
+- `~/miniconda3/envs/mfe/bin/python -m pytest -q` → 186 passed
+- `tectonic -X compile --outdir build main.tex` → 23 pages
+
+**Why:** The cloud main had the D-030 alpha-combination and D-031 follow-up
+work; the local branch had the final presentation framework. The user asked to
+merge both and push to origin main.
+
+**Validation:**
+- 186 tests pass after installing scikit-learn 1.9.1 and xgboost 3.2.0.
+- The deck still compiles to 23 pages.
+- Log IDs are ordered 0061 (D-030), 0062 (D-031), 0063 (presentation), 0064
+  (merge); no collision.
+- The merge keeps the official v2 results and the new alpha-combination
+  results separate; the presentation's A/B flip numbers are unchanged.
+
+**Commit:** `merge: integrate origin/main alpha combination into final-presentation branch` (`this commit`).
+
+**Next:** Push to `origin main`; then fill the E and portfolio slides and the
+result figures.
